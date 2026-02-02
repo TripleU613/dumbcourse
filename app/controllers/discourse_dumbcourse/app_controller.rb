@@ -42,7 +42,11 @@ module DiscourseDumbcourse
 
     def login_path_request?
       path = params[:path].to_s
-      path == "login" || path.start_with?("login/")
+      return true if path == "login" || path.start_with?("login/")
+      return true if path == "signup" || path.start_with?("signup/")
+      return true if path == "register" || path.start_with?("register/")
+      return true if path == "emoji_map.json"
+      false
     end
 
     def redirect_anonymous_to_login

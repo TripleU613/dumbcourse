@@ -229,7 +229,7 @@ button svg,.icon svg{vertical-align:middle}
 <!-- Top Bar -->
 <header id="topbar">
   <button class="back" id="backBtn" aria-label="Back"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg></button>
-  <a class="title-link" id="homeLink" href="#/" tabindex="0">
+  <a class="title-link" id="homeLink" href="/dumb/" tabindex="0">
     <img id="siteIcon" alt="">
     <span class="title" id="topTitle">Forum</span>
   </a>
@@ -240,11 +240,11 @@ button svg,.icon svg{vertical-align:middle}
   <div class="menu-wrap">
     <button class="search-btn" id="menuBtn" aria-label="Menu" tabindex="0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
     <div class="menu-drop" id="menuDrop">
-      <a href="#/" data-auth tabindex="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Topics</a>
-      <a href="#/messages" data-auth tabindex="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Messages</a>
-      <a href="#/notifications" data-auth tabindex="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Notifications</a>
-      <a href="#/u/me" data-auth tabindex="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Profile</a>
-      <a href="#/search" data-auth tabindex="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Search</a>
+      <a href="/dumb/" data-auth tabindex="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Topics</a>
+      <a href="/dumb/messages" data-auth tabindex="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Messages</a>
+      <a href="/dumb/notifications" data-auth tabindex="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Notifications</a>
+      <a href="/dumb/u/me" data-auth tabindex="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Profile</a>
+      <a href="/dumb/search" data-auth tabindex="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Search</a>
       <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border)">
         <button id="scaleDown" tabindex="0" style="flex:1;min-height:38px;font-size:.9rem;background:var(--bg3);color:var(--fg);border:1px solid var(--border)">A−</button>
         <span id="scaleLabel" style="font-size:.8rem;color:var(--fg2);min-width:36px;text-align:center">100%</span>
@@ -274,8 +274,10 @@ if (!NodeList.prototype.forEach) {
 }
 
 // ============ CONFIG ============
-var PROXY = location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? location.protocol + '//' + location.hostname + ':8080' : location.origin;
-var SITE = location.origin;
+var ORIGIN = location.origin || location.protocol + '//' + location.host;
+var PROXY = location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? location.protocol + '//' + location.hostname + ':8080' : ORIGIN;
+var SITE = ORIGIN;
+var BASE_PATH = '/dumb';
 var SITE_ICON = '';
 
 var SITE_TITLE = 'Forum';
@@ -290,28 +292,40 @@ var API_CACHE = {};
 var RATE_LIMIT_UNTIL = 0;
 var LAST_SESSION_CHECK = 0;
 var SESSION_CHECKING = false;
-var EMOJI_MAP = {
-  wave: '👋',
-  smile: '😄',
-  grinning: '😀',
-  heart: '❤️',
-  thumbsup: '👍',
-  '+1': '👍',
-  thumbsdown: '👎',
-  '-1': '👎',
-  tada: '🎉',
-  fire: '🔥',
-  clap: '👏',
-  joy: '😂',
-  cry: '😢',
-  sob: '😭',
-  thinking: '🤔'
-};
+var EMOJI_MAP = {};
+var EMOJI_CACHE = {};
+var EMOJI_READY = false;
 
+function fromCodePoint(cp) {
+  if (String.fromCodePoint) return String.fromCodePoint(cp);
+  if (cp <= 0xFFFF) return String.fromCharCode(cp);
+  cp -= 0x10000;
+  return String.fromCharCode(0xD800 + (cp >> 10), 0xDC00 + (cp & 0x3FF));
+}
+function codepointsToString(codeStr) {
+  if (!codeStr) return '';
+  var parts = String(codeStr).split('-');
+  var out = '';
+  for (var i = 0; i < parts.length; i++) {
+    var cp = parseInt(parts[i], 16);
+    if (!cp) continue;
+    out += fromCodePoint(cp);
+  }
+  return out;
+}
+function emojiForName(name) {
+  var code = EMOJI_MAP[name];
+  if (!code) return '';
+  if (EMOJI_CACHE[name]) return EMOJI_CACHE[name];
+  var val = codepointsToString(code);
+  EMOJI_CACHE[name] = val;
+  return val;
+}
 function emojifyText(s) {
   if (!s) return '';
   return String(s).replace(/:([a-z0-9_+\-]+):/g, function (m, name) {
-    return EMOJI_MAP[name] || m;
+    var e = emojiForName(name);
+    return e || m;
   });
 }
 
@@ -394,6 +408,23 @@ function loadManifest() {
       var iconUrl = icons[0].src;
       if (iconUrl.indexOf('http') !== 0 && iconUrl.indexOf('//') !== 0) iconUrl = SITE + iconUrl;
       setSiteIcon(iconUrl);
+    }
+  }).catch(function () {});
+}
+
+function loadEmojiMap() {
+  return fetch(SITE + BASE_PATH + '/emoji_map.json', {
+    headers: {
+      'Accept': 'application/json'
+    },
+    credentials: 'same-origin'
+  }).then(function (resp) {
+    if (!resp || !resp.ok) return null;
+    return resp.json();
+  }).then(function (d) {
+    if (d && d.map) {
+      EMOJI_MAP = d.map;
+      EMOJI_READY = true;
     }
   }).catch(function () {});
 }
@@ -607,8 +638,7 @@ function _api() {
           localStorage.removeItem('jt_cookies');
           localStorage.removeItem('jt_username');
           localStorage.removeItem('jt_user_id');
-          location.hash = '#/';
-          route();
+          navigate('/', true);
           throw new Error('Session expired. Please log in again.');
         case 2:
           if (resp.status === 429) {
@@ -680,6 +710,104 @@ function uploadFile(file, btn) {
   });
 }
 
+function useHashRouting() {
+  return false;
+}
+function makeUrl(path) {
+  var p = path || '/';
+  if (p.indexOf(BASE_PATH) === 0) return p;
+  if (p[0] !== '/') p = '/' + p;
+  return BASE_PATH + p;
+}
+function currentPath() {
+  var p = location.pathname || '/';
+  if (p.indexOf(BASE_PATH) === 0) p = p.slice(BASE_PATH.length) || '/';
+  return p || '/';
+}
+function currentQuery() {
+  return (location.search || '').replace(/^\?/, '');
+}
+function setUrl(path, replace) {
+  var p = path || '/';
+  var url = makeUrl(p);
+  if (replace && history.replaceState) history.replaceState(null, '', url);else if (history.pushState) history.pushState(null, '', url);else location.href = url;
+}
+function navigate(path, replace) {
+  if (topicScrollCleanup && currentPath() === '/' && path !== '/') {
+    topicScrollCleanup();
+  }
+  setUrl(path, replace);
+  route();
+}
+
+// Internal link handling for /dumb routes (avoid full page reloads when possible)
+document.addEventListener('click', function (e) {
+  if (e.defaultPrevented) return;
+  var a = e.target.closest ? e.target.closest('a') : null;
+  if (!a) return;
+  if (a.target === '_blank' || a.hasAttribute('download')) return;
+  var href = a.getAttribute('href') || '';
+  if (!href || href.indexOf('javascript:') === 0 || href.indexOf('mailto:') === 0) return;
+  var url = href;
+  if (href.indexOf('http://') === 0 || href.indexOf('https://') === 0) {
+    if (href.indexOf(ORIGIN) !== 0) return;
+    url = href.slice(ORIGIN.length);
+  }
+  if (url.indexOf(BASE_PATH) !== 0) return;
+  e.preventDefault();
+  navigate(url.slice(BASE_PATH.length) || '/');
+});
+
+function parseTopicPath(path) {
+  if (!path) return null;
+  var p = path.split('?')[0];
+  var parts = p.split('/').filter(Boolean);
+  if (parts[0] === 't') {
+    if (parts.length >= 2 && /^\d+$/.test(parts[1])) {
+      return {
+        id: parts[1],
+        post: parts[2] || ''
+      };
+    }
+    if (parts.length >= 3 && /^\d+$/.test(parts[2])) {
+      return {
+        id: parts[2],
+        post: parts[3] || ''
+      };
+    }
+  }
+  if (parts[0] === 'messages' && parts[1] && /^\d+$/.test(parts[1])) {
+    return {
+      id: parts[1],
+      post: ''
+    };
+  }
+  return null;
+}
+function currentTopicId() {
+  var t = parseTopicPath(currentPath());
+  return t && t.id || '';
+}
+function currentTopicPost() {
+  var t = parseTopicPath(currentPath());
+  return t && t.post || '';
+}
+function topicPath(id, slug, postNumber) {
+  if (!id) return '/';
+  var p = slug ? '/t/' + slug + '/' + id : '/t/' + id;
+  if (postNumber) p += '/' + postNumber;
+  return p;
+}
+function topicHref(id, slug, postNumber) {
+  return makeUrl(topicPath(id, slug, postNumber));
+}
+function userPath(username) {
+  return '/u/' + encodeURIComponent(username);
+}
+function userHref(username) {
+  return makeUrl(userPath(username));
+}
+
 // ============ ROUTER ============
 var $app = document.getElementById('app');
 var $title = document.getElementById('topTitle');
@@ -704,21 +832,17 @@ function showCreate(target) {
   $create.style.display = target ? 'block' : 'none';
 }
 $create.addEventListener('click', function () {
-  if (createTarget) location.hash = createTarget;
+  if (createTarget) navigate(createTarget);
 });
 if ($home) {
   $home.addEventListener('click', function (e) {
     e.preventDefault();
-    if (location.hash !== '#/') {
-      location.hash = '#/';
-    } else {
-      route();
-    }
+    navigate('/', true);
   });
 }
 if ($searchBtn) {
   $searchBtn.addEventListener('click', function () {
-    location.hash = '#/search';
+    navigate('/search');
   });
 }
 document.getElementById('refreshBtn').addEventListener('click', function () {
@@ -727,7 +851,7 @@ document.getElementById('refreshBtn').addEventListener('click', function () {
 function goBack() {
   if (S.history.length > 1) {
     S.history.pop();
-    location.hash = S.history[S.history.length - 1];
+    navigate(S.history[S.history.length - 1], true);
   } else history.back();
 }
 $back.addEventListener('click', goBack);
@@ -777,17 +901,18 @@ function route() {
 }
 function _route() {
   _route = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee13() {
-    var hash, m, path, _t13;
+    var hash, m, path, topicInfo, _t13;
     return _regenerator().w(function (_context13) {
       while (1) switch (_context13.p = _context13.n) {
         case 0:
-          hash = location.hash || '#/';
+          hash = currentPath();
+          if (currentQuery()) hash += '?' + currentQuery();
           if (S.history[S.history.length - 1] !== hash) S.history.push(hash);
           if (isLoggedIn()) {
             _context13.n = 2;
             break;
           }
-          if (hash === '#/signup' || hash === '#/register') {
+          if (hash === '/signup' || hash === '/register') {
             showCreate('');
             renderSignup();
             return _context13.a(2);
@@ -796,9 +921,10 @@ function _route() {
           renderLogin();
           return _context13.a(2);
         case 2:
-          m = hash.match(/^#(\/.*)/);
-          path = m ? m[1] : '/';
+          m = hash.split('?')[0];
+          path = m || '/';
           showCreate('');
+          topicInfo = parseTopicPath(path);
           _context13.p = 2;
           if (!(path === '/')) {
             _context13.n = 4;
@@ -810,12 +936,12 @@ function _route() {
           _context13.n = 20;
           break;
         case 4:
-          if (!path.match(/^\/t\/(\d+)/)) {
+          if (!topicInfo) {
             _context13.n = 6;
             break;
           }
           _context13.n = 5;
-          return renderTopic(path.match(/^\/t\/(\d+)/)[1]);
+          return renderTopic(topicInfo.id, topicInfo.post);
         case 5:
           _context13.n = 20;
           break;
@@ -843,7 +969,7 @@ function _route() {
             break;
           }
           _context13.n = 10;
-          return renderTopic(path.match(/^\/messages\/(\d+)/)[1]);
+          return renderTopic(path.match(/^\/messages\/(\d+)/)[1], '');
         case 10:
           _context13.n = 20;
           break;
@@ -941,7 +1067,7 @@ route = function () {
   }
   return p;
 };
-window.addEventListener('hashchange', route);
+window.addEventListener('popstate', route);
 
 // ============ HELPERS ============
 var _escEl = document.createElement('div');
@@ -1101,11 +1227,43 @@ function avatarUrl(tpl, size) {
   return ASSET_BASE + tpl.replace('{size}', size || 48);
 }
 // Base for proxying assets (uploads, avatars, images) — uses origin root on Worker, PROXY on local
-var ASSET_BASE = location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? PROXY : location.origin;
-// Rewrite URLs in post HTML to go through proxy
+var ASSET_BASE = location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? PROXY : ORIGIN;
+function isHttpUrl(url) {
+  return url.indexOf('http://') === 0 || url.indexOf('https://') === 0;
+}
+function stripOrigin(url) {
+  if (isHttpUrl(url) && url.indexOf(ORIGIN) === 0) return url.slice(ORIGIN.length);
+  return url;
+}
+function rewriteSrc(url) {
+  if (!url) return url;
+  var u = stripOrigin(url);
+  if (isHttpUrl(u) || u.indexOf('//') === 0) return url;
+  if (u[0] === '/') return ASSET_BASE + u;
+  return url;
+}
+function rewriteHref(url) {
+  if (!url) return url;
+  if (url.indexOf('#') === 0 || url.indexOf('mailto:') === 0 || url.indexOf('javascript:') === 0) return url;
+  var u = stripOrigin(url);
+  if (isHttpUrl(u) || u.indexOf('//') === 0) return url;
+  if (u[0] !== '/') return url;
+  if (u.indexOf('/uploads/') === 0 || u.indexOf('/images/') === 0 || u.indexOf('/user_avatar/') === 0 || u.indexOf('/letter_avatar_proxy/') === 0 || u.indexOf('/emoji/') === 0) {
+    return ASSET_BASE + u;
+  }
+  if (u === '/' || u.indexOf('/t/') === 0 || u.indexOf('/u/') === 0 || u.indexOf('/messages') === 0 || u.indexOf('/search') === 0 || u.indexOf('/notifications') === 0) {
+    return makeUrl(u);
+  }
+  return ORIGIN + u;
+}
+// Rewrite URLs in post HTML to go through proxy or /dumb routes
 function fixPostHtml(html) {
   if (!html) return '';
-  return html.replace(/src="https:\/\/forums\.jtechforums\.org\/([^"]*?)"/g, `src="${ASSET_BASE}/$1"`).replace(/href="https:\/\/forums\.jtechforums\.org\/([^"]*?)"/g, `href="${ASSET_BASE}/$1"`).replace(/src="\/([^"]*?)"/g, `src="${ASSET_BASE}/$1"`).replace(/href="\/([^"]*?)"/g, `href="${ASSET_BASE}/$1"`).replace(/srcset="[^"]*"/g, '');
+  return html.replace(/src="([^"]*?)"/g, function (m, url) {
+    return 'src="' + rewriteSrc(url) + '"';
+  }).replace(/href="([^"]*?)"/g, function (m, url) {
+    return 'href="' + rewriteHref(url) + '"';
+  }).replace(/srcset="[^"]*"/g, '');
 }
 // SVG icons
 var IC = {
@@ -1237,7 +1395,7 @@ function renderLogin() {
       <div id="loginError" class="error" style="display:none"></div>
       <button id="loginBtn" style="width:100%" tabindex="0">Sign In</button>
       <div id="loginDivider" class="login-divider"><span>or</span></div>
-      <a id="signupLink" class="link-btn" href="#/signup" tabindex="0">Create Account</a>
+      <a id="signupLink" class="link-btn" href="/dumb/signup" tabindex="0">Create Account</a>
     </div>`;
   var doLogin = /*#__PURE__*/function () {
     var _ref = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
@@ -1329,8 +1487,7 @@ function renderLogin() {
             S.authChecked = true;
             return refreshCurrentUser().then(function (ok) {
               if (!ok) throw new Error('Login failed. Please try again.');
-              location.hash = '#/';
-              route();
+              navigate('/');
             });
             _context.n = 13;
             break;
@@ -1369,7 +1526,7 @@ function renderSignup() {
       <h2 id="signupTitle">${SITE_TITLE}</h2>
       <p id="signupNote">Create your account on ${SITE_TITLE}.</p>
       <div class="error">Account creation is disabled on this site.</div>
-      <a class="link-btn" href="#/" tabindex="0">Back to Sign In</a>
+      <a class="link-btn" href="/dumb/" tabindex="0">Back to Sign In</a>
     </div>`;
     updateSiteUI();
     return;
@@ -1395,7 +1552,7 @@ function renderSignup() {
       <div id="signupSuccess" class="success" style="display:none"></div>
       <button id="signupBtn" style="width:100%" tabindex="0">Create Account</button>
       <div class="login-divider"><span>or</span></div>
-      <a class="link-btn" href="#/" tabindex="0">Back to Sign In</a>
+      <a class="link-btn" href="/dumb/" tabindex="0">Back to Sign In</a>
     </div>`;
   var doSignup = /*#__PURE__*/function () {
     var _ref2 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee2() {
@@ -1570,8 +1727,7 @@ function _logout() {
           localStorage.removeItem('jt_cookies');
           localStorage.removeItem('jt_username');
           localStorage.removeItem('jt_user_id');
-          location.hash = '#/';
-          route();
+          navigate('/');
         case 3:
           return _context15.a(2);
       }
@@ -1586,7 +1742,7 @@ var topicPage = 0,
 function topicItemHtml(t) {
   var unread = (t.unread_posts || 0) + (t.new_posts || 0);
   var statusIcons = (t.pinned ? '<span class="topic-status-icon">' + IC.pin + '</span>' : '') + (t.closed || t.archived ? '<span class="topic-status-icon">' + IC.lock + '</span>' : '');
-  return `<a class="list-item" href="#/t/${t.id}" tabindex="0">
+  return `<a class="list-item" href="${topicHref(t.id, t.slug)}" tabindex="0">
     <div style="display:flex;align-items:flex-start;gap:8px">
       <div style="flex:1;min-width:0">
         <div class="item-title">${statusIcons}${escEmoji(t.title)}</div>
@@ -1683,7 +1839,7 @@ function _renderTopics() {
           html += '</div>';
           html += '<div id="topicLoader" class="loading" style="display:none">Loading more...</div>';
           $app.innerHTML = html;
-          showCreate('#/new-topic');
+          showCreate('/new-topic');
 
           // Infinite scroll — clean up previous listener first
           if (topicScrollCleanup) topicScrollCleanup();
@@ -1695,11 +1851,11 @@ function _renderTopics() {
           window.addEventListener('scroll', onScroll);
           _cleanup = function cleanup() {
             window.removeEventListener('scroll', onScroll);
-            window.removeEventListener('hashchange', _cleanup);
+            window.removeEventListener('popstate', _cleanup);
             topicScrollCleanup = null;
           };
           topicScrollCleanup = _cleanup;
-          window.addEventListener('hashchange', _cleanup);
+          window.addEventListener('popstate', _cleanup);
           focusContent();
         case 4:
           return _context17.a(2);
@@ -1708,20 +1864,21 @@ function _renderTopics() {
   }));
   return _renderTopics.apply(this, arguments);
 }
-function renderTopic(_x2) {
+function renderTopic(_x2, _x3) {
   return _renderTopic.apply(this, arguments);
 }
 function _renderTopic() {
-  _renderTopic = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee22(id) {
-    var d, lastPost, highestNum, timings, allPostIds, loadedPosts, postNumberMap, loadedIds, earlierIds, html, remainingIds, replyToPostNumber, replyBox, uploadBtn, loadEarlierBtn, posts, last;
+  _renderTopic = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee22(id, postNumber) {
+    var d, apiPath, lastPost, highestNum, timings, allPostIds, loadedPosts, postNumberMap, indexMap, loadedIndexes, minIdx, maxIdx, earlierIds, laterIds, html, remainingEarlierIds, remainingLaterIds, replyToPostNumber, replyBox, uploadBtn, loadEarlierBtn, loadLaterBtn, posts, last;
     return _regenerator().w(function (_context22) {
       while (1) switch (_context22.n) {
         case 0:
           showBack(true);
           $app.innerHTML = '<div class="loading">Loading topic...</div>';
-          // Load topic near the last post so user sees the latest
+          // Load topic near a specific post (if provided) or last post
+          apiPath = postNumber ? `/t/${id}/${postNumber}.json` : `/t/${id}/last.json`;
           _context22.n = 1;
-          return api(`/t/${id}/last.json`);
+          return api(apiPath);
         case 1:
           d = _context22.v;
           setTitle(d.title || 'Topic');
@@ -1753,13 +1910,20 @@ function _renderTopic() {
             postNumberMap[p.id] = p.post_number;
           });
 
-          // Earlier posts that aren't loaded yet (shown as "load earlier" button)
-          loadedIds = new Set(loadedPosts.map(function (p) {
-            return p.id;
-          }));
-          earlierIds = allPostIds.filter(function (pid) {
-            return !loadedIds.has(pid);
+          // Track where the current loaded posts sit within the full stream
+          indexMap = {};
+          allPostIds.forEach(function (pid, idx) {
+            indexMap[pid] = idx;
           });
+          loadedIndexes = loadedPosts.map(function (p) {
+            return indexMap[p.id];
+          }).filter(function (i) {
+            return typeof i === 'number';
+          });
+          minIdx = loadedIndexes.length ? Math.min.apply(null, loadedIndexes) : 0;
+          maxIdx = loadedIndexes.length ? Math.max.apply(null, loadedIndexes) : -1;
+          earlierIds = allPostIds.slice(0, minIdx);
+          laterIds = allPostIds.slice(maxIdx + 1);
           html = `<h2 style="padding:12px;font-size:1.1rem">${escEmoji(d.title)}</h2>`; // Show "load earlier" at the top if there are older posts
           if (earlierIds.length > 0) {
             html += `<button id="loadEarlierPosts" tabindex="0" style="width:100%;margin:8px 0;background:var(--bg3);color:var(--fg)">Load ${earlierIds.length} earlier posts</button>`;
@@ -1769,7 +1933,11 @@ function _renderTopic() {
             return renderPost(p, d);
           }).join('');
           html += '</div>';
-          remainingIds = earlierIds;
+          if (laterIds.length > 0) {
+            html += `<button id="loadLaterPosts" tabindex="0" style="width:100%;margin:8px 0;background:var(--bg3);color:var(--fg)">Load ${laterIds.length} newer posts</button>`;
+          }
+          remainingEarlierIds = earlierIds;
+          remainingLaterIds = laterIds;
           html += `<div id="replyIndicator" class="reply-indicator" style="display:none">
     <span id="replyingToText">Replying to topic</span>
     <button class="cancel-reply" id="cancelReply" tabindex="0">${IC.x}</button>
@@ -1981,9 +2149,11 @@ function _renderTopic() {
               return '<button class="emoji-item" tabindex="0">' + e + '</button>';
             }).join('') + '</div></div>';
             document.body.appendChild(overlay);
-            history.pushState({
-              emoji: true
-            }, '');
+            if (history && history.pushState) {
+              history.pushState({
+                emoji: true
+              }, '');
+            }
             var closeEmoji = function closeEmoji() {
               overlay.remove();
             };
@@ -2076,7 +2246,7 @@ function _renderTopic() {
                     this.textContent = 'Loading...';
                     _context21.p = 1;
                     // Load last 20 from the earlier batch (closest to current view)
-                    batch = remainingIds.splice(-20);
+                    batch = remainingEarlierIds.splice(-20);
                     _context21.n = 2;
                     return api(`/t/${id}/posts.json?post_ids[]=${batch.join('&post_ids[]=')}`);
                   case 2:
@@ -2095,9 +2265,9 @@ function _renderTopic() {
                     attachPostHandlers(container, id, replyBox, postNumberMap, function (n) {
                       replyToPostNumber = n;
                     });
-                    if (remainingIds.length > 0) {
+                    if (remainingEarlierIds.length > 0) {
                       this.disabled = false;
-                      this.textContent = `Load ${remainingIds.length} earlier posts`;
+                      this.textContent = `Load ${remainingEarlierIds.length} earlier posts`;
                     } else {
                       this.remove();
                     }
@@ -2116,10 +2286,71 @@ function _renderTopic() {
             })));
           }
 
+          // Load later posts
+          loadLaterBtn = document.getElementById('loadLaterPosts');
+          if (loadLaterBtn) {
+            loadLaterBtn.addEventListener('click', /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee21b() {
+              var batch, resp, newPosts, container, _t19b;
+              return _regenerator().w(function (_context21b) {
+                while (1) switch (_context21b.p = _context21b.n) {
+                  case 0:
+                    this.disabled = true;
+                    this.textContent = 'Loading...';
+                    _context21b.p = 1;
+                    // Load first 20 from the later batch (closest to current view)
+                    batch = remainingLaterIds.splice(0, 20);
+                    _context21b.n = 2;
+                    return api(`/t/${id}/posts.json?post_ids[]=${batch.join('&post_ids[]=')}`);
+                  case 2:
+                    resp = _context21b.v;
+                    newPosts = (resp.post_stream && resp.post_stream.posts || []).sort(function (a, b) {
+                      return a.post_number - b.post_number;
+                    });
+                    container = document.getElementById('postsContainer'); // Append at the bottom of the container
+                    newPosts.forEach(function (p) {
+                      postNumberMap[p.id] = p.post_number;
+                      container.insertAdjacentHTML('beforeend', renderPost(p, d));
+                    });
+                    attachPostHandlers(container, id, replyBox, postNumberMap, function (n) {
+                      replyToPostNumber = n;
+                    });
+                    if (remainingLaterIds.length > 0) {
+                      this.disabled = false;
+                      this.textContent = `Load ${remainingLaterIds.length} newer posts`;
+                    } else {
+                      this.remove();
+                    }
+                    _context21b.n = 4;
+                    break;
+                  case 3:
+                    _context21b.p = 3;
+                    _t19b = _context21b.v;
+                    showAlert(_t19b.message);
+                    this.disabled = false;
+                    this.textContent = 'Load newer posts';
+                  case 4:
+                    return _context21b.a(2);
+                }
+              }, _callee21b, this, [[1, 3]]);
+            })));
+          }
+
           // Attach all post interaction handlers
           attachPostHandlers($app, id, replyBox, postNumberMap, function (n) {
             replyToPostNumber = n;
           });
+
+          if (postNumber) {
+            var pn = parseInt(postNumber, 10);
+            if (pn) {
+              setTimeout(function () {
+                var target = $app.querySelector('.post[data-post-number=\"' + pn + '\"]');
+                if (target && target.scrollIntoView) {
+                  target.scrollIntoView({ block: 'start' });
+                }
+              }, 0);
+            }
+          }
 
           // Scroll to last post and focus it
           posts = document.querySelectorAll('.post');
@@ -2331,7 +2562,7 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
                   case 3:
                     te = postEl.closest('[data-topic-id]');
                     _context4.n = 4;
-                    return renderTopic(te && te.dataset.topicId || (location.hash.match(/\d+/) || [])[0]);
+                    return renderTopic(te && te.dataset.topicId || currentTopicId());
                   case 4:
                     _context4.n = 6;
                     break;
@@ -2347,7 +2578,7 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
               }, _callee4, this, [[2, 5]]);
             })));
             bodyEl.querySelector('.cancel-edit').addEventListener('click', function () {
-              return renderTopic((location.hash.match(/\d+/) || [])[0]);
+              return renderTopic(currentTopicId());
             });
             _context5.n = 5;
             break;
@@ -2387,7 +2618,7 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
             });
           case 2:
             _context6.n = 3;
-            return renderTopic((location.hash.match(/\d+/) || [])[0]);
+            return renderTopic(currentTopicId());
           case 3:
             _context6.n = 5;
             break;
@@ -2471,7 +2702,7 @@ function showReactionPicker(postId) {
           case 2:
             close();
             _context7.n = 3;
-            return renderTopic((location.hash.match(/\d+/) || [])[0]);
+            return renderTopic(currentTopicId());
           case 3:
             _context7.n = 5;
             break;
@@ -2607,11 +2838,11 @@ function renderPost(p, topicData) {
     var replyAvatar = p.reply_to_user && p.reply_to_user.avatar_template ? `<img src="${avatarUrl(p.reply_to_user.avatar_template, 20)}" alt="" style="width:16px;height:16px;border-radius:50%;vertical-align:middle">` : '';
     replyInfo = `<span style="font-size:.75rem;color:var(--fg2);margin-left:auto;display:inline-flex;align-items:center;gap:3px">${IC.reply} ${replyAvatar}#${p.reply_to_post_number}</span>`;
   }
-  return `<div class="post" id="post-${p.id}" tabindex="0">
+  return `<div class="post" id="post-${p.id}" data-post-number="${p.post_number}" tabindex="0">
     <div class="post-header">
       <img class="post-avatar" src="${avatarUrl(p.avatar_template, 48)}" alt="" loading="lazy">
       <div>
-        <a class="post-author" href="#/u/${esc(p.username)}" tabindex="-1">${esc(p.username)}</a>
+        <a class="post-author" href="${userHref(p.username)}" tabindex="-1">${esc(p.username)}</a>
         <div class="post-date">${timeAgo(p.created_at)}</div>
       </div>
       <span class="post-num">#${p.post_number}</span>
@@ -2738,7 +2969,7 @@ function renderNewTopic() {
           d = _context0.v;
           clearDraft('new_topic_title');
           clearDraft('new_topic_body');
-          location.hash = `#/t/${d.topic_id}`;
+          navigate(topicPath(d.topic_id, d.topic_slug));
           _context0.n = 5;
           break;
         case 4:
@@ -2802,7 +3033,7 @@ function renderNewMessage() {
           });
         case 3:
           d = _context1.v;
-          location.hash = `#/messages/${d.topic_id}`;
+          navigate(topicPath(d.topic_id, d.topic_slug));
           _context1.n = 5;
           break;
         case 4:
@@ -2842,13 +3073,13 @@ function _renderMessages() {
           } else {
             $app.innerHTML = topics.map(function (t) {
               return `
-        <a class="list-item" href="#/messages/${t.id}" tabindex="0">
+        <a class="list-item" href="${topicHref(t.id, t.slug)}" tabindex="0">
           <div class="item-title">${escEmoji(t.title)}</div>
           <div class="item-meta"><span>${t.posts_count} posts</span><span>${timeAgo(t.last_posted_at)}</span></div>
         </a>`;
             }).join('');
           }
-          showCreate('#/new-message');
+          showCreate('/new-message');
           focusContent();
           _context23.n = 4;
           break;
@@ -2902,7 +3133,7 @@ function _renderNotifications() {
             var icon = types[n.notification_type] || IC.bell;
             var text = n.data && n.data.display_username ? esc(n.data.display_username) + ': ' : '';
             var topic = n.data && n.data.topic_title || n.data && n.data.badge_name || n.fancy_title || '';
-            var href = n.topic_id ? `#/t/${n.topic_id}` : '#/notifications';
+            var href = n.topic_id ? topicHref(n.topic_id) : makeUrl('/notifications');
             return `<a class="notif-item ${n.read ? '' : 'unread'}" href="${href}" tabindex="0">
         <span class="notif-icon">${icon}</span>
         <span class="notif-text">${text}${escEmoji(topic)}</span>
@@ -2997,7 +3228,7 @@ function _renderProfile() {
           $app.innerHTML = html;
           if (uname === S.username) {
             document.getElementById('editProfileBtn').addEventListener('click', function () {
-              return location.hash = '#/settings';
+              return navigate('/settings');
             });
             document.getElementById('logoutBtn').addEventListener('click', function () {
               return logout();
@@ -3014,7 +3245,7 @@ function _renderProfile() {
           if (posts.length) {
             actHtml = posts.slice(0, 20).map(function (a) {
               return `
-          <a class="list-item" href="#/t/${a.topic_id}" tabindex="0">
+          <a class="list-item" href="${topicHref(a.topic_id, a.topic_slug)}" tabindex="0">
             <div class="item-title">${escEmoji(a.title)}</div>
             <div class="item-meta"><span>${timeAgo(a.created_at)}</span></div>
           </a>`;
@@ -3097,7 +3328,7 @@ function renderSettings() {
             }
           });
         case 3:
-          location.hash = '#/u/me';
+          navigate('/u/me');
           _context10.n = 5;
           break;
         case 4:
@@ -3139,9 +3370,11 @@ function toggleMenu(open) {
   $menu.classList.toggle('open', show);
   if (show) {
     updateMenuItems();
-    history.pushState({
-      menu: true
-    }, '');
+    if (history && history.pushState) {
+      history.pushState({
+        menu: true
+      }, '');
+    }
     var first = $menu.querySelector('a:not([style*="display: none"])');
     if (first) first.focus();
   }
@@ -3167,8 +3400,7 @@ document.getElementById('menuAuthBtn').addEventListener('click', function (e) {
   e.preventDefault();
   toggleMenu(false);
   if (isLoggedIn()) logout();else {
-    location.hash = '#/';
-    route();
+    navigate('/');
   }
 });
 // Close menu on outside click
@@ -3220,7 +3452,7 @@ function _renderSearch() {
     return _regenerator().w(function (_context28) {
       while (1) switch (_context28.n) {
         case 0:
-          qs = location.hash.split('?')[1] || '';
+          qs = currentQuery();
           q = '';
           qs.split('&').forEach(function (p) {
             var kv = p.split('=');
@@ -3248,7 +3480,7 @@ function _renderSearch() {
                     return _context27.a(2);
                   case 1:
                     // Update URL without re-rendering
-                    history.replaceState(null, '', `#/search?q=${encodeURIComponent(query)}`);
+                    setUrl('/search?q=' + encodeURIComponent(query), true);
                     results = document.getElementById('searchResults');
                     results.innerHTML = '<div class="loading">Searching...</div>';
                     _context27.p = 2;
@@ -3263,7 +3495,7 @@ function _renderSearch() {
                       rhtml += '<h3 style="padding:8px 12px;font-size:.9rem;color:var(--fg2)">Users</h3>';
                       rhtml += users.map(function (u) {
                         return `
-          <a class="list-item" href="#/u/${esc(u.username)}" tabindex="0">
+          <a class="list-item" href="${userHref(u.username)}" tabindex="0">
             <div class="item-title">@${esc(u.username)}</div>
             ${u.name ? `<div class="item-meta">${esc(u.name)}</div>` : ''}
           </a>`;
@@ -3273,7 +3505,7 @@ function _renderSearch() {
                       rhtml += '<h3 style="padding:8px 12px;font-size:.9rem;color:var(--fg2)">Topics</h3>';
                       rhtml += topics.map(function (t) {
                         return `
-          <a class="list-item" href="#/t/${t.id}" tabindex="0">
+          <a class="list-item" href="${topicHref(t.id, t.slug)}" tabindex="0">
             <div class="item-title">${escEmoji(t.title)}</div>
             <div class="item-meta">${catBadge(t.category_id)}<span>${timeAgo(t.created_at)}</span></div>
           </a>`;
@@ -3533,9 +3765,17 @@ function focusContent() {
 
 // ============ INIT ============
 function init() {
-  loadSite();
-  loadManifest();
-  checkSession().then(function () {
+  if (location.hash && location.hash.indexOf('#/') === 0) {
+    var p = location.hash.slice(1);
+    var url = makeUrl(p);
+    if (history && history.replaceState) history.replaceState(null, '', url);else location.href = url;
+  }
+  var tasks = [loadSite(), loadManifest(), loadEmojiMap()];
+  Promise.all(tasks.map(function (t) {
+    return t && t.catch ? t.catch(function () {}) : Promise.resolve();
+  })).then(function () {
+    return checkSession();
+  }).then(function () {
     route();
   });
 }
