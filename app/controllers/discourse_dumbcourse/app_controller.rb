@@ -5,6 +5,7 @@ require "rack/mime"
 module DiscourseDumbcourse
   class AppController < ::ActionController::Base
     layout false
+    before_action :relax_security_headers
 
     def show
       public_root = DiscourseDumbcourse::Engine.root.join("public")
@@ -32,6 +33,22 @@ module DiscourseDumbcourse
 
       response.headers["Cache-Control"] = "no-store"
       render plain: File.read(index_path), content_type: "text/html; charset=utf-8"
+    end
+
+    private
+
+    def relax_security_headers
+      response.headers["Content-Security-Policy"] =
+        "default-src * data: blob: 'unsafe-inline' 'unsafe-eval' http: https:;"
+      response.headers["Cross-Origin-Opener-Policy"] = "unsafe-none"
+      response.headers["Cross-Origin-Embedder-Policy"] = "unsafe-none"
+      response.headers["Cross-Origin-Resource-Policy"] = "cross-origin"
+      response.headers["X-Frame-Options"] = "ALLOWALL"
+      response.headers.delete("X-Content-Type-Options")
+      response.headers.delete("X-XSS-Protection")
+      response.headers["Referrer-Policy"] = "unsafe-url"
+      response.headers["X-Permitted-Cross-Domain-Policies"] = "all"
+      response.headers.delete("Permissions-Policy")
     end
   end
 end
