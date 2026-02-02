@@ -888,6 +888,17 @@ document.addEventListener('keydown', function (e) {
   // Backspace / Escape = go back (when not in an input)
   var tag = document.activeElement && document.activeElement.tagName;
   var inInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+  // From top bar, Down should move into content (not sideways)
+  if (e.key === 'ArrowDown') {
+    var active = document.activeElement;
+    var inTopbar = active && active.closest && active.closest('#topbar');
+    var inMenu = active && active.closest && active.closest('#menuDrop');
+    if (inTopbar && !inMenu && !$menu.classList.contains('open')) {
+      focusContent();
+      e.preventDefault();
+      return;
+    }
+  }
   if ((e.key === 'Backspace' || e.key === 'Escape') && !inInput) {
     // Escape closes menu first
     if ($menu.classList.contains('open')) {
@@ -1361,7 +1372,14 @@ function catBadge(id) {
   var c = S.categories[id];
   if (!c) return '';
   var bg = c.color ? '#' + c.color : '#666';
-  return `<span class="cat" style="background:${bg}">${esc(c.name)}</span>`;
+  var fg = c.text_color ? '#' + c.text_color : '#fff';
+  return `<span class="cat" style="background:${bg};color:${fg}">${esc(c.name)}</span>`;
+}
+function mergeCategories(list) {
+  (list || []).forEach(function (c) {
+    if (!c || !c.id) return;
+    S.categories[c.id] = c;
+  });
 }
 function loadCategories() {
   return _loadCategories.apply(this, arguments);
@@ -1372,20 +1390,12 @@ function _loadCategories() {
     return _regenerator().w(function (_context14) {
       while (1) switch (_context14.p = _context14.n) {
         case 0:
-          if (!Object.keys(S.categories).length) {
-            _context14.n = 1;
-            break;
-          }
-          return _context14.a(2);
-        case 1:
           _context14.p = 1;
           _context14.n = 2;
           return api('/categories.json');
         case 2:
           d = _context14.v;
-          (d.category_list && d.category_list.categories || []).forEach(function (c) {
-            S.categories[c.id] = c;
-          });
+          mergeCategories(d.category_list && d.category_list.categories || []);
           _context14.n = 4;
           break;
         case 3:
@@ -1893,6 +1903,7 @@ function _renderTopics() {
           return api('/latest.json');
         case 2:
           d = _context17.v;
+          mergeCategories(d.topic_list && d.topic_list.categories || []);
           topics = d.topic_list && d.topic_list.topics || [];
           if (topics.length) {
             _context17.n = 3;
@@ -2797,17 +2808,25 @@ function showReactionPicker(postId) {
     return '<button class="reaction-pick" data-rid="' + r + '" tabindex="0">' + (REACTION_EMOJI[r] || r) + '</button>';
   }).join('') + '</div><button class="cancel" tabindex="0" style="background:var(--bg3);color:var(--fg);margin-top:8px;width:100%">Cancel</button></div>';
   document.body.appendChild(el);
-  var first = el.querySelector('.reaction-pick');
+  var picks = [].slice.call(el.querySelectorAll('.reaction-pick'));
+  var cancelBtn = el.querySelector('.cancel');
+  var first = picks[0];
   if (first) first.focus();
+  var lastPickIndex = 0;
+  picks.forEach(function (btn, idx) {
+    btn.addEventListener('focus', function () {
+      lastPickIndex = idx;
+    });
+  });
   var close = function close() {
     el.remove();
     if (prev && prev.focus) prev.focus();
   };
-  el.querySelector('.cancel').onclick = close;
+  if (cancelBtn) cancelBtn.onclick = close;
   el.onclick = function (e) {
     if (e.target === el) close();
   };
-  el.querySelectorAll('.reaction-pick').forEach(function (btn) {
+  picks.forEach(function (btn) {
     btn.addEventListener('click', /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee7() {
       var _t8;
       return _regenerator().w(function (_context7) {
@@ -2837,36 +2856,73 @@ function showReactionPicker(postId) {
       }, _callee7, null, [[1, 4]]);
     })));
   });
+  function getCols() {
+    if (!picks.length) return 1;
+    var top = picks[0].offsetTop;
+    var c = 0;
+    for (var i = 0; i < picks.length; i++) {
+      if (picks[i].offsetTop === top) c++;else break;
+    }
+    return c || picks.length;
+  }
+  function focusPick(idx) {
+    if (idx < 0) idx = 0;
+    if (idx >= picks.length) idx = picks.length - 1;
+    if (picks[idx]) picks[idx].focus();
+  }
   el.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
       e.stopPropagation();
       close();
     }
+    if (e.key === 'Tab') {
+      var focusables = picks.slice();
+      if (cancelBtn) focusables.push(cancelBtn);
+      var cur = focusables.indexOf(document.activeElement);
+      if (cur === -1) {
+        focusables[0] && focusables[0].focus();
+      } else {
+        var nextIdx = e.shiftKey ? (cur - 1 + focusables.length) % focusables.length : (cur + 1) % focusables.length;
+        focusables[nextIdx].focus();
+      }
+      e.preventDefault();
+      return;
+    }
+    if (document.activeElement === cancelBtn) {
+      if (e.key === 'ArrowUp') {
+        focusPick(lastPickIndex);
+        e.preventDefault();
+      }
+      return;
+    }
+    var idx = picks.indexOf(document.activeElement);
+    if (idx === -1) return;
+    var cols = getCols();
     if (e.key === 'ArrowRight') {
-      var next = document.activeElement.nextElementSibling;
-      if (next && next.classList.contains('reaction-pick')) {
-        next.focus();
+      if (idx + 1 < picks.length) {
+        picks[idx + 1].focus();
         e.preventDefault();
       }
     }
     if (e.key === 'ArrowLeft') {
-      var prev = document.activeElement.previousElementSibling;
-      if (prev && prev.classList.contains('reaction-pick')) {
-        prev.focus();
+      if (idx - 1 >= 0) {
+        picks[idx - 1].focus();
         e.preventDefault();
       }
     }
     if (e.key === 'ArrowDown') {
-      var cancelBtn = el.querySelector('.cancel');
-      if (cancelBtn) {
+      var down = idx + cols;
+      if (down < picks.length) {
+        picks[down].focus();
+      } else if (cancelBtn) {
         cancelBtn.focus();
-        e.preventDefault();
       }
+      e.preventDefault();
     }
     if (e.key === 'ArrowUp') {
-      var lastPick = el.querySelectorAll('.reaction-pick');
-      if (lastPick.length && document.activeElement === el.querySelector('.cancel')) {
-        lastPick[lastPick.length - 1].focus();
+      var up = idx - cols;
+      if (up >= 0) {
+        picks[up].focus();
         e.preventDefault();
       }
     }
@@ -3614,6 +3670,7 @@ function _renderSearch() {
                     return api(`/search.json?q=${encodeURIComponent(query)}`);
                   case 3:
                     _d4 = _context27.v;
+                    mergeCategories(_d4.categories || _d4.topic_list && _d4.topic_list.categories || []);
                     rhtml = '';
                     topics = _d4.topics || [];
                     users = _d4.users || [];
@@ -3897,7 +3954,7 @@ function init() {
     var url = makeUrl(p);
     if (history && history.replaceState) history.replaceState(null, '', url);else location.href = url;
   }
-  var tasks = [loadSite(), loadManifest(), loadEmojiMap()];
+  var tasks = [loadSite(), loadManifest(), loadEmojiMap(), loadCategories()];
   Promise.all(tasks.map(function (t) {
     return t && t.catch ? t.catch(function () {}) : Promise.resolve();
   })).then(function () {
