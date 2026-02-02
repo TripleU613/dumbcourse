@@ -1595,10 +1595,8 @@ function renderLogin() {
             S.authChecked = true;
             return refreshCurrentUser().then(function (ok) {
               if (!ok) throw new Error('Login failed. Please try again.');
-              // Load site config and categories before navigating to ensure proper rendering
-              return Promise.all([loadSite(), loadCategories()]);
-            }).then(function () {
-              navigate('/');
+              // Refresh the page after successful login to ensure proper initialization
+              window.location.href = makeUrl('/');
             });
             _context.n = 13;
             break;
