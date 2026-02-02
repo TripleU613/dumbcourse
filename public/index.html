@@ -31,7 +31,9 @@ input[type=text],input[type=search],input[type=email],input[type=password],input
 #topbar{position:fixed;top:0;left:0;right:0;height:var(--top-h);background:var(--bg2);
   display:flex;align-items:center;padding:0 8px;gap:8px;z-index:100;border-bottom:1px solid var(--border)}
 #topbar .back{display:none;background:none;color:var(--fg);min-height:36px;padding:4px 8px;font-size:1.2rem}
-#topbar .title{flex:1;font-weight:600;font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#topbar .title-link{flex:1;display:flex;align-items:center;gap:8px;color:var(--fg);text-decoration:none;min-width:0}
+#topbar .title{font-weight:600;font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#siteIcon{width:20px;height:20px;border-radius:4px;display:none;flex:0 0 auto}
 #topbar .search-btn{background:none;color:var(--fg);min-height:36px;padding:4px 8px;font-size:1.1rem}
 
 /* Menu dropdown */
@@ -157,8 +159,8 @@ button svg,.icon svg{vertical-align:middle}
 
 .login-divider{display:flex;align-items:center;gap:8px;margin:12px 0;color:var(--fg2);font-size:.8rem}
 .login-divider:before,.login-divider:after{content:'';flex:1;border-top:1px solid var(--border)}
-.google-btn{width:100%;background:#fff;color:#111;border:1px solid #ddd}
-.google-btn:hover,.google-btn:focus{outline:3px solid var(--focus)}
+.link-btn{width:100%;display:block;text-align:center;background:var(--bg3);color:var(--fg);border:1px solid var(--border);padding:8px 12px;border-radius:var(--radius);min-height:44px;line-height:28px}
+.link-btn:focus{outline:3px solid var(--focus)}
 
 /* Search bar */
 .search-bar{display:flex;gap:8px;padding:8px 0;margin-bottom:8px}
@@ -169,6 +171,7 @@ button svg,.icon svg{vertical-align:middle}
 .loading{text-align:center;padding:24px;color:var(--fg2)}
 .empty{text-align:center;padding:32px;color:var(--fg2);font-size:.9rem}
 .error{color:var(--danger);padding:12px;text-align:center;font-size:.9rem}
+.success{color:var(--success);padding:12px;text-align:center;font-size:.9rem}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
 .confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;
   justify-content:center;z-index:200;padding:16px}
@@ -213,6 +216,12 @@ button svg,.icon svg{vertical-align:middle}
 .emoji-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
 .emoji-item{font-size:1.4rem;background:none;border:none;min-height:36px;min-width:36px;padding:4px;cursor:pointer;border-radius:var(--radius)}
 .emoji-item:focus,.emoji-item:hover{background:var(--bg3);outline:3px solid var(--focus)}
+.md-preview{padding:12px;border:1px solid var(--border);background:var(--bg2);border-radius:var(--radius);margin-top:8px;font-size:.9rem;line-height:1.4}
+.md-preview pre{white-space:pre-wrap;background:var(--bg3);padding:8px;border-radius:var(--radius);overflow-x:auto}
+.md-preview code{background:var(--bg3);padding:2px 4px;border-radius:4px}
+.md-preview h1,.md-preview h2,.md-preview h3{margin:8px 0 4px}
+.md-preview ul,.md-preview ol{padding-left:18px;margin:6px 0}
+.md-preview blockquote{border-left:3px solid var(--border);padding-left:8px;color:var(--fg2);margin:6px 0}
 </style>
 </head>
 <body>
@@ -220,7 +229,11 @@ button svg,.icon svg{vertical-align:middle}
 <!-- Top Bar -->
 <header id="topbar">
   <button class="back" id="backBtn" aria-label="Back"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg></button>
-  <span class="title" id="topTitle">Forum</span>
+  <a class="title-link" id="homeLink" href="#/" tabindex="0">
+    <img id="siteIcon" alt="">
+    <span class="title" id="topTitle">Forum</span>
+  </a>
+  <button class="search-btn" id="searchBtn" aria-label="Search" tabindex="0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
   <button class="search-btn" id="themeBtn" aria-label="Toggle theme" tabindex="0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
   <button class="search-btn" id="createBtn" aria-label="Create" style="display:none" tabindex="0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
   <button class="search-btn" id="refreshBtn" aria-label="Refresh" tabindex="0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>
@@ -263,26 +276,71 @@ if (!NodeList.prototype.forEach) {
 // ============ CONFIG ============
 var PROXY = location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? location.protocol + '//' + location.hostname + ':8080' : location.origin;
 var SITE = location.origin;
-var AUTH_GOOGLE = PROXY + '/auth/google_oauth2';
+var SITE_ICON = '';
 
 var SITE_TITLE = 'Forum';
 
-var AUTH_PROVIDERS = [];
+var SITE_SETTINGS = {
+  allowSignup: true,
+  fullNameRequired: false,
+  fullNameVisible: false
+};
 var API_INFLIGHT = {};
 var API_CACHE = {};
 var RATE_LIMIT_UNTIL = 0;
 var LAST_SESSION_CHECK = 0;
 var SESSION_CHECKING = false;
+var EMOJI_MAP = {
+  wave: '👋',
+  smile: '😄',
+  grinning: '😀',
+  heart: '❤️',
+  thumbsup: '👍',
+  '+1': '👍',
+  thumbsdown: '👎',
+  '-1': '👎',
+  tada: '🎉',
+  fire: '🔥',
+  clap: '👏',
+  joy: '😂',
+  cry: '😢',
+  sob: '😭',
+  thinking: '🤔'
+};
+
+function emojifyText(s) {
+  if (!s) return '';
+  return String(s).replace(/:([a-z0-9_+\-]+):/g, function (m, name) {
+    return EMOJI_MAP[name] || m;
+  });
+}
 
 function updateSiteUI(prevTitle) {
-  var t = SITE_TITLE || 'Forum';
+  var t = emojifyText(SITE_TITLE || 'Forum');
   var top = document.getElementById('topTitle');
-  if (top && (top.textContent === 'Forum' || top.textContent === prevTitle)) top.textContent = t;
+  if (top && (top.textContent === 'Forum' || top.textContent === emojifyText(prevTitle || ''))) top.textContent = t;
+  var icon = document.getElementById('siteIcon');
+  if (icon) {
+    if (SITE_ICON) {
+      icon.src = SITE_ICON;
+      icon.alt = t;
+      icon.style.display = 'block';
+    } else {
+      icon.style.display = 'none';
+    }
+  }
   var loginTitle = document.getElementById('loginTitle');
   if (loginTitle) loginTitle.textContent = t;
   var loginNote = document.getElementById('loginNote');
   if (loginNote) loginNote.textContent = 'Sign in to ' + t + '.';
-  updateAuthUI();
+  var signupLink = document.getElementById('signupLink');
+  var loginDivider = document.getElementById('loginDivider');
+  if (signupLink) signupLink.style.display = SITE_SETTINGS.allowSignup === false ? 'none' : 'block';
+  if (loginDivider) loginDivider.style.display = SITE_SETTINGS.allowSignup === false ? 'none' : 'flex';
+  var signupTitle = document.getElementById('signupTitle');
+  if (signupTitle) signupTitle.textContent = t;
+  var signupNote = document.getElementById('signupNote');
+  if (signupNote) signupNote.textContent = 'Create your account on ' + t + '.';
 }
 
 function setSiteTitle(t) {
@@ -291,26 +349,9 @@ function setSiteTitle(t) {
   updateSiteUI(prev);
 }
 
-function setAuthProviders(list) {
-  AUTH_PROVIDERS = list || [];
-  updateAuthUI();
-}
-
-function googleEnabled() {
-  return AUTH_PROVIDERS.indexOf('google_oauth2') !== -1;
-}
-
-function updateAuthUI() {
-  var btn = document.getElementById('googleBtn');
-  var divider = document.getElementById('loginDivider');
-  if (!btn) return;
-  if (googleEnabled()) {
-    btn.style.display = 'block';
-    if (divider) divider.style.display = 'flex';
-  } else {
-    btn.style.display = 'none';
-    if (divider) divider.style.display = 'none';
-  }
+function setSiteIcon(url) {
+  SITE_ICON = url || '';
+  updateSiteUI(SITE_TITLE);
 }
 
 function loadSite() {
@@ -325,12 +366,35 @@ function loadSite() {
   }).then(function (d) {
     var name = d && d.site && (d.site.title || d.site.name) || (d && d.title);
     if (name) setSiteTitle(name);
-    var providers = (d && d.auth_providers) || (d && d.site && d.site.auth_providers) || [];
-    var names = [];
-    for (var i = 0; i < providers.length; i++) {
-      if (providers[i] && providers[i].name) names.push(providers[i].name);
+    if (typeof d.full_name_required_for_signup === 'boolean') {
+      SITE_SETTINGS.fullNameRequired = d.full_name_required_for_signup;
     }
-    setAuthProviders(names);
+    if (typeof d.full_name_visible_in_signup === 'boolean') {
+      SITE_SETTINGS.fullNameVisible = d.full_name_visible_in_signup;
+    }
+    if (typeof d.allow_new_registrations === 'boolean') {
+      SITE_SETTINGS.allowSignup = d.allow_new_registrations;
+    }
+  }).catch(function () {});
+}
+
+function loadManifest() {
+  return fetch(PROXY + '/manifest.json', {
+    headers: {
+      'Accept': 'application/json'
+    },
+    credentials: 'same-origin'
+  }).then(function (resp) {
+    if (!resp || !resp.ok) return null;
+    return resp.json();
+  }).then(function (m) {
+    if (m && m.name && (!SITE_TITLE || SITE_TITLE === 'Forum')) setSiteTitle(m.name);
+    var icons = m && m.icons || [];
+    if (icons.length && icons[0] && icons[0].src) {
+      var iconUrl = icons[0].src;
+      if (iconUrl.indexOf('http') !== 0 && iconUrl.indexOf('//') !== 0) iconUrl = SITE + iconUrl;
+      setSiteIcon(iconUrl);
+    }
   }).catch(function () {});
 }
 
@@ -348,7 +412,7 @@ var S = {
   history: []
 };
 function isLoggedIn() {
-  return !!(S.loggedIn || S.token || S.cookies);
+  return !!S.loggedIn;
 }
 
 function refreshCurrentUser() {
@@ -375,8 +439,10 @@ function refreshCurrentUser() {
       if (S.userId) localStorage.setItem('jt_user_id', S.userId);
       return true;
     }
+    S.loggedIn = false;
     return false;
   }).catch(function () {
+    S.loggedIn = false;
     return false;
   }).then(function (v) {
     SESSION_CHECKING = false;
@@ -387,11 +453,37 @@ function refreshCurrentUser() {
 function checkSession() {
   if (S.authChecked) return Promise.resolve(isLoggedIn());
   S.authChecked = true;
-  if (S.token || S.cookies) {
-    S.loggedIn = true;
-    return Promise.resolve(true);
-  }
   return refreshCurrentUser();
+}
+
+function ensureCsrf() {
+  return fetch(PROXY + '/session/csrf.json', {
+    headers: {
+      'Accept': 'application/json'
+    },
+    credentials: 'same-origin'
+  }).then(function (resp) {
+    if (!resp || !resp.ok) return null;
+    var t = resp.headers.get('X-Session-Token');
+    if (t) {
+      S.token = t;
+      localStorage.setItem('jt_session_token', t);
+    }
+    var c = resp.headers.get('X-Cookies');
+    if (c) {
+      S.cookies = c;
+      localStorage.setItem('jt_cookies', c);
+    }
+    return resp.json();
+  }).then(function (d) {
+    if (d && d.csrf) {
+      S.csrf = d.csrf;
+      localStorage.setItem('jt_csrf', S.csrf);
+    }
+    return d;
+  }).catch(function () {
+    return null;
+  });
 }
 function saveDraft(key, val) {
   S.drafts[key] = val;
@@ -506,9 +598,15 @@ function _api() {
           S.token = '';
           S.csrf = '';
           S.cookies = '';
+          S.loggedIn = false;
+          S.authChecked = true;
+          S.username = '';
+          S.userId = '';
           localStorage.removeItem('jt_session_token');
           localStorage.removeItem('jt_csrf');
           localStorage.removeItem('jt_cookies');
+          localStorage.removeItem('jt_username');
+          localStorage.removeItem('jt_user_id');
           location.hash = '#/';
           route();
           throw new Error('Session expired. Please log in again.');
@@ -585,15 +683,18 @@ function uploadFile(file, btn) {
 // ============ ROUTER ============
 var $app = document.getElementById('app');
 var $title = document.getElementById('topTitle');
+var $home = document.getElementById('homeLink');
+var $searchBtn = document.getElementById('searchBtn');
 var $back = document.getElementById('backBtn');
 var $menu = document.getElementById('menuDrop');
 var $menuBtn = document.getElementById('menuBtn');
 var $create = document.getElementById('createBtn');
 var createTarget = '';
 function setTitle(t) {
-  var title = t || SITE_TITLE;
+  var siteTitle = emojifyText(SITE_TITLE);
+  var title = emojifyText(t || SITE_TITLE);
   $title.textContent = title;
-  document.title = title === SITE_TITLE ? SITE_TITLE : title + ' - ' + SITE_TITLE;
+  document.title = title === siteTitle ? siteTitle : title + ' - ' + siteTitle;
 }
 function showBack(show) {
   $back.style.display = show ? 'block' : 'none';
@@ -605,6 +706,21 @@ function showCreate(target) {
 $create.addEventListener('click', function () {
   if (createTarget) location.hash = createTarget;
 });
+if ($home) {
+  $home.addEventListener('click', function (e) {
+    e.preventDefault();
+    if (location.hash !== '#/') {
+      location.hash = '#/';
+    } else {
+      route();
+    }
+  });
+}
+if ($searchBtn) {
+  $searchBtn.addEventListener('click', function () {
+    location.hash = '#/search';
+  });
+}
 document.getElementById('refreshBtn').addEventListener('click', function () {
   return route();
 });
@@ -668,13 +784,18 @@ function _route() {
           hash = location.hash || '#/';
           if (S.history[S.history.length - 1] !== hash) S.history.push(hash);
           if (isLoggedIn()) {
-            _context13.n = 1;
+            _context13.n = 2;
             break;
+          }
+          if (hash === '#/signup' || hash === '#/register') {
+            showCreate('');
+            renderSignup();
+            return _context13.a(2);
           }
           showCreate('');
           renderLogin();
           return _context13.a(2);
-        case 1:
+        case 2:
           m = hash.match(/^#(\/.*)/);
           path = m ? m[1] : '/';
           showCreate('');
@@ -829,6 +950,143 @@ function esc(s) {
   _escEl.textContent = String(s);
   return _escEl.innerHTML;
 }
+function escEmoji(s) {
+  return esc(emojifyText(s));
+}
+function stripHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/<[^>]*>/g, '');
+}
+function mdBasic(src) {
+  var text = String(src || '').replace(/\r\n/g, '\n');
+  var blocks = [];
+  text = text.replace(/```([\s\S]*?)```/g, function (m, code) {
+    blocks.push(code);
+    return '\n%%CODE' + (blocks.length - 1) + '%%\n';
+  });
+  text = esc(text);
+  text = emojifyText(text);
+  text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+  text = text.replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1</strong>');
+  text = text.replace(/__([\s\S]+?)__/g, '<strong>$1</strong>');
+  text = text.replace(/\*(?!\s)([^*]+?)\*/g, '<em>$1</em>');
+  text = text.replace(/_(?!\s)([^_]+?)_/g, '<em>$1</em>');
+  text = text.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  var lines = text.split('\n');
+  var out = '';
+  var inUl = false;
+  var inOl = false;
+  var inBq = false;
+  var para = '';
+  function flushPara() {
+    if (para) {
+      out += '<p>' + para + '</p>';
+      para = '';
+    }
+  }
+  function closeLists() {
+    if (inUl) {
+      out += '</ul>';
+      inUl = false;
+    }
+    if (inOl) {
+      out += '</ol>';
+      inOl = false;
+    }
+  }
+  function closeBq() {
+    if (inBq) {
+      out += '</blockquote>';
+      inBq = false;
+    }
+  }
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if (/^%%CODE\\d+%%$/.test(line.trim())) {
+      flushPara();
+      closeLists();
+      closeBq();
+      var idx = parseInt(line.trim().replace(/\\D/g, ''), 10);
+      out += '<pre><code>' + esc(blocks[idx] || '') + '</code></pre>';
+      continue;
+    }
+    if (line.trim() === '') {
+      flushPara();
+      closeLists();
+      closeBq();
+      continue;
+    }
+    if (/^#{1,3}\\s+/.test(line)) {
+      flushPara();
+      closeLists();
+      closeBq();
+      var level = line.match(/^#{1,3}/)[0].length;
+      out += '<h' + level + '>' + line.replace(/^#{1,3}\\s+/, '') + '</h' + level + '>';
+      continue;
+    }
+    if (line.indexOf('&gt; ') === 0) {
+      flushPara();
+      closeLists();
+      if (!inBq) {
+        out += '<blockquote>';
+        inBq = true;
+      }
+      out += line.replace(/^&gt;\\s?/, '') + '<br>';
+      continue;
+    }
+    if (/^\\s*[-*]\\s+/.test(line)) {
+      flushPara();
+      closeBq();
+      if (!inUl) {
+        out += '<ul>';
+        inUl = true;
+      }
+      out += '<li>' + line.replace(/^\\s*[-*]\\s+/, '') + '</li>';
+      continue;
+    }
+    if (/^\\s*\\d+\\.\\s+/.test(line)) {
+      flushPara();
+      closeBq();
+      if (!inOl) {
+        out += '<ol>';
+        inOl = true;
+      }
+      out += '<li>' + line.replace(/^\\s*\\d+\\.\\s+/, '') + '</li>';
+      continue;
+    }
+    closeLists();
+    closeBq();
+    if (para) para += '<br>';
+    para += line;
+  }
+  flushPara();
+  closeLists();
+  closeBq();
+  return out || '';
+}
+function bindPreview(textareaId, previewId, toggleId) {
+  var ta = document.getElementById(textareaId);
+  var pv = document.getElementById(previewId);
+  var btn = document.getElementById(toggleId);
+  if (!ta || !pv || !btn) return;
+  var on = false;
+  var timer = null;
+  function render() {
+    pv.innerHTML = mdBasic(ta.value);
+  }
+  function schedule() {
+    if (!on) return;
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(render, 200);
+  }
+  btn.addEventListener('click', function () {
+    on = !on;
+    pv.style.display = on ? 'block' : 'none';
+    btn.textContent = on ? 'Hide Preview' : 'Preview';
+    if (on) render();
+  });
+  ta.addEventListener('input', schedule);
+}
 function timeAgo(dateStr) {
   if (!dateStr) return '';
   var s = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
@@ -979,11 +1237,11 @@ function renderLogin() {
       <div id="loginError" class="error" style="display:none"></div>
       <button id="loginBtn" style="width:100%" tabindex="0">Sign In</button>
       <div id="loginDivider" class="login-divider"><span>or</span></div>
-      <button id="googleBtn" class="google-btn" tabindex="0">Continue with Google</button>
+      <a id="signupLink" class="link-btn" href="#/signup" tabindex="0">Create Account</a>
     </div>`;
   var doLogin = /*#__PURE__*/function () {
     var _ref = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
-      var login, password, errEl, btn, csrfResp, csrfData, t, c, headers, body, resp, newToken, newCsrf, newCookies, d, user, _t, _t2;
+      var login, password, errEl, btn, headers, body, resp, newToken, newCsrf, newCookies, d, user, _t, _t2;
       return _regenerator().w(function (_context) {
         while (1) switch (_context.p = _context.n) {
           case 0:
@@ -1005,32 +1263,8 @@ function renderLogin() {
             _context.p = 2;
             _context.p = 3;
             _context.n = 4;
-            return fetch(PROXY + '/session/csrf.json', {
-              headers: {
-                'Accept': 'application/json'
-              },
-              credentials: 'same-origin'
-            });
+            return ensureCsrf();
           case 4:
-            csrfResp = _context.v;
-            _context.n = 5;
-            return csrfResp.json();
-          case 5:
-            csrfData = _context.v;
-            if (csrfData.csrf) {
-              S.csrf = csrfData.csrf;
-              localStorage.setItem('jt_csrf', S.csrf);
-            }
-            t = csrfResp.headers.get('X-Session-Token');
-            if (t) {
-              S.token = t;
-              localStorage.setItem('jt_session_token', t);
-            }
-            c = csrfResp.headers.get('X-Cookies');
-            if (c) {
-              S.cookies = c;
-              localStorage.setItem('jt_cookies', c);
-            }
             _context.n = 7;
             break;
           case 6:
@@ -1040,7 +1274,8 @@ function renderLogin() {
             // Login
             headers = {
               'Content-Type': 'application/x-www-form-urlencoded',
-              'Accept': 'application/json'
+              'Accept': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest'
             };
             if (S.csrf) headers['X-CSRF-Token'] = S.csrf;
             if (S.token) headers['X-Session-Token'] = S.token;
@@ -1091,9 +1326,9 @@ function renderLogin() {
             S.userId = user.id || '';
             localStorage.setItem('jt_username', S.username);
             localStorage.setItem('jt_user_id', S.userId);
-            S.loggedIn = true;
             S.authChecked = true;
-            return refreshCurrentUser().then(function () {
+            return refreshCurrentUser().then(function (ok) {
+              if (!ok) throw new Error('Login failed. Please try again.');
               location.hash = '#/';
               route();
             });
@@ -1122,13 +1357,184 @@ function renderLogin() {
   document.getElementById('loginUser').addEventListener('keydown', function (e) {
     if (e.key === 'Enter') document.getElementById('loginPass').focus();
   });
-  var googleBtn = document.getElementById('googleBtn');
-  if (googleBtn) googleBtn.addEventListener('click', function () {
-    location.href = AUTH_GOOGLE;
+  updateSiteUI();
+  // Don't auto-focus input — brings up keyboard on mobile
+}
+function renderSignup() {
+  setTitle(SITE_TITLE);
+  document.title = 'Create account - ' + SITE_TITLE;
+  showBack(true);
+  if (SITE_SETTINGS.allowSignup === false) {
+    $app.innerHTML = `<div class="login-box">
+      <h2 id="signupTitle">${SITE_TITLE}</h2>
+      <p id="signupNote">Create your account on ${SITE_TITLE}.</p>
+      <div class="error">Account creation is disabled on this site.</div>
+      <a class="link-btn" href="#/" tabindex="0">Back to Sign In</a>
+    </div>`;
+    updateSiteUI();
+    return;
+  }
+  var showName = SITE_SETTINGS.fullNameVisible || SITE_SETTINGS.fullNameRequired;
+  var nameLabel = SITE_SETTINGS.fullNameRequired ? 'Full Name' : 'Full Name (optional)';
+  var nameField = showName ? `<div class="field"><label for="signupName">${nameLabel}</label>
+        <input type="text" id="signupName" placeholder="Your name" tabindex="0"></div>` : '';
+  $app.innerHTML = `
+    <div class="login-box">
+      <h2 id="signupTitle">${SITE_TITLE}</h2>
+      <p id="signupNote">Create your account on ${SITE_TITLE}.</p>
+      ${nameField}
+      <div class="field"><label for="signupUser">Username</label>
+        <input type="text" id="signupUser" placeholder="Username" tabindex="0"></div>
+      <div class="field"><label for="signupEmail">Email</label>
+        <input type="email" id="signupEmail" placeholder="Email" tabindex="0"></div>
+      <div class="field"><label for="signupPass">Password</label>
+        <input type="password" id="signupPass" placeholder="Password" tabindex="0"></div>
+      <div class="field"><label for="signupPass2">Confirm Password</label>
+        <input type="password" id="signupPass2" placeholder="Confirm password" tabindex="0"></div>
+      <div id="signupError" class="error" style="display:none"></div>
+      <div id="signupSuccess" class="success" style="display:none"></div>
+      <button id="signupBtn" style="width:100%" tabindex="0">Create Account</button>
+      <div class="login-divider"><span>or</span></div>
+      <a class="link-btn" href="#/" tabindex="0">Back to Sign In</a>
+    </div>`;
+  var doSignup = /*#__PURE__*/function () {
+    var _ref2 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee2() {
+      var name, username, email, pass, pass2, errEl, okEl, btn, emailOk, usernameCheck, emailCheck, headers, body, resp, d, msg, _t3;
+      return _regenerator().w(function (_context2) {
+        while (1) switch (_context2.p = _context2.n) {
+          case 0:
+            name = showName ? document.getElementById('signupName').value.trim() : '';
+            username = document.getElementById('signupUser').value.trim();
+            email = document.getElementById('signupEmail').value.trim();
+            pass = document.getElementById('signupPass').value;
+            pass2 = document.getElementById('signupPass2').value;
+            errEl = document.getElementById('signupError');
+            okEl = document.getElementById('signupSuccess');
+            btn = document.getElementById('signupBtn');
+            errEl.style.display = 'none';
+            okEl.style.display = 'none';
+            if (!username || !email || !pass || !pass2 || showName && SITE_SETTINGS.fullNameRequired && !name) {
+              errEl.textContent = 'All required fields must be filled';
+              errEl.style.display = 'block';
+              return _context2.a(2);
+            }
+            if (pass !== pass2) {
+              errEl.textContent = 'Passwords do not match';
+              errEl.style.display = 'block';
+              return _context2.a(2);
+            }
+            emailOk = /.+@.+\..+/.test(email);
+            if (!emailOk) {
+              errEl.textContent = 'Please enter a valid email address';
+              errEl.style.display = 'block';
+              return _context2.a(2);
+            }
+            btn.disabled = true;
+            btn.textContent = 'Creating...';
+            _context2.p = 2;
+            _context2.n = 3;
+            return ensureCsrf();
+          case 3:
+            _context2.n = 4;
+            return api('/u/check_username.json?username=' + encodeURIComponent(username), {
+              nocache: true,
+              nodup: true
+            });
+          case 4:
+            usernameCheck = _context2.v;
+            if (!(usernameCheck && usernameCheck.errors && usernameCheck.errors.length)) {
+              _context2.n = 5;
+              break;
+            }
+            throw new Error(usernameCheck.errors.join(', '));
+          case 5:
+            if (!(usernameCheck && usernameCheck.available === false)) {
+              _context2.n = 6;
+              break;
+            }
+            throw new Error('Username is not available');
+          case 6:
+            _context2.n = 7;
+            return api('/u/check_email.json?email=' + encodeURIComponent(email), {
+              nocache: true,
+              nodup: true
+            });
+          case 7:
+            emailCheck = _context2.v;
+            if (!(emailCheck && emailCheck.errors && emailCheck.errors.length)) {
+              _context2.n = 8;
+              break;
+            }
+            throw new Error(emailCheck.errors.join(', '));
+          case 8:
+            headers = {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'Accept': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest'
+            };
+            if (S.csrf) headers['X-CSRF-Token'] = S.csrf;
+            if (S.token) headers['X-Session-Token'] = S.token;
+            if (S.cookies) headers['X-Cookies'] = S.cookies;
+            body = `name=${encodeURIComponent(name)}&username=${encodeURIComponent(username)}&email=${encodeURIComponent(email)}&password=${encodeURIComponent(pass)}&password_confirmation=${encodeURIComponent(pass2)}`;
+            _context2.n = 9;
+            return fetch(PROXY + '/u', {
+              method: 'POST',
+              headers,
+              body,
+              credentials: 'same-origin'
+            });
+          case 9:
+            resp = _context2.v;
+            _context2.n = 10;
+            return resp.json();
+          case 10:
+            d = _context2.v;
+            if (!(d && d.success)) {
+              _context2.n = 11;
+              break;
+            }
+            msg = stripHtml(d.message) || 'Account created. Check your email to activate.';
+            okEl.textContent = msg;
+            okEl.style.display = 'block';
+            btn.disabled = false;
+            btn.textContent = 'Create Account';
+            return _context2.a(2);
+          case 11:
+            msg = d && (d.error || d.message || d.errors && d.errors.join(', ')) || 'Sign up failed';
+            throw new Error(stripHtml(msg));
+          case 12:
+            _context2.n = 14;
+            break;
+          case 13:
+            _context2.p = 13;
+            _t3 = _context2.v;
+            errEl.textContent = _t3.message;
+            errEl.style.display = 'block';
+          case 14:
+            btn.disabled = false;
+            btn.textContent = 'Create Account';
+            return _context2.a(2);
+        }
+      }, _callee2, null, [[2, 13]]);
+    }));
+    return function doSignup() {
+      return _ref2.apply(this, arguments);
+    };
+  }();
+  document.getElementById('signupBtn').addEventListener('click', doSignup);
+  document.getElementById('signupPass2').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') doSignup();
+  });
+  document.getElementById('signupPass').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') document.getElementById('signupPass2').focus();
+  });
+  document.getElementById('signupEmail').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') document.getElementById('signupPass').focus();
+  });
+  document.getElementById('signupUser').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') document.getElementById('signupEmail').focus();
   });
   updateSiteUI();
-  updateAuthUI();
-  // Don't auto-focus input — brings up keyboard on mobile
 }
 function logout() {
   return _logout.apply(this, arguments);
@@ -1183,7 +1589,7 @@ function topicItemHtml(t) {
   return `<a class="list-item" href="#/t/${t.id}" tabindex="0">
     <div style="display:flex;align-items:flex-start;gap:8px">
       <div style="flex:1;min-width:0">
-        <div class="item-title">${statusIcons}${esc(t.title)}</div>
+        <div class="item-title">${statusIcons}${escEmoji(t.title)}</div>
         <div class="item-meta">
           ${catBadge(t.category_id)}
           <span>${t.posts_count - 1} replies</span>
@@ -1354,7 +1760,7 @@ function _renderTopic() {
           earlierIds = allPostIds.filter(function (pid) {
             return !loadedIds.has(pid);
           });
-          html = `<h2 style="padding:12px;font-size:1.1rem">${esc(d.title)}</h2>`; // Show "load earlier" at the top if there are older posts
+          html = `<h2 style="padding:12px;font-size:1.1rem">${escEmoji(d.title)}</h2>`; // Show "load earlier" at the top if there are older posts
           if (earlierIds.length > 0) {
             html += `<button id="loadEarlierPosts" tabindex="0" style="width:100%;margin:8px 0;background:var(--bg3);color:var(--fg)">Load ${earlierIds.length} earlier posts</button>`;
           }
@@ -1368,14 +1774,16 @@ function _renderTopic() {
     <span id="replyingToText">Replying to topic</span>
     <button class="cancel-reply" id="cancelReply" tabindex="0">${IC.x}</button>
   </div>`;
-          html += `<div class="compose" id="replyArea">
+  html += `<div class="compose" id="replyArea">
     <textarea id="replyBox" placeholder="Press Enter to type a reply..." tabindex="0" readonly>${esc(getDraft('reply_' + id))}</textarea>
     <div class="actions">
       <button id="uploadBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)">${IC.upload} Upload</button>
       <input type="file" id="uploadFile" style="display:none">
       <button id="emojiBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)">${IC.smile}</button>
+      <button id="replyPreviewBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)">Preview</button>
       <button id="sendReply" tabindex="0">Post Reply</button>
     </div>
+    <div id="replyPreview" class="md-preview" style="display:none"></div>
   </div>`;
           $app.innerHTML = html;
 
@@ -1400,6 +1808,7 @@ function _renderTopic() {
               replyBox.placeholder = 'Press Enter to type a reply...';
             }
           });
+          bindPreview('replyBox', 'replyPreview', 'replyPreviewBtn');
 
           // @Mention autocomplete
           (function () {
@@ -2246,8 +2655,10 @@ function renderNewTopic() {
     <div class="actions">
       <button id="uploadNt" tabindex="0" style="background:var(--bg3);color:var(--fg)">${IC.upload} Upload</button>
       <input type="file" id="uploadNtFile" style="display:none">
+      <button id="previewNt" tabindex="0" style="background:var(--bg3);color:var(--fg)">Preview</button>
       <button id="postTopic" tabindex="0">Create Topic</button>
     </div>
+    <div id="ntPreview" class="md-preview" style="display:none"></div>
   </div>`;
   document.getElementById('ntTitle').focus();
   document.getElementById('ntTitle').addEventListener('input', function (e) {
@@ -2256,6 +2667,7 @@ function renderNewTopic() {
   document.getElementById('ntBody').addEventListener('input', function (e) {
     return saveDraft('new_topic_body', e.target.value);
   });
+  bindPreview('ntBody', 'ntPreview', 'previewNt');
   var uploadNtBtn = document.getElementById('uploadNt');
   uploadNtBtn.addEventListener('click', function () {
     return document.getElementById('uploadNtFile').click();
@@ -2353,9 +2765,14 @@ function renderNewMessage() {
       <input type="text" id="pmTitle" placeholder="Subject" tabindex="0"></div>
     <div class="field"><label for="pmBody">Message</label>
       <textarea id="pmBody" placeholder="Write your message..." tabindex="0"></textarea></div>
-    <button id="sendPm" tabindex="0" style="width:100%">Send Message</button>
+    <div class="actions">
+      <button id="previewPm" tabindex="0" style="background:var(--bg3);color:var(--fg)">Preview</button>
+      <button id="sendPm" tabindex="0">Send Message</button>
+    </div>
+    <div id="pmPreview" class="md-preview" style="display:none"></div>
   </div>`;
   document.getElementById('pmTo').focus();
+  bindPreview('pmBody', 'pmPreview', 'previewPm');
   document.getElementById('sendPm').addEventListener('click', /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee1() {
     var to, title, raw, d, _t10;
     return _regenerator().w(function (_context1) {
@@ -2426,7 +2843,7 @@ function _renderMessages() {
             $app.innerHTML = topics.map(function (t) {
               return `
         <a class="list-item" href="#/messages/${t.id}" tabindex="0">
-          <div class="item-title">${esc(t.title)}</div>
+          <div class="item-title">${escEmoji(t.title)}</div>
           <div class="item-meta"><span>${t.posts_count} posts</span><span>${timeAgo(t.last_posted_at)}</span></div>
         </a>`;
             }).join('');
@@ -2488,7 +2905,7 @@ function _renderNotifications() {
             var href = n.topic_id ? `#/t/${n.topic_id}` : '#/notifications';
             return `<a class="notif-item ${n.read ? '' : 'unread'}" href="${href}" tabindex="0">
         <span class="notif-icon">${icon}</span>
-        <span class="notif-text">${text}${esc(topic)}</span>
+        <span class="notif-text">${text}${escEmoji(topic)}</span>
         <span class="notif-time">${timeAgo(n.created_at)}</span>
       </a>`;
           }).join('');
@@ -2598,7 +3015,7 @@ function _renderProfile() {
             actHtml = posts.slice(0, 20).map(function (a) {
               return `
           <a class="list-item" href="#/t/${a.topic_id}" tabindex="0">
-            <div class="item-title">${esc(a.title)}</div>
+            <div class="item-title">${escEmoji(a.title)}</div>
             <div class="item-meta"><span>${timeAgo(a.created_at)}</span></div>
           </a>`;
             }).join('');
@@ -2857,7 +3274,7 @@ function _renderSearch() {
                       rhtml += topics.map(function (t) {
                         return `
           <a class="list-item" href="#/t/${t.id}" tabindex="0">
-            <div class="item-title">${esc(t.title)}</div>
+            <div class="item-title">${escEmoji(t.title)}</div>
             <div class="item-meta">${catBadge(t.category_id)}<span>${timeAgo(t.created_at)}</span></div>
           </a>`;
                       }).join('');
@@ -3117,6 +3534,7 @@ function focusContent() {
 // ============ INIT ============
 function init() {
   loadSite();
+  loadManifest();
   checkSession().then(function () {
     route();
   });
