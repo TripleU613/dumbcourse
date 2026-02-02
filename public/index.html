@@ -163,9 +163,11 @@ button svg,.icon svg{vertical-align:middle}
 .link-btn:focus{outline:3px solid var(--focus)}
 
 /* Search bar */
-.search-bar{display:flex;gap:8px;padding:8px 0;margin-bottom:8px}
-.search-bar input{flex:1}
-.search-bar button{min-width:60px}
+.search-bar{display:flex;gap:10px;padding:12px;margin:8px 8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:12px}
+.search-bar input{flex:1;min-height:40px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--fg)}
+.search-bar button{min-width:70px;min-height:40px;border-radius:10px}
+body.search-mode #siteIcon{display:none !important}
+body.search-mode .title-link{gap:6px}
 
 /* Utility */
 .loading{text-align:center;padding:24px;color:var(--fg2)}
@@ -924,6 +926,7 @@ function _route() {
         case 2:
           m = hash.split('?')[0];
           path = m || '/';
+          document.body.classList.remove('search-mode');
           showCreate('');
           topicInfo = parseTopicPath(path);
           _context13.p = 2;
@@ -3460,6 +3463,7 @@ function _renderSearch() {
             var kv = p.split('=');
             if (kv[0] === 'q') q = decodeURIComponent(kv[1] || '');
           });
+          document.body.classList.add('search-mode');
           setTitle('Search');
           showBack(true);
           html = `<div class="search-bar">
@@ -3481,6 +3485,10 @@ function _renderSearch() {
                     }
                     return _context27.a(2);
                   case 1:
+                    if (query.length < 3) {
+                      showAlert('Search needs at least 3 characters.');
+                      return _context27.a(2);
+                    }
                     // Update URL without re-rendering
                     setUrl('/search?q=' + encodeURIComponent(query), true);
                     results = document.getElementById('searchResults');
@@ -3520,7 +3528,8 @@ function _renderSearch() {
                   case 4:
                     _context27.p = 4;
                     _t25 = _context27.v;
-                    results.innerHTML = `<div class="error">${esc(_t25.message)}</div>`;
+                    results.innerHTML = '';
+                    showAlert(_t25.message);
                   case 5:
                     return _context27.a(2);
                 }
