@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>JTech Forums</title><!-- v1.2 -->
+<title>Forum</title><!-- v1.2 -->
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -220,7 +220,7 @@ button svg,.icon svg{vertical-align:middle}
 <!-- Top Bar -->
 <header id="topbar">
   <button class="back" id="backBtn" aria-label="Back"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg></button>
-  <span class="title" id="topTitle">JTech Forums</span>
+  <span class="title" id="topTitle">Forum</span>
   <button class="search-btn" id="themeBtn" aria-label="Toggle theme" tabindex="0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
   <button class="search-btn" id="createBtn" aria-label="Create" style="display:none" tabindex="0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
   <button class="search-btn" id="refreshBtn" aria-label="Refresh" tabindex="0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>
@@ -265,6 +265,39 @@ var PROXY = location.hostname === 'localhost' || location.hostname === '127.0.0.
 var SITE = location.origin;
 var AUTH_GOOGLE = PROXY + '/auth/google_oauth2';
 
+var SITE_TITLE = 'Forum';
+
+function updateSiteUI(prevTitle) {
+  var t = SITE_TITLE || 'Forum';
+  var top = document.getElementById('topTitle');
+  if (top && (top.textContent === 'Forum' || top.textContent === prevTitle)) top.textContent = t;
+  var loginTitle = document.getElementById('loginTitle');
+  if (loginTitle) loginTitle.textContent = t;
+  var loginNote = document.getElementById('loginNote');
+  if (loginNote) loginNote.textContent = 'Sign in to ' + t + '.';
+}
+
+function setSiteTitle(t) {
+  var prev = SITE_TITLE;
+  SITE_TITLE = t || 'Forum';
+  updateSiteUI(prev);
+}
+
+function loadSite() {
+  return fetch(PROXY + '/site.json', {
+    headers: {
+      'Accept': 'application/json'
+    },
+    credentials: 'same-origin'
+  }).then(function (resp) {
+    if (!resp || !resp.ok) return null;
+    return resp.json();
+  }).then(function (d) {
+    var name = d && d.site && (d.site.title || d.site.name) || (d && d.title);
+    if (name) setSiteTitle(name);
+  }).catch(function () {});
+}
+
 // ============ STATE ============
 var S = {
   token: localStorage.getItem('jt_session_token') || '',
@@ -272,12 +305,49 @@ var S = {
   cookies: localStorage.getItem('jt_cookies') || '',
   username: localStorage.getItem('jt_username') || '',
   userId: localStorage.getItem('jt_user_id') || '',
+  loggedIn: false,
+  authChecked: false,
   categories: {},
   drafts: JSON.parse(localStorage.getItem('jt_drafts') || '{}'),
   history: []
 };
 function isLoggedIn() {
-  return !!(S.token || S.cookies);
+  return !!(S.loggedIn || S.token || S.cookies);
+}
+
+function refreshCurrentUser() {
+  return fetch(PROXY + '/session/current.json', {
+    headers: {
+      'Accept': 'application/json'
+    },
+    credentials: 'same-origin'
+  }).then(function (resp) {
+    if (!resp || !resp.ok) return false;
+    return resp.json();
+  }).then(function (d) {
+    if (d && d.current_user) {
+      S.loggedIn = true;
+      S.authChecked = true;
+      S.username = d.current_user.username || S.username;
+      S.userId = d.current_user.id || S.userId;
+      if (S.username) localStorage.setItem('jt_username', S.username);
+      if (S.userId) localStorage.setItem('jt_user_id', S.userId);
+      return true;
+    }
+    return false;
+  }).catch(function () {
+    return false;
+  });
+}
+
+function checkSession() {
+  if (S.authChecked) return Promise.resolve(isLoggedIn());
+  S.authChecked = true;
+  if (S.token || S.cookies) {
+    S.loggedIn = true;
+    return Promise.resolve(true);
+  }
+  return refreshCurrentUser();
 }
 function saveDraft(key, val) {
   S.drafts[key] = val;
@@ -331,7 +401,8 @@ function _api() {
           delete opts.headers; // consumed
           _context12.n = 1;
           return fetch(url, _objectSpread(_objectSpread({}, opts), {}, {
-            headers: mergedHeaders
+            headers: mergedHeaders,
+            credentials: opts.credentials || 'same-origin'
           }));
         case 1:
           resp = _context12.v;
@@ -442,8 +513,9 @@ var $menuBtn = document.getElementById('menuBtn');
 var $create = document.getElementById('createBtn');
 var createTarget = '';
 function setTitle(t) {
-  $title.textContent = t;
-  document.title = t + ' - JTech Forums';
+  var title = t || SITE_TITLE;
+  $title.textContent = title;
+  document.title = title === SITE_TITLE ? SITE_TITLE : title + ' - ' + SITE_TITLE;
 }
 function showBack(show) {
   $back.style.display = show ? 'block' : 'none';
@@ -784,12 +856,13 @@ function confirm(msg) {
 
 // ============ LOGIN ============
 function renderLogin() {
-  setTitle('Login');
+  setTitle(SITE_TITLE);
+  document.title = 'Sign in - ' + SITE_TITLE;
   showBack(false);
   $app.innerHTML = `
     <div class="login-box">
-      <h2>JTech Forums</h2>
-      <p>Sign in with your forum account.</p>
+      <h2 id="loginTitle">${SITE_TITLE}</h2>
+      <p id="loginNote">Sign in to ${SITE_TITLE}.</p>
       <div class="field"><label for="loginUser">Username or Email</label>
         <input type="text" id="loginUser" placeholder="Username or email" tabindex="0"></div>
       <div class="field"><label for="loginPass">Password</label>
@@ -826,7 +899,8 @@ function renderLogin() {
             return fetch(PROXY + '/session/csrf.json', {
               headers: {
                 'Accept': 'application/json'
-              }
+              },
+              credentials: 'same-origin'
             });
           case 4:
             csrfResp = _context.v;
@@ -867,7 +941,8 @@ function renderLogin() {
             return fetch(PROXY + '/session.json', {
               method: 'POST',
               headers,
-              body
+              body,
+              credentials: 'same-origin'
             });
           case 8:
             resp = _context.v;
@@ -907,8 +982,12 @@ function renderLogin() {
             S.userId = user.id || '';
             localStorage.setItem('jt_username', S.username);
             localStorage.setItem('jt_user_id', S.userId);
-            location.hash = '#/';
-            route();
+            S.loggedIn = true;
+            S.authChecked = true;
+            return refreshCurrentUser().then(function () {
+              location.hash = '#/';
+              route();
+            });
             _context.n = 13;
             break;
           case 12:
@@ -938,6 +1017,7 @@ function renderLogin() {
   if (googleBtn) googleBtn.addEventListener('click', function () {
     location.href = AUTH_GOOGLE;
   });
+  updateSiteUI();
   // Don't auto-focus input — brings up keyboard on mobile
 }
 function logout() {
@@ -949,7 +1029,7 @@ function _logout() {
       while (1) switch (_context15.n) {
         case 0:
           _context15.n = 1;
-          return confirm('Log out of JTech Forums?');
+          return confirm('Log out of ' + SITE_TITLE + '?');
         case 1:
           if (_context15.v) {
             _context15.n = 2;
@@ -967,6 +1047,8 @@ function _logout() {
           S.cookies = '';
           S.username = '';
           S.userId = '';
+          S.loggedIn = false;
+          S.authChecked = true;
           localStorage.removeItem('jt_session_token');
           localStorage.removeItem('jt_csrf');
           localStorage.removeItem('jt_cookies');
@@ -1059,7 +1141,7 @@ function _renderTopics() {
     return _regenerator().w(function (_context17) {
       while (1) switch (_context17.n) {
         case 0:
-          setTitle('JTech Forums');
+          setTitle(SITE_TITLE);
           showBack(false);
           $app.innerHTML = '<div class="loading">Loading topics...</div>';
           _context17.n = 1;
@@ -2923,6 +3005,12 @@ function focusContent() {
 }
 
 // ============ INIT ============
-route();</script>
+function init() {
+  loadSite();
+  checkSession().then(function () {
+    route();
+  });
+}
+init();</script>
 </body>
 </html>
