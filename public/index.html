@@ -269,6 +269,7 @@ var SITE_TITLE = 'Forum';
 
 var AUTH_PROVIDERS = [];
 var API_INFLIGHT = {};
+var API_CACHE = {};
 var RATE_LIMIT_UNTIL = 0;
 var LAST_SESSION_CHECK = 0;
 var SESSION_CHECKING = false;
@@ -408,6 +409,10 @@ function clearDraft(key) {
 function api(path, opts) {
   var method = opts && opts.method ? String(opts.method).toUpperCase() : 'GET';
   var key = method + ' ' + path;
+  if (method === 'GET' && (!opts || !opts.nocache)) {
+    var c = API_CACHE[path];
+    if (c && Date.now() - c.t < 1000) return Promise.resolve(c.v);
+  }
   if (!opts || !opts.nodup) {
     if (API_INFLIGHT[key]) return API_INFLIGHT[key];
     var p = _api(path, opts);
@@ -416,7 +421,14 @@ function api(path, opts) {
       if (API_INFLIGHT[key] === p) delete API_INFLIGHT[key];
     };
     if (p && typeof p.then === 'function') {
-      return p.then(function (v) { clear(); return v; }, function (e) { clear(); throw e; });
+      return p.then(function (v) {
+        clear();
+        if (method === 'GET' && (!opts || !opts.nocache)) API_CACHE[path] = { t: Date.now(), v: v };
+        return v;
+      }, function (e) {
+        clear();
+        throw e;
+      });
     }
     clear();
     return p;
