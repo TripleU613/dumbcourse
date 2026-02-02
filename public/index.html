@@ -766,13 +766,13 @@ function parseTopicPath(path) {
     if (parts.length >= 2 && /^\d+$/.test(parts[1])) {
       return {
         id: parts[1],
-        post: parts[2] || ''
+        post: /^\d+$/.test(parts[2] || '') ? parts[2] : ''
       };
     }
     if (parts.length >= 3 && /^\d+$/.test(parts[2])) {
       return {
         id: parts[2],
-        post: parts[3] || ''
+        post: /^\d+$/.test(parts[3] || '') ? parts[3] : ''
       };
     }
   }
@@ -795,7 +795,8 @@ function currentTopicPost() {
 function topicPath(id, slug, postNumber) {
   if (!id) return '/';
   var p = slug ? '/t/' + slug + '/' + id : '/t/' + id;
-  if (postNumber) p += '/' + postNumber;
+  var pn = postNumber && String(postNumber).match(/^\d+$/) ? postNumber : '';
+  if (pn) p += '/' + pn;
   return p;
 }
 function topicHref(id, slug, postNumber) {
@@ -1876,6 +1877,7 @@ function _renderTopic() {
           showBack(true);
           $app.innerHTML = '<div class="loading">Loading topic...</div>';
           // Load topic near a specific post (if provided) or last post
+          postNumber = postNumber && String(postNumber).match(/^\d+$/) ? postNumber : '';
           apiPath = postNumber ? `/t/${id}/${postNumber}.json` : `/t/${id}/last.json`;
           _context22.n = 1;
           return api(apiPath);
