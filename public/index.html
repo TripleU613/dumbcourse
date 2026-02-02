@@ -1082,12 +1082,28 @@ function esc(s) {
   _escEl.textContent = String(s);
   return _escEl.innerHTML;
 }
+function decodeHtml(s) {
+  if (!s) return '';
+  _escEl.innerHTML = String(s);
+  return _escEl.textContent || _escEl.innerText || '';
+}
 function escEmoji(s) {
   return esc(emojifyText(s));
 }
 function stripHtml(s) {
   if (!s) return '';
   return String(s).replace(/<[^>]*>/g, '');
+}
+function htmlToText(html) {
+  if (!html) return '';
+  var s = String(html);
+  s = s.replace(/<br\s*\/?>/gi, '\n');
+  s = s.replace(/<\/p>/gi, '\n\n');
+  s = s.replace(/<\/div>/gi, '\n');
+  s = s.replace(/<\/li>/gi, '\n');
+  s = stripHtml(s);
+  s = decodeHtml(s);
+  return s.replace(/\n{3,}/g, '\n\n').trim();
 }
 function mdBasic(src) {
   var text = String(src || '').replace(/\r\n/g, '\n');
@@ -1276,6 +1292,7 @@ var IC = {
   heart: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
   bookmark: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>',
   reply: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>',
+  quote: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17H5a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3h6v6H7v6z"/><path d="M19 17h-2a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3h6v6h-4v6z"/></svg>',
   edit: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
   trash: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
   x: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
@@ -2468,6 +2485,57 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
     });
   });
 
+  // Quote post
+  container.querySelectorAll('[data-quote-post]').forEach(function (btn) {
+    if (btn._bound) return;
+    btn._bound = true;
+    btn.addEventListener('click', /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee2b() {
+      var postId, user, postNum, raw, postEl, bodyEl, quote, val;
+      return _regenerator().w(function (_context2b) {
+        while (1) switch (_context2b.p = _context2b.n) {
+          case 0:
+            postId = parseInt(btn.dataset.quotePost);
+            user = btn.dataset.quoteUser || '';
+            postNum = postNumberMap[postId] || postId;
+            btn.disabled = true;
+            _context2b.p = 1;
+            _context2b.n = 2;
+            return api(`/posts/${postId}.json`);
+          case 2:
+            raw = _context2b.v.raw || '';
+            _context2b.n = 5;
+            break;
+          case 4:
+            _context2b.p = 4;
+          case 5:
+            if (!raw) {
+              postEl = document.getElementById('post-' + postId);
+              bodyEl = postEl && postEl.querySelector('.post-body');
+              raw = bodyEl ? htmlToText(bodyEl.innerHTML) : '';
+            }
+            quote = `[quote=\"${user}, post:${postNum}, topic:${topicId}\"]\n${raw}\n[/quote]\n`;
+            setReplyTo(postNum);
+            var indicator = document.getElementById('replyIndicator');
+            document.getElementById('replyingToText').textContent = `Replying to @${user} (#${postNum})`;
+            indicator.style.display = 'flex';
+            replyBox.readOnly = false;
+            replyBox.placeholder = 'Write a reply...';
+            val = replyBox.value || '';
+            if (val && !val.match(/\n$/)) val += '\n';
+            replyBox.value = val + quote;
+            replyBox.focus();
+            replyBox.scrollIntoView({
+              behavior: 'smooth'
+            });
+            replyBox.dispatchEvent(new Event('input'));
+            btn.disabled = false;
+          case 6:
+            return _context2b.a(2);
+        }
+      }, _callee2b, null, [[1, 4]]);
+    })));
+  });
+
   // Delete post
   container.querySelectorAll('[data-delete-post]').forEach(function (btn) {
     if (btn._bound) return;
@@ -2869,6 +2937,7 @@ function renderPost(p, topicData) {
     <div class="post-actions">
       <button data-react-open="${p.id}" tabindex="-1">${IC.heart} React</button>
       <button data-reply-to="${p.id}" data-reply-user="${esc(p.username)}" tabindex="-1">${IC.reply} Reply</button>
+      <button data-quote-post="${p.id}" data-quote-user="${esc(p.username)}" tabindex="-1">${IC.quote} Quote</button>
       ${isOwn ? `<button data-edit-post="${p.id}" tabindex="-1">${IC.edit} Edit</button>
       <button data-delete-post="${p.id}" tabindex="-1" style="color:var(--danger)">${IC.trash} Delete</button>` : `<button data-flag="${p.id}" tabindex="-1">${IC.flag} Flag</button>`}
     </div>
