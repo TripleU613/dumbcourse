@@ -62,10 +62,16 @@ module DiscourseDumbcourse
       redirect_to "#{Discourse.base_path}/dumb/login"
     end
 
+    def google_login_enabled?
+      Discourse.enabled_auth_providers.any? { |provider| provider.name == "google_oauth2" }
+    end
+
     def login_html
       return_path = "#{Discourse.base_path}/dumb"
       login_url = "/login?return_path=#{CGI.escape(return_path)}"
       signup_url = "/signup?return_path=#{CGI.escape(return_path)}"
+      google_url = "/auth/google_oauth2?origin=#{CGI.escape(return_path)}"
+      google_button = google_login_enabled? ? "<a class=\"btn\" href=\"#{google_url}\">Continue with Google</a>" : ""
 
       <<~HTML
         <!DOCTYPE html>
@@ -88,10 +94,11 @@ module DiscourseDumbcourse
         <body>
           <div class="wrap">
             <h1>Sign in</h1>
-            <p>Use your forum account to continue.</p>
+            <p>Use your account to continue.</p>
             <a class="btn" href="#{login_url}">Log in</a>
+            #{google_button}
             <a class="btn secondary" href="#{signup_url}">Create account</a>
-            <div class="note">This page uses the forum sign-in.</div>
+            <div class="note">This page uses the main sign-in.</div>
           </div>
         </body>
         </html>
