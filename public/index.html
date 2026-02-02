@@ -230,11 +230,13 @@ body.auth-mode #searchBtn{display:none !important}
 .md-preview blockquote{border-left:3px solid var(--border);padding-left:8px;color:var(--fg2);margin:6px 0}
 
 /* Navigation Mode Styles */
-[data-nav-mode="touch"] :focus{outline-width:2px;outline-offset:1px}
+[data-nav-mode="touch"] :focus{outline:none !important}
 [data-nav-mode="touch"] .post{cursor:default}
 [data-nav-mode="touch"] .post:hover{background:var(--bg1)}
+[data-nav-mode="touch"] .post-actions,
+[data-nav-mode="touch"] .post-reactions{display:flex !important;opacity:1 !important}
 [data-nav-mode="touch"] .post-actions button,
-[data-nav-mode="touch"] .post-reactions button{cursor:pointer}
+[data-nav-mode="touch"] .post-reactions button{cursor:pointer;opacity:1 !important}
 [data-nav-mode="dpad"] .post{cursor:pointer}
 [data-nav-mode="dpad"] .post:hover{background:var(--bg2)}
 [data-nav-mode="dpad"] .post:not(.active) .post-actions button,
@@ -269,20 +271,20 @@ body.auth-mode #searchBtn{display:none !important}
         <button id="scaleUp" tabindex="0" style="flex:1;min-height:38px;font-size:.9rem;background:var(--bg3);color:var(--fg);border:1px solid var(--border)">A+</button>
       </div>
       <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border)">
-        <button id="navDpad" tabindex="0" style="flex:1;min-height:38px;font-size:.8rem;background:var(--bg3);color:var(--fg);border:1px solid var(--border);position:relative">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px">
+        <button id="navDpad" tabindex="0" style="flex:1;min-height:38px;font-size:.7rem;background:var(--bg3);color:var(--fg);border:1px solid var(--border);position:relative;padding:4px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:2px">
             <rect x="5" y="5" width="14" height="14" rx="2"/>
             <line x1="12" y1="5" x2="12" y2="19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
           </svg>D-pad
-          <span id="dpadCheck" style="position:absolute;right:4px;top:50%;transform:translateY(-50%);color:var(--accent)">✓</span>
+          <span id="dpadCheck" style="position:absolute;right:3px;top:50%;transform:translateY(-50%);color:var(--accent);font-size:.7rem">✓</span>
         </button>
-        <button id="navTouch" tabindex="0" style="flex:1;min-height:38px;font-size:.8rem;background:var(--bg3);color:var(--fg);border:1px solid var(--border);position:relative">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px">
+        <button id="navTouch" tabindex="0" style="flex:1;min-height:38px;font-size:.7rem;background:var(--bg3);color:var(--fg);border:1px solid var(--border);position:relative;padding:4px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:2px">
             <path d="M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/>
             <path d="M12 21v-7"/>
           </svg>Touch
-          <span id="touchCheck" style="position:absolute;right:4px;top:50%;transform:translateY(-50%);color:var(--accent);display:none">✓</span>
+          <span id="touchCheck" style="position:absolute;right:3px;top:50%;transform:translateY(-50%);color:var(--accent);display:none;font-size:.7rem">✓</span>
         </button>
       </div>
       <a href="#" id="menuAuthBtn" tabindex="0"></a>
@@ -1593,8 +1595,8 @@ function renderLogin() {
             S.authChecked = true;
             return refreshCurrentUser().then(function (ok) {
               if (!ok) throw new Error('Login failed. Please try again.');
-              // Load categories before navigating to ensure proper rendering
-              return loadCategories();
+              // Load site config and categories before navigating to ensure proper rendering
+              return Promise.all([loadSite(), loadCategories()]);
             }).then(function () {
               navigate('/');
             });
