@@ -1,0 +1,21 @@
+version: 2
+updates:
+  # Ruby gems (Discourse plugins are Ruby apps)
+  - package-ecosystem: "bundler"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "ruby"
+
+  # Frontend deps if you have a package.json (common in Discourse plugins/themes)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "frontend"
