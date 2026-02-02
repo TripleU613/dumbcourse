@@ -47,7 +47,7 @@ module DiscourseDumbcourse
     private
 
     def login_page?
-      current_user.nil? && login_path_request?
+      !authenticated? && login_path_request?
     end
 
     def login_path_request?
@@ -56,7 +56,7 @@ module DiscourseDumbcourse
     end
 
     def redirect_anonymous_to_login
-      return unless current_user.nil?
+      return if authenticated?
       return if login_path_request?
 
       redirect_to "#{Discourse.base_path}/dumb/login"
@@ -64,6 +64,10 @@ module DiscourseDumbcourse
 
     def google_login_enabled?
       Discourse.enabled_auth_providers.any? { |provider| provider.name == "google_oauth2" }
+    end
+
+    def authenticated?
+      current_user.present? || CurrentUser.has_auth_cookie?(request.env)
     end
 
     def login_html
