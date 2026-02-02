@@ -267,6 +267,8 @@ var AUTH_GOOGLE = PROXY + '/auth/google_oauth2';
 
 var SITE_TITLE = 'Forum';
 
+var AUTH_PROVIDERS = [];
+
 function updateSiteUI(prevTitle) {
   var t = SITE_TITLE || 'Forum';
   var top = document.getElementById('topTitle');
@@ -275,12 +277,35 @@ function updateSiteUI(prevTitle) {
   if (loginTitle) loginTitle.textContent = t;
   var loginNote = document.getElementById('loginNote');
   if (loginNote) loginNote.textContent = 'Sign in to ' + t + '.';
+  updateAuthUI();
 }
 
 function setSiteTitle(t) {
   var prev = SITE_TITLE;
   SITE_TITLE = t || 'Forum';
   updateSiteUI(prev);
+}
+
+function setAuthProviders(list) {
+  AUTH_PROVIDERS = list || [];
+  updateAuthUI();
+}
+
+function googleEnabled() {
+  return AUTH_PROVIDERS.indexOf('google_oauth2') !== -1;
+}
+
+function updateAuthUI() {
+  var btn = document.getElementById('googleBtn');
+  var divider = document.getElementById('loginDivider');
+  if (!btn) return;
+  if (googleEnabled()) {
+    btn.style.display = 'block';
+    if (divider) divider.style.display = 'flex';
+  } else {
+    btn.style.display = 'none';
+    if (divider) divider.style.display = 'none';
+  }
 }
 
 function loadSite() {
@@ -295,6 +320,12 @@ function loadSite() {
   }).then(function (d) {
     var name = d && d.site && (d.site.title || d.site.name) || (d && d.title);
     if (name) setSiteTitle(name);
+    var providers = (d && d.auth_providers) || (d && d.site && d.site.auth_providers) || [];
+    var names = [];
+    for (var i = 0; i < providers.length; i++) {
+      if (providers[i] && providers[i].name) names.push(providers[i].name);
+    }
+    setAuthProviders(names);
   }).catch(function () {});
 }
 
@@ -869,7 +900,7 @@ function renderLogin() {
         <input type="password" id="loginPass" placeholder="Password" tabindex="0"></div>
       <div id="loginError" class="error" style="display:none"></div>
       <button id="loginBtn" style="width:100%" tabindex="0">Sign In</button>
-      <div class="login-divider"><span>or</span></div>
+      <div id="loginDivider" class="login-divider"><span>or</span></div>
       <button id="googleBtn" class="google-btn" tabindex="0">Continue with Google</button>
     </div>`;
   var doLogin = /*#__PURE__*/function () {
@@ -1018,6 +1049,7 @@ function renderLogin() {
     location.href = AUTH_GOOGLE;
   });
   updateSiteUI();
+  updateAuthUI();
   // Don't auto-focus input — brings up keyboard on mobile
 }
 function logout() {

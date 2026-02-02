@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "rack/mime"
-require "cgi"
 
 module DiscourseDumbcourse
   class AppController < ::ActionController::Base
@@ -12,11 +11,6 @@ module DiscourseDumbcourse
     before_action :redirect_anonymous_to_login
 
     def show
-      if login_page?
-        response.headers["Cache-Control"] = "no-store"
-        return render plain: login_html, content_type: "text/html; charset=utf-8"
-      end
-
       public_root = DiscourseDumbcourse::Engine.root.join("public")
       request_path = params[:path].to_s
 
@@ -46,10 +40,6 @@ module DiscourseDumbcourse
 
     private
 
-    def login_page?
-      !authenticated? && login_path_request?
-    end
-
     def login_path_request?
       path = params[:path].to_s
       path == "login" || path.start_with?("login/")
@@ -62,56 +52,8 @@ module DiscourseDumbcourse
       redirect_to "#{Discourse.base_path}/dumb/login"
     end
 
-    def google_login_enabled?
-      Discourse.enabled_auth_providers.any? { |provider| provider.name == "google_oauth2" }
-    end
-
     def authenticated?
       current_user.present? || CurrentUser.has_auth_cookie?(request.env)
-    end
-
-    def login_html
-      return_path = "#{Discourse.base_path}/dumb"
-      login_url = "/login?return_path=#{CGI.escape(return_path)}"
-      signup_url = "/signup?return_path=#{CGI.escape(return_path)}"
-      google_url = "/auth/google_oauth2?origin=#{CGI.escape(return_path)}"
-      google_button = google_login_enabled? ? "<a class=\"btn\" href=\"#{google_url}\">Continue with Google</a>" : ""
-      site_name = CGI.escapeHTML(site_title)
-
-      <<~HTML
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta http-equiv="X-UA-Compatible" content="IE=edge">
-          <meta name="viewport" content="width=device-width, initial-scale=1">
-          <title>Sign in - #{site_name}</title>
-          <style>
-            body{margin:0;padding:0;background:#111;color:#eee;font-family:Arial,Helvetica,sans-serif}
-            .wrap{max-width:520px;margin:40px auto;padding:24px}
-            h1{margin:0 0 8px 0;font-size:22px}
-            p{margin:0 0 18px 0;color:#bbb;font-size:14px}
-            a.btn{display:block;text-align:center;text-decoration:none;padding:12px 14px;border-radius:6px;margin:10px 0;border:1px solid #333;background:#1f1f1f;color:#fff}
-            a.btn.secondary{background:#151515;color:#ddd}
-            .note{margin-top:16px;color:#777;font-size:12px}
-          </style>
-        </head>
-        <body>
-          <div class="wrap">
-            <h1>#{site_name}</h1>
-            <p>Sign in to continue.</p>
-            <a class="btn" href="#{login_url}">Log in</a>
-            #{google_button}
-            <a class="btn secondary" href="#{signup_url}">Create account</a>
-            <div class="note">This page uses the main sign-in for #{site_name}.</div>
-          </div>
-        </body>
-        </html>
-      HTML
-    end
-
-    def site_title
-      SiteSetting.title.presence || SiteSetting.site_name.presence || "Forum"
     end
 
     def relax_security_headers
