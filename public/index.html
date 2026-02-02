@@ -228,6 +228,18 @@ body.auth-mode #searchBtn{display:none !important}
 .md-preview h1,.md-preview h2,.md-preview h3{margin:8px 0 4px}
 .md-preview ul,.md-preview ol{padding-left:18px;margin:6px 0}
 .md-preview blockquote{border-left:3px solid var(--border);padding-left:8px;color:var(--fg2);margin:6px 0}
+
+/* Navigation Mode Styles */
+[data-nav-mode="touch"] :focus{outline-width:2px;outline-offset:1px}
+[data-nav-mode="touch"] .post{cursor:default}
+[data-nav-mode="touch"] .post:hover{background:var(--bg1)}
+[data-nav-mode="touch"] .post-actions button,
+[data-nav-mode="touch"] .post-reactions button{cursor:pointer}
+[data-nav-mode="dpad"] .post{cursor:pointer}
+[data-nav-mode="dpad"] .post:hover{background:var(--bg2)}
+[data-nav-mode="dpad"] .post:not(.active) .post-actions button,
+[data-nav-mode="dpad"] .post:not(.active) .post-reactions button{opacity:0.8}
+[data-nav-mode="dpad"] .post.active{background:var(--bg2);box-shadow:inset 0 0 0 2px var(--accent)}
 </style>
 </head>
 <body>
@@ -255,6 +267,23 @@ body.auth-mode #searchBtn{display:none !important}
         <button id="scaleDown" tabindex="0" style="flex:1;min-height:38px;font-size:.9rem;background:var(--bg3);color:var(--fg);border:1px solid var(--border)">A−</button>
         <span id="scaleLabel" style="font-size:.8rem;color:var(--fg2);min-width:36px;text-align:center">100%</span>
         <button id="scaleUp" tabindex="0" style="flex:1;min-height:38px;font-size:.9rem;background:var(--bg3);color:var(--fg);border:1px solid var(--border)">A+</button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border)">
+        <button id="navDpad" tabindex="0" style="flex:1;min-height:38px;font-size:.8rem;background:var(--bg3);color:var(--fg);border:1px solid var(--border);position:relative">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px">
+            <rect x="5" y="5" width="14" height="14" rx="2"/>
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>D-pad
+          <span id="dpadCheck" style="position:absolute;right:4px;top:50%;transform:translateY(-50%);color:var(--accent)">✓</span>
+        </button>
+        <button id="navTouch" tabindex="0" style="flex:1;min-height:38px;font-size:.8rem;background:var(--bg3);color:var(--fg);border:1px solid var(--border);position:relative">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px">
+            <path d="M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/>
+            <path d="M12 21v-7"/>
+          </svg>Touch
+          <span id="touchCheck" style="position:absolute;right:4px;top:50%;transform:translateY(-50%);color:var(--accent);display:none">✓</span>
+        </button>
       </div>
       <a href="#" id="menuAuthBtn" tabindex="0"></a>
     </div>
@@ -1564,6 +1593,9 @@ function renderLogin() {
             S.authChecked = true;
             return refreshCurrentUser().then(function (ok) {
               if (!ok) throw new Error('Login failed. Please try again.');
+              // Load categories before navigating to ensure proper rendering
+              return loadCategories();
+            }).then(function () {
               navigate('/');
             });
             _context.n = 13;
@@ -2023,7 +2055,7 @@ function _renderTopic() {
     <button class="cancel-reply" id="cancelReply" tabindex="0">${IC.x}</button>
   </div>`;
   html += `<div class="compose" id="replyArea">
-    <textarea id="replyBox" placeholder="Press Enter to type a reply..." tabindex="0" readonly>${esc(getDraft('reply_' + id))}</textarea>
+    <textarea id="replyBox" placeholder="${getNavMode() === 'touch' ? 'Write a reply...' : 'Press Enter to type a reply...'}" tabindex="0" ${getNavMode() === 'dpad' ? 'readonly' : ''}>${esc(getDraft('reply_' + id))}</textarea>
     <div class="actions">
       <button id="uploadBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)">${IC.upload} Upload</button>
       <input type="file" id="uploadFile" style="display:none">
@@ -2035,6 +2067,9 @@ function _renderTopic() {
   </div>`;
           $app.innerHTML = html;
 
+          // Update post tabindexes based on navigation mode
+          updatePostTabindexes();
+
           // State for reply-to
           replyToPostNumber = null; // Auto-save draft
           replyBox = document.getElementById('replyBox');
@@ -2043,7 +2078,7 @@ function _renderTopic() {
           });
           // Enter on readonly textarea opens it for editing (brings up keyboard)
           replyBox.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter' && replyBox.readOnly) {
+            if (getNavMode() === 'dpad' && e.key === 'Enter' && replyBox.readOnly) {
               e.preventDefault();
               replyBox.readOnly = false;
               replyBox.placeholder = 'Write a reply...';
@@ -2051,7 +2086,7 @@ function _renderTopic() {
             }
           });
           replyBox.addEventListener('blur', function () {
-            if (!replyBox.readOnly) {
+            if (getNavMode() === 'dpad' && !replyBox.readOnly) {
               replyBox.readOnly = true;
               replyBox.placeholder = 'Press Enter to type a reply...';
             }
@@ -2340,6 +2375,8 @@ function _renderTopic() {
                       postNumberMap[p.id] = p.post_number;
                       container.insertAdjacentHTML('afterbegin', renderPost(p, d));
                     });
+                    // Update post tabindexes based on navigation mode
+                    updatePostTabindexes();
                     // Maintain scroll position so user doesn't jump
                     window.scrollBy(0, document.body.scrollHeight - beforeScrollH);
                     attachPostHandlers(container, id, replyBox, postNumberMap, function (n) {
@@ -2391,6 +2428,8 @@ function _renderTopic() {
                       postNumberMap[p.id] = p.post_number;
                       container.insertAdjacentHTML('beforeend', renderPost(p, d));
                     });
+                    // Update post tabindexes based on navigation mode
+                    updatePostTabindexes();
                     attachPostHandlers(container, id, replyBox, postNumberMap, function (n) {
                       replyToPostNumber = n;
                     });
@@ -3030,15 +3069,15 @@ function renderPost(p, topicData) {
     return rxs.length ? '<div class="post-reactions">' + rxs.map(function (r) {
       var em = REACTION_EMOJI[r.id] || r.id;
       var active = p.current_user_reaction === r.id ? ' reacted' : '';
-      return '<button class="reaction-pill' + active + '" data-react="' + esc(r.id) + '" data-post-id="' + p.id + '" tabindex="-1">' + em + ' ' + r.count + '</button>';
+      return '<button class="reaction-pill' + active + '" data-react="' + esc(r.id) + '" data-post-id="' + p.id + '" tabindex="' + (getNavMode() === 'touch' ? '0' : '-1') + '">' + em + ' ' + r.count + '</button>';
     }).join('') + '</div>' : '';
   }()}
     <div class="post-actions">
-      <button data-react-open="${p.id}" tabindex="-1">${IC.heart} React</button>
-      <button data-reply-to="${p.id}" data-reply-user="${esc(p.username)}" tabindex="-1">${IC.reply} Reply</button>
-      <button data-quote-post="${p.id}" data-quote-user="${esc(p.username)}" tabindex="-1">${IC.quote} Quote</button>
-      ${isOwn ? `<button data-edit-post="${p.id}" tabindex="-1">${IC.edit} Edit</button>
-      <button data-delete-post="${p.id}" tabindex="-1" style="color:var(--danger)">${IC.trash} Delete</button>` : `<button data-flag="${p.id}" tabindex="-1">${IC.flag} Flag</button>`}
+      <button data-react-open="${p.id}" tabindex="${getNavMode() === 'touch' ? '0' : '-1'}">${IC.heart} React</button>
+      <button data-reply-to="${p.id}" data-reply-user="${esc(p.username)}" tabindex="${getNavMode() === 'touch' ? '0' : '-1'}">${IC.reply} Reply</button>
+      <button data-quote-post="${p.id}" data-quote-user="${esc(p.username)}" tabindex="${getNavMode() === 'touch' ? '0' : '-1'}">${IC.quote} Quote</button>
+      ${isOwn ? `<button data-edit-post="${p.id}" tabindex="${getNavMode() === 'touch' ? '0' : '-1'}">${IC.edit} Edit</button>
+      <button data-delete-post="${p.id}" tabindex="${getNavMode() === 'touch' ? '0' : '-1'}" style="color:var(--danger)">${IC.trash} Delete</button>` : `<button data-flag="${p.id}" tabindex="${getNavMode() === 'touch' ? '0' : '-1'}">${IC.flag} Flag</button>`}
     </div>
   </div>`;
 }
@@ -3619,6 +3658,64 @@ $themeBtn.addEventListener('click', function () {
   return applyTheme(!document.documentElement.classList.contains('light'));
 });
 
+// ============ NAVIGATION MODE ============
+var navMode = localStorage.getItem('jt_nav_mode') || 'dpad';
+function getNavMode() {
+  return navMode;
+}
+function setNavMode(mode) {
+  navMode = mode;
+  localStorage.setItem('jt_nav_mode', mode);
+  document.documentElement.setAttribute('data-nav-mode', mode);
+
+  // Update checkmarks
+  document.getElementById('dpadCheck').style.display = mode === 'dpad' ? '' : 'none';
+  document.getElementById('touchCheck').style.display = mode === 'touch' ? '' : 'none';
+
+  // Update viewport meta for pinch zoom
+  var viewport = document.querySelector('meta[name="viewport"]');
+  if (mode === 'touch') {
+    viewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes';
+  } else {
+    viewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+  }
+
+  // Update existing post tabindexes
+  updatePostTabindexes();
+}
+function updatePostTabindexes() {
+  var mode = getNavMode();
+  if (mode === 'touch') {
+    // In touch mode, all post actions are always accessible
+    document.querySelectorAll('.post').forEach(function(post) {
+      if (!post.classList.contains('active')) {
+        post.querySelectorAll('.post-actions button, .post-reactions button').forEach(function(btn) {
+          btn.setAttribute('tabindex', '0');
+        });
+      }
+    });
+  } else {
+    // In dpad mode, only active post actions are accessible
+    document.querySelectorAll('.post').forEach(function(post) {
+      if (!post.classList.contains('active')) {
+        post.querySelectorAll('.post-actions button, .post-reactions button').forEach(function(btn) {
+          btn.setAttribute('tabindex', '-1');
+        });
+      }
+    });
+  }
+}
+// Initialize navigation mode
+setNavMode(navMode);
+document.getElementById('navDpad').addEventListener('click', function() {
+  setNavMode('dpad');
+  toggleMenu(false);
+});
+document.getElementById('navTouch').addEventListener('click', function() {
+  setNavMode('touch');
+  toggleMenu(false);
+});
+
 // ============ SEARCH ============
 function renderSearch() {
   return _renderSearch.apply(this, arguments);
@@ -3865,25 +3962,38 @@ document.addEventListener('keydown', function (e) {
   }
 });
 
-// Auto-scroll focused elements into view
+// Auto-scroll focused elements into view (mode-aware)
 document.addEventListener('focusin', function () {
   if (document.activeElement && document.activeElement !== document.body) {
     requestAnimationFrame(function () {
       var el = document.activeElement;
       var rect = el.getBoundingClientRect();
       var topH = document.getElementById('topbar').offsetHeight;
-      // If element is taller than viewport or top is above topbar, scroll to start
       var vh = window.innerHeight;
-      if (rect.height > vh - topH || rect.top < topH) {
-        el.scrollIntoView({
-          block: 'start',
-          behavior: 'smooth'
-        });
+
+      // Touch mode: only scroll if element is completely out of view
+      if (getNavMode() === 'touch') {
+        // Only scroll if element is completely hidden
+        if (rect.bottom < topH || rect.top > vh) {
+          el.scrollIntoView({
+            block: 'nearest',
+            behavior: 'smooth'
+          });
+        }
       } else {
-        el.scrollIntoView({
-          block: 'nearest',
-          behavior: 'smooth'
-        });
+        // D-pad mode: aggressive scrolling for better navigation
+        // If element is taller than viewport or top is above topbar, scroll to start
+        if (rect.height > vh - topH || rect.top < topH) {
+          el.scrollIntoView({
+            block: 'start',
+            behavior: 'smooth'
+          });
+        } else {
+          el.scrollIntoView({
+            block: 'nearest',
+            behavior: 'smooth'
+          });
+        }
       }
     });
   }
@@ -3891,6 +4001,9 @@ document.addEventListener('focusin', function () {
 
 // Post activation: Enter on post shows actions, Escape goes back to post
 function activatePost(post) {
+  // In touch mode, posts are not activatable
+  if (getNavMode() === 'touch') return;
+
   document.querySelectorAll('.post.active').forEach(function (p) {
     return deactivatePost(p);
   });
@@ -3912,12 +4025,19 @@ function activatePost(post) {
 }
 function deactivatePost(post) {
   post.classList.remove('active');
-  post.querySelectorAll('.post-actions button').forEach(function (b) {
-    return b.setAttribute('tabindex', '-1');
-  });
-  post.querySelectorAll('.post-reactions button').forEach(function (b) {
-    return b.setAttribute('tabindex', '-1');
-  });
+  // In touch mode, keep buttons accessible
+  if (getNavMode() === 'touch') {
+    post.querySelectorAll('.post-actions button, .post-reactions button').forEach(function (b) {
+      return b.setAttribute('tabindex', '0');
+    });
+  } else {
+    post.querySelectorAll('.post-actions button').forEach(function (b) {
+      return b.setAttribute('tabindex', '-1');
+    });
+    post.querySelectorAll('.post-reactions button').forEach(function (b) {
+      return b.setAttribute('tabindex', '-1');
+    });
+  }
   post.querySelectorAll('.post-body a').forEach(function (a) {
     return a.setAttribute('tabindex', '-1');
   });
@@ -3926,6 +4046,9 @@ function deactivatePost(post) {
   });
 }
 document.addEventListener('click', function (e) {
+  // In touch mode, don't handle post activation clicks
+  if (getNavMode() === 'touch') return;
+
   var post = e.target.closest('.post');
   // Don't intercept clicks on links, images, or action buttons inside posts
   if (e.target.closest('.post-actions')) return;
