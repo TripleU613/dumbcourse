@@ -129,6 +129,7 @@ button svg,.icon svg{vertical-align:middle}
 .compose label{display:block;font-size:.85rem;color:var(--fg2);margin-bottom:4px}
 .compose .actions{display:flex;gap:8px;margin-top:8px;align-items:center}
 .compose .actions button{display:inline-flex;align-items:center;gap:6px}
+.compose .actions .discard{background:var(--danger);color:#fff}
 .compose .chip-actions{flex-wrap:wrap;overflow:hidden}
 .compose .chip-actions .btn-label{display:inline-block}
 .compose .chip-actions.compact{flex-wrap:nowrap}
@@ -193,6 +194,14 @@ body.auth-mode #searchBtn{display:none !important}
 .confirm-box{background:var(--bg2);border-radius:var(--radius);padding:24px;max-width:300px;width:100%;text-align:center}
 .confirm-box p{margin-bottom:16px}
 .confirm-box .actions{display:flex;gap:8px;justify-content:center}
+
+/* Drafts */
+.draft-item{display:flex;flex-direction:column;gap:6px}
+.draft-item .item-meta{flex-wrap:wrap}
+.draft-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.draft-actions button{background:var(--bg3);color:var(--fg);min-height:38px}
+.draft-actions .primary{background:var(--accent);color:#fff}
+.draft-actions .discard{background:var(--danger);color:#fff}
 
 /* Poll */
 .poll{background:var(--bg3);border-radius:var(--radius);padding:12px;margin:8px 0}
@@ -263,6 +272,7 @@ body.auth-mode #searchBtn{display:none !important}
     <div class="menu-drop" id="menuDrop">
       <a href="/dumb/" data-auth tabindex="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Topics</a>
       <a href="/dumb/messages" data-auth tabindex="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Messages</a>
+      <a href="/dumb/drafts" data-auth tabindex="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Drafts</a>
       <a href="/dumb/notifications" data-auth tabindex="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Notifications</a>
       <a href="/dumb/u/me" data-auth tabindex="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Profile</a>
       <a href="/dumb/search" data-auth tabindex="0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Search</a>
@@ -296,6 +306,34 @@ if (!NodeList.prototype.forEach) {
   NodeList.prototype.forEach = Array.prototype.forEach;
 }
 
+// ============ STORAGE HELPERS ============
+var STORAGE_OK = true;
+function storageGet(key, fallback) {
+  try {
+    var val = localStorage.getItem(key);
+    return val === null || val === undefined ? fallback : val;
+  } catch (e) {
+    STORAGE_OK = false;
+    return fallback;
+  }
+}
+function storageSet(key, val) {
+  if (!STORAGE_OK) return;
+  try {
+    localStorage.setItem(key, val);
+  } catch (e) {
+    STORAGE_OK = false;
+  }
+}
+function storageRemove(key) {
+  if (!STORAGE_OK) return;
+  try {
+    localStorage.removeItem(key);
+  } catch (e) {
+    STORAGE_OK = false;
+  }
+}
+
 // ============ CONFIG ============
 var ORIGIN = location.origin || location.protocol + '//' + location.host;
 var PROXY = location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? location.protocol + '//' + location.hostname + ':8080' : ORIGIN;
@@ -319,6 +357,31 @@ var SESSION_CHECKING = false;
 var EMOJI_MAP = {};
 var EMOJI_CACHE = {};
 var EMOJI_READY = false;
+var API_CACHE_KEY = 'jt_api_cache';
+var API_CACHE_TTL = 5 * 60 * 1000;
+var PERSISTENT_API_CACHE = {};
+try {
+  PERSISTENT_API_CACHE = JSON.parse(storageGet(API_CACHE_KEY, '{}') || '{}') || {};
+} catch (e) {
+  PERSISTENT_API_CACHE = {};
+}
+var IMAGE_CACHE_KEY = 'jt_image_cache';
+var IMAGE_CACHE_MAX = 60;
+var IMAGE_CACHE = {};
+var IMAGE_LIST = [];
+try {
+  IMAGE_LIST = JSON.parse(storageGet(IMAGE_CACHE_KEY, '[]') || '[]') || [];
+} catch (e) {
+  IMAGE_LIST = [];
+}
+var EMOJI_CACHE_KEY = 'jt_emoji_map';
+try {
+  var emojiSeed = JSON.parse(storageGet(EMOJI_CACHE_KEY, '{}') || '{}');
+  if (emojiSeed && emojiSeed.map) {
+    EMOJI_MAP = emojiSeed.map;
+    EMOJI_READY = true;
+  }
+} catch (e) {}
 
 function fromCodePoint(cp) {
   if (String.fromCodePoint) return String.fromCodePoint(cp);
@@ -466,21 +529,22 @@ function loadEmojiMap() {
     if (d && d.map) {
       EMOJI_MAP = d.map;
       EMOJI_READY = true;
+      storageSet(EMOJI_CACHE_KEY, JSON.stringify(d));
     }
   }).catch(function () {});
 }
 
 // ============ STATE ============
 var S = {
-  token: localStorage.getItem('jt_session_token') || '',
-  csrf: localStorage.getItem('jt_csrf') || '',
-  cookies: localStorage.getItem('jt_cookies') || '',
-  username: localStorage.getItem('jt_username') || '',
-  userId: localStorage.getItem('jt_user_id') || '',
-  loggedIn: false,
+  token: storageGet('jt_session_token', '') || '',
+  csrf: storageGet('jt_csrf', '') || '',
+  cookies: storageGet('jt_cookies', '') || '',
+  username: storageGet('jt_username', '') || '',
+  userId: storageGet('jt_user_id', '') || '',
+  loggedIn: storageGet('jt_logged_in', '') === '1',
   authChecked: false,
   categories: {},
-  drafts: JSON.parse(localStorage.getItem('jt_drafts') || '{}'),
+  drafts: JSON.parse(storageGet('jt_drafts', '{}') || '{}'),
   history: []
 };
 function isLoggedIn() {
@@ -507,14 +571,17 @@ function refreshCurrentUser() {
       S.authChecked = true;
       S.username = d.current_user.username || S.username;
       S.userId = d.current_user.id || S.userId;
-      if (S.username) localStorage.setItem('jt_username', S.username);
-      if (S.userId) localStorage.setItem('jt_user_id', S.userId);
+      if (S.username) storageSet('jt_username', S.username);
+      if (S.userId) storageSet('jt_user_id', S.userId);
+      storageSet('jt_logged_in', '1');
       return true;
     }
     S.loggedIn = false;
+    storageSet('jt_logged_in', '0');
     return false;
   }).catch(function () {
     S.loggedIn = false;
+    storageSet('jt_logged_in', '0');
     return false;
   }).then(function (v) {
     SESSION_CHECKING = false;
@@ -539,18 +606,18 @@ function ensureCsrf() {
     var t = resp.headers.get('X-Session-Token');
     if (t) {
       S.token = t;
-      localStorage.setItem('jt_session_token', t);
+      storageSet('jt_session_token', t);
     }
     var c = resp.headers.get('X-Cookies');
     if (c) {
       S.cookies = c;
-      localStorage.setItem('jt_cookies', c);
+      storageSet('jt_cookies', c);
     }
     return resp.json();
   }).then(function (d) {
     if (d && d.csrf) {
       S.csrf = d.csrf;
-      localStorage.setItem('jt_csrf', S.csrf);
+      storageSet('jt_csrf', S.csrf);
     }
     return d;
   }).catch(function () {
@@ -558,15 +625,81 @@ function ensureCsrf() {
   });
 }
 function saveDraft(key, val) {
-  S.drafts[key] = val;
-  localStorage.setItem('jt_drafts', JSON.stringify(S.drafts));
+  if (!key) return;
+  var entry = {
+    text: String(val || ''),
+    updatedAt: Date.now()
+  };
+  if (arguments.length > 2 && arguments[2]) {
+    entry.meta = arguments[2];
+  } else if (S.drafts[key] && typeof S.drafts[key] === 'object' && S.drafts[key].meta) {
+    entry.meta = S.drafts[key].meta;
+  }
+  S.drafts[key] = entry;
+  storageSet('jt_drafts', JSON.stringify(S.drafts));
 }
 function getDraft(key) {
-  return S.drafts[key] || '';
+  var val = S.drafts[key];
+  if (!val) return '';
+  if (typeof val === 'string') return val;
+  if (typeof val === 'object' && val.text) return val.text;
+  return '';
+}
+function getDraftEntry(key) {
+  var val = S.drafts[key];
+  if (!val) return null;
+  if (typeof val === 'string') return {
+    text: val,
+    updatedAt: 0
+  };
+  if (typeof val === 'object') return val;
+  return null;
 }
 function clearDraft(key) {
   delete S.drafts[key];
-  localStorage.setItem('jt_drafts', JSON.stringify(S.drafts));
+  storageSet('jt_drafts', JSON.stringify(S.drafts));
+}
+function cacheApiSet(path, val) {
+  if (!path || !val) return;
+  PERSISTENT_API_CACHE[path] = {
+    t: Date.now(),
+    v: val
+  };
+  var keys = Object.keys(PERSISTENT_API_CACHE);
+  if (keys.length > 80) {
+    keys.sort(function (a, b) {
+      return PERSISTENT_API_CACHE[a].t - PERSISTENT_API_CACHE[b].t;
+    });
+    keys.slice(0, keys.length - 80).forEach(function (k) {
+      delete PERSISTENT_API_CACHE[k];
+    });
+  }
+  storageSet(API_CACHE_KEY, JSON.stringify(PERSISTENT_API_CACHE));
+}
+function cacheApiGet(path) {
+  var c = PERSISTENT_API_CACHE[path];
+  if (!c) return null;
+  if (Date.now() - c.t > API_CACHE_TTL) return null;
+  return c.v || null;
+}
+function rememberImage(url) {
+  if (!url || IMAGE_CACHE[url]) return;
+  IMAGE_CACHE[url] = true;
+  if (IMAGE_LIST.indexOf(url) === -1) {
+    IMAGE_LIST.unshift(url);
+    IMAGE_LIST = IMAGE_LIST.slice(0, IMAGE_CACHE_MAX);
+    storageSet(IMAGE_CACHE_KEY, JSON.stringify(IMAGE_LIST));
+  }
+  try {
+    var img = new Image();
+    img.src = url;
+  } catch (e) {}
+}
+function hydrateImageCache() {
+  if (!IMAGE_LIST.length) return;
+  IMAGE_LIST.forEach(function (url) {
+    rememberImage(url);
+  });
 }
 
 // ============ API ============
@@ -576,6 +709,14 @@ function api(path, opts) {
   if (method === 'GET' && (!opts || !opts.nocache)) {
     var c = API_CACHE[path];
     if (c && Date.now() - c.t < 1000) return Promise.resolve(c.v);
+    var persisted = cacheApiGet(path);
+    if (persisted) {
+      API_CACHE[path] = {
+        t: Date.now(),
+        v: persisted
+      };
+      return Promise.resolve(persisted);
+    }
   }
   if (!opts || !opts.nodup) {
     if (API_INFLIGHT[key]) return API_INFLIGHT[key];
@@ -587,7 +728,13 @@ function api(path, opts) {
     if (p && typeof p.then === 'function') {
       return p.then(function (v) {
         clear();
-        if (method === 'GET' && (!opts || !opts.nocache)) API_CACHE[path] = { t: Date.now(), v: v };
+        if (method === 'GET' && (!opts || !opts.nocache)) {
+          API_CACHE[path] = {
+            t: Date.now(),
+            v: v
+          };
+          cacheApiSet(path, v);
+        }
         return v;
       }, function (e) {
         clear();
@@ -647,17 +794,17 @@ function _api() {
           newToken = resp.headers.get('X-Session-Token');
           if (newToken) {
             S.token = newToken;
-            localStorage.setItem('jt_session_token', newToken);
+            storageSet('jt_session_token', newToken);
           }
           newCsrf = resp.headers.get('X-CSRF-Token');
           if (newCsrf) {
             S.csrf = newCsrf;
-            localStorage.setItem('jt_csrf', newCsrf);
+            storageSet('jt_csrf', newCsrf);
           }
           newCookies = resp.headers.get('X-Cookies');
           if (newCookies) {
             S.cookies = newCookies;
-            localStorage.setItem('jt_cookies', newCookies);
+            storageSet('jt_cookies', newCookies);
           }
           if (resp.ok) {
             _context12.n = 4;
@@ -674,11 +821,12 @@ function _api() {
           S.authChecked = true;
           S.username = '';
           S.userId = '';
-          localStorage.removeItem('jt_session_token');
-          localStorage.removeItem('jt_csrf');
-          localStorage.removeItem('jt_cookies');
-          localStorage.removeItem('jt_username');
-          localStorage.removeItem('jt_user_id');
+          storageRemove('jt_session_token');
+          storageRemove('jt_csrf');
+          storageRemove('jt_cookies');
+          storageRemove('jt_username');
+          storageRemove('jt_user_id');
+          storageSet('jt_logged_in', '0');
           navigate('/', true);
           throw new Error('Session expired. Please log in again.');
         case 2:
@@ -1030,51 +1178,56 @@ function _route() {
           _context13.n = 20;
           break;
         case 11:
-          if (!(path === '/new-message')) {
+          if (!(path === '/drafts')) {
             _context13.n = 12;
+            break;
+          }
+          renderDrafts();
+          _context13.n = 20;
+          break;
+        case 12:
+          if (!(path === '/new-message')) {
+            _context13.n = 13;
             break;
           }
           renderNewMessage();
           _context13.n = 20;
           break;
-        case 12:
-          if (!(path === '/notifications')) {
-            _context13.n = 14;
-            break;
-          }
-          _context13.n = 13;
-          return renderNotifications();
         case 13:
-          _context13.n = 20;
-          break;
-        case 14:
-          if (!path.match(/^\/u\/(.+)/)) {
-            _context13.n = 16;
+          if (!(path === '/notifications')) {
+            _context13.n = 15;
             break;
           }
-          _context13.n = 15;
-          return renderProfile(decodeURIComponent(path.match(/^\/u\/(.+)/)[1]));
-        case 15:
+          _context13.n = 14;
+          return renderNotifications();
+        case 14:
           _context13.n = 20;
           break;
-        case 16:
-          if (!(path === '/settings')) {
+        case 15:
+          if (!path.match(/^\/u\/(.+)/)) {
             _context13.n = 17;
+            break;
+          }
+          _context13.n = 16;
+          return renderProfile(decodeURIComponent(path.match(/^\/u\/(.+)/)[1]));
+        case 16:
+          _context13.n = 20;
+          break;
+        case 17:
+          if (!(path === '/settings')) {
+            _context13.n = 18;
             break;
           }
           renderSettings();
           _context13.n = 20;
           break;
-        case 17:
+        case 18:
           if (!path.match(/^\/search/)) {
             _context13.n = 19;
             break;
           }
-          _context13.n = 18;
-          return renderSearch();
-        case 18:
           _context13.n = 20;
-          break;
+          return renderSearch();
         case 19:
           _context13.n = 20;
           return renderTopics();
@@ -1133,6 +1286,7 @@ window.addEventListener('resize', function () {
   _topbarTimer = setTimeout(syncTopbarHeight, 120);
 });
 setTimeout(syncTopbarHeight, 0);
+hydrateImageCache();
 
 // ============ HELPERS ============
 var _escEl = document.createElement('div');
@@ -1347,7 +1501,9 @@ function timeAgo(dateStr) {
 }
 function avatarUrl(tpl, size) {
   if (!tpl) return '';
-  return ASSET_BASE + tpl.replace('{size}', size || 48);
+  var url = ASSET_BASE + tpl.replace('{size}', size || 48);
+  rememberImage(url);
+  return url;
 }
 // Base for proxying assets (uploads, avatars, images) — uses origin root on Worker, PROXY on local
 var ASSET_BASE = location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? PROXY : ORIGIN;
@@ -1383,7 +1539,9 @@ function rewriteHref(url) {
 function fixPostHtml(html) {
   if (!html) return '';
   return html.replace(/src="([^"]*?)"/g, function (m, url) {
-    return 'src="' + rewriteSrc(url) + '"';
+    var finalUrl = rewriteSrc(url);
+    rememberImage(finalUrl);
+    return 'src="' + finalUrl + '"';
   }).replace(/href="([^"]*?)"/g, function (m, url) {
     return 'href="' + rewriteHref(url) + '"';
   }).replace(/srcset="[^"]*"/g, '');
@@ -1577,17 +1735,17 @@ function renderLogin() {
             newToken = resp.headers.get('X-Session-Token');
             if (newToken) {
               S.token = newToken;
-              localStorage.setItem('jt_session_token', newToken);
+              storageSet('jt_session_token', newToken);
             }
             newCsrf = resp.headers.get('X-CSRF-Token');
             if (newCsrf) {
               S.csrf = newCsrf;
-              localStorage.setItem('jt_csrf', newCsrf);
+              storageSet('jt_csrf', newCsrf);
             }
             newCookies = resp.headers.get('X-Cookies');
             if (newCookies) {
               S.cookies = newCookies;
-              localStorage.setItem('jt_cookies', newCookies);
+              storageSet('jt_cookies', newCookies);
             }
             _context.n = 9;
             return resp.json();
@@ -1608,8 +1766,9 @@ function renderLogin() {
             user = d.user || {};
             S.username = user.username || login;
             S.userId = user.id || '';
-            localStorage.setItem('jt_username', S.username);
-            localStorage.setItem('jt_user_id', S.userId);
+            storageSet('jt_username', S.username);
+            storageSet('jt_user_id', S.userId);
+            storageSet('jt_logged_in', '1');
             S.authChecked = true;
             return refreshCurrentUser().then(function (ok) {
               if (!ok) throw new Error('Login failed. Please try again.');
@@ -1850,11 +2009,12 @@ function _logout() {
           S.userId = '';
           S.loggedIn = false;
           S.authChecked = true;
-          localStorage.removeItem('jt_session_token');
-          localStorage.removeItem('jt_csrf');
-          localStorage.removeItem('jt_cookies');
-          localStorage.removeItem('jt_username');
-          localStorage.removeItem('jt_user_id');
+          storageRemove('jt_session_token');
+          storageRemove('jt_csrf');
+          storageRemove('jt_cookies');
+          storageRemove('jt_username');
+          storageRemove('jt_user_id');
+          storageSet('jt_logged_in', '0');
           navigate('/');
         case 3:
           return _context15.a(2);
@@ -2081,6 +2241,7 @@ function _renderTopic() {
       <button id="replyPreviewBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)"></button>
     </div>
     <div class="actions primary-actions">
+      <button id="discardReply" class="discard" tabindex="0">Discard</button>
       <button id="sendReply" tabindex="0">Post Reply</button>
     </div>
     <div id="replyPreview" class="md-preview" style="display:none"></div>
@@ -2095,7 +2256,11 @@ function _renderTopic() {
           replyToPostNumber = null; // Auto-save draft
           replyBox = document.getElementById('replyBox');
           replyBox.addEventListener('input', function () {
-            return saveDraft('reply_' + id, replyBox.value);
+            return saveDraft('reply_' + id, replyBox.value, {
+              type: 'reply',
+              topicId: id,
+              topicTitle: d.title || ''
+            });
           });
           // Enter on readonly textarea opens it for editing (brings up keyboard)
           function enableReplyBoxEditing() {
@@ -2123,6 +2288,29 @@ function _renderTopic() {
           });
           bindPreview('replyBox', 'replyPreview', 'replyPreviewBtn');
           refreshComposeActions();
+          document.getElementById('discardReply').addEventListener('click', /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _calleeReplyDiscard() {
+            return _regenerator().w(function (_contextReplyDiscard) {
+              while (1) switch (_contextReplyDiscard.p = _contextReplyDiscard.n) {
+                case 0:
+                  _contextReplyDiscard.n = 1;
+                  return confirm('Discard this reply draft?');
+                case 1:
+                  if (_contextReplyDiscard.v) {
+                    _contextReplyDiscard.n = 2;
+                    break;
+                  }
+                  return _contextReplyDiscard.a(2);
+                case 2:
+                  clearDraft('reply_' + id);
+                  replyBox.value = '';
+                  replyToPostNumber = null;
+                  document.getElementById('replyIndicator').style.display = 'none';
+                  replyBox.dispatchEvent(new Event('input'));
+                  replyBox.focus();
+                  return _contextReplyDiscard.a(2);
+              }
+            }, _calleeReplyDiscard);
+          })));
 
           // @Mention autocomplete
           (function () {
@@ -3136,6 +3324,7 @@ function renderNewTopic() {
       <button id="previewNt" tabindex="0" style="background:var(--bg3);color:var(--fg)"></button>
     </div>
     <div class="actions primary-actions">
+      <button id="discardNt" class="discard" tabindex="0">Discard</button>
       <button id="postTopic" tabindex="0">Create Topic</button>
     </div>
     <div id="ntPreview" class="md-preview" style="display:none"></div>
@@ -3143,12 +3332,36 @@ function renderNewTopic() {
   refreshComposeActions();
   document.getElementById('ntTitle').focus();
   document.getElementById('ntTitle').addEventListener('input', function (e) {
-    return saveDraft('new_topic_title', e.target.value);
+    return saveDraft('new_topic_title', e.target.value, {
+      type: 'topic'
+    });
   });
   document.getElementById('ntBody').addEventListener('input', function (e) {
-    return saveDraft('new_topic_body', e.target.value);
+    return saveDraft('new_topic_body', e.target.value, {
+      type: 'topic'
+    });
   });
   bindPreview('ntBody', 'ntPreview', 'previewNt');
+  document.getElementById('discardNt').addEventListener('click', /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _calleeNtDiscard() {
+    return _regenerator().w(function (_contextNtDiscard) {
+      while (1) switch (_contextNtDiscard.p = _contextNtDiscard.n) {
+        case 0:
+          _contextNtDiscard.n = 1;
+          return confirm('Discard this topic draft?');
+        case 1:
+          if (_contextNtDiscard.v) {
+            _contextNtDiscard.n = 2;
+            break;
+          }
+          return _contextNtDiscard.a(2);
+        case 2:
+          clearDraft('new_topic_title');
+          clearDraft('new_topic_body');
+          navigate('/new-topic', true);
+          return _contextNtDiscard.a(2);
+      }
+    }, _calleeNtDiscard);
+  })));
   refreshComposeActions();
   var uploadNtBtn = document.getElementById('uploadNt');
   uploadNtBtn.addEventListener('click', function () {
@@ -3242,21 +3455,58 @@ function renderNewMessage() {
   showBack(true);
   $app.innerHTML = `<div class="compose">
     <div class="field"><label for="pmTo">To (username)</label>
-      <input type="text" id="pmTo" placeholder="username" tabindex="0"></div>
+      <input type="text" id="pmTo" placeholder="username" tabindex="0" value="${esc(getDraft('new_message_to'))}"></div>
     <div class="field"><label for="pmTitle">Subject</label>
-      <input type="text" id="pmTitle" placeholder="Subject" tabindex="0"></div>
+      <input type="text" id="pmTitle" placeholder="Subject" tabindex="0" value="${esc(getDraft('new_message_title'))}"></div>
     <div class="field"><label for="pmBody">Message</label>
-      <textarea id="pmBody" placeholder="Write your message..." tabindex="0"></textarea></div>
+      <textarea id="pmBody" placeholder="Write your message..." tabindex="0">${esc(getDraft('new_message_body'))}</textarea></div>
     <div class="actions chip-actions">
       <button id="previewPm" tabindex="0" style="background:var(--bg3);color:var(--fg)"></button>
     </div>
     <div class="actions primary-actions">
+      <button id="discardPm" class="discard" tabindex="0">Discard</button>
       <button id="sendPm" tabindex="0">Send Message</button>
     </div>
     <div id="pmPreview" class="md-preview" style="display:none"></div>
   </div>`;
   refreshComposeActions();
   document.getElementById('pmTo').focus();
+  document.getElementById('pmTo').addEventListener('input', function (e) {
+    return saveDraft('new_message_to', e.target.value, {
+      type: 'message'
+    });
+  });
+  document.getElementById('pmTitle').addEventListener('input', function (e) {
+    return saveDraft('new_message_title', e.target.value, {
+      type: 'message'
+    });
+  });
+  document.getElementById('pmBody').addEventListener('input', function (e) {
+    return saveDraft('new_message_body', e.target.value, {
+      type: 'message'
+    });
+  });
+  document.getElementById('discardPm').addEventListener('click', /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _calleePmDiscard() {
+    return _regenerator().w(function (_contextPmDiscard) {
+      while (1) switch (_contextPmDiscard.p = _contextPmDiscard.n) {
+        case 0:
+          _contextPmDiscard.n = 1;
+          return confirm('Discard this message draft?');
+        case 1:
+          if (_contextPmDiscard.v) {
+            _contextPmDiscard.n = 2;
+            break;
+          }
+          return _contextPmDiscard.a(2);
+        case 2:
+          clearDraft('new_message_to');
+          clearDraft('new_message_title');
+          clearDraft('new_message_body');
+          navigate('/new-message', true);
+          return _contextPmDiscard.a(2);
+      }
+    }, _calleePmDiscard);
+  })));
   bindPreview('pmBody', 'pmPreview', 'previewPm');
   refreshComposeActions();
   document.getElementById('sendPm').addEventListener('click', /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee1() {
@@ -3288,6 +3538,9 @@ function renderNewMessage() {
           });
         case 3:
           d = _context1.v;
+          clearDraft('new_message_to');
+          clearDraft('new_message_title');
+          clearDraft('new_message_body');
           navigate(topicPath(d.topic_id, d.topic_slug));
           _context1.n = 5;
           break;
@@ -3302,6 +3555,115 @@ function renderNewMessage() {
       }
     }, _callee1, this, [[2, 4]]);
   })));
+}
+
+// ============ DRAFTS ============
+function draftSnippet(text) {
+  if (!text) return '';
+  var clean = String(text).replace(/\s+/g, ' ').trim();
+  if (clean.length <= 140) return clean;
+  return clean.slice(0, 140) + '…';
+}
+function collectDraftEntries() {
+  var entries = [];
+  Object.keys(S.drafts || {}).forEach(function (key) {
+    if (key.indexOf('reply_') !== 0) return;
+    var entry = getDraftEntry(key);
+    var text = entry && entry.text ? entry.text.trim() : '';
+    if (!text) return;
+    var topicId = key.replace('reply_', '');
+    var meta = entry.meta || {};
+    entries.push({
+      id: key,
+      title: meta.topicTitle ? `Reply: ${meta.topicTitle}` : `Reply draft #${topicId}`,
+      meta: `Topic ${topicId}`,
+      snippet: draftSnippet(text),
+      path: topicPath(topicId),
+      clearKeys: [key]
+    });
+  });
+  var topicTitle = getDraft('new_topic_title');
+  var topicBody = getDraft('new_topic_body');
+  if (topicTitle.trim() || topicBody.trim()) {
+    entries.push({
+      id: 'new_topic',
+      title: topicTitle.trim() ? `Topic: ${topicTitle.trim()}` : 'New topic draft',
+      meta: 'Topic draft',
+      snippet: draftSnippet(topicBody),
+      path: '/new-topic',
+      clearKeys: ['new_topic_title', 'new_topic_body']
+    });
+  }
+  var pmTo = getDraft('new_message_to');
+  var pmTitle = getDraft('new_message_title');
+  var pmBody = getDraft('new_message_body');
+  if (pmTo.trim() || pmTitle.trim() || pmBody.trim()) {
+    entries.push({
+      id: 'new_message',
+      title: pmTitle.trim() ? `Message: ${pmTitle.trim()}` : 'New message draft',
+      meta: pmTo.trim() ? `To ${pmTo.trim()}` : 'Message draft',
+      snippet: draftSnippet(pmBody),
+      path: '/new-message',
+      clearKeys: ['new_message_to', 'new_message_title', 'new_message_body']
+    });
+  }
+  entries.sort(function (a, b) {
+    return a.title.localeCompare(b.title);
+  });
+  return entries;
+}
+function renderDrafts() {
+  setTitle('Drafts');
+  showBack(true);
+  showCreate('');
+  var drafts = collectDraftEntries();
+  if (!drafts.length) {
+    $app.innerHTML = '<div class="empty">No drafts yet.</div>';
+    focusContent();
+    return;
+  }
+  $app.innerHTML = drafts.map(function (draft) {
+    return `<div class="list-item draft-item" tabindex="0">
+      <div class="item-title">${escEmoji(draft.title)}</div>
+      <div class="item-meta"><span>${esc(draft.meta)}</span></div>
+      ${draft.snippet ? `<div class="item-excerpt">${escEmoji(draft.snippet)}</div>` : ''}
+      <div class="draft-actions">
+        <button class="primary" data-draft-open="${esc(draft.path)}" tabindex="0">Open</button>
+        <button class="discard" data-draft-clear="${esc(draft.clearKeys.join('|'))}" tabindex="0">Discard</button>
+      </div>
+    </div>`;
+  }).join('');
+  $app.querySelectorAll('[data-draft-open]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      navigate(btn.dataset.draftOpen);
+    });
+  });
+  $app.querySelectorAll('[data-draft-clear]').forEach(function (btn) {
+    btn.addEventListener('click', /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _calleeDraftClear() {
+      var keys;
+      return _regenerator().w(function (_contextDraftClear) {
+        while (1) switch (_contextDraftClear.p = _contextDraftClear.n) {
+          case 0:
+            _contextDraftClear.n = 1;
+            return confirm('Discard this draft?');
+          case 1:
+            if (_contextDraftClear.v) {
+              _contextDraftClear.n = 2;
+              break;
+            }
+            return _contextDraftClear.a(2);
+          case 2:
+            keys = btn.dataset.draftClear.split('|');
+            keys.forEach(function (k) {
+              return clearDraft(k);
+            });
+            renderDrafts();
+            return _contextDraftClear.a(2);
+        }
+      }, _calleeDraftClear);
+    })));
+  });
+  focusContent();
 }
 
 // ============ MESSAGES ============
@@ -3670,7 +4032,7 @@ document.addEventListener('click', function (e) {
 });
 
 // ============ SCALE ============
-var scale = parseInt(localStorage.getItem('jt_scale') || '100');
+var scale = parseInt(storageGet('jt_scale', '100') || '100');
 function applyScale() {
   document.documentElement.style.fontSize = 15 * scale / 100 + 'px';
   document.getElementById('scaleLabel').textContent = scale + '%';
@@ -3680,13 +4042,13 @@ applyScale();
 document.getElementById('scaleDown').addEventListener('click', function (e) {
   e.preventDefault();
   scale = Math.max(50, scale - 10);
-  localStorage.setItem('jt_scale', scale);
+  storageSet('jt_scale', scale);
   applyScale();
 });
 document.getElementById('scaleUp').addEventListener('click', function (e) {
   e.preventDefault();
   scale = Math.min(200, scale + 10);
-  localStorage.setItem('jt_scale', scale);
+  storageSet('jt_scale', scale);
   applyScale();
 });
 
@@ -3699,9 +4061,9 @@ function applyTheme(light) {
   if ($menuThemeBtn) {
     $menuThemeBtn.innerHTML = light ? moonSvg + ' Dark Mode' : sunSvg + ' Light Mode';
   }
-  localStorage.setItem('jt_theme', light ? 'light' : 'dark');
+  storageSet('jt_theme', light ? 'light' : 'dark');
 }
-applyTheme(localStorage.getItem('jt_theme') === 'light');
+applyTheme(storageGet('jt_theme', '') === 'light');
 if ($menuThemeBtn) {
   $menuThemeBtn.addEventListener('click', function () {
     applyTheme(!document.documentElement.classList.contains('light'));
