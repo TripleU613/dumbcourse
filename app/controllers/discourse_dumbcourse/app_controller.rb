@@ -72,6 +72,7 @@ module DiscourseDumbcourse
       signup_url = "/signup?return_path=#{CGI.escape(return_path)}"
       google_url = "/auth/google_oauth2?origin=#{CGI.escape(return_path)}"
       google_button = google_login_enabled? ? "<a class=\"btn\" href=\"#{google_url}\">Continue with Google</a>" : ""
+      site_name = CGI.escapeHTML(site_title)
 
       <<~HTML
         <!DOCTYPE html>
@@ -80,7 +81,7 @@ module DiscourseDumbcourse
           <meta charset="UTF-8">
           <meta http-equiv="X-UA-Compatible" content="IE=edge">
           <meta name="viewport" content="width=device-width, initial-scale=1">
-          <title>Sign In</title>
+          <title>Sign in - #{site_name}</title>
           <style>
             body{margin:0;padding:0;background:#111;color:#eee;font-family:Arial,Helvetica,sans-serif}
             .wrap{max-width:520px;margin:40px auto;padding:24px}
@@ -93,16 +94,20 @@ module DiscourseDumbcourse
         </head>
         <body>
           <div class="wrap">
-            <h1>Sign in</h1>
-            <p>Use your account to continue.</p>
+            <h1>#{site_name}</h1>
+            <p>Sign in to continue.</p>
             <a class="btn" href="#{login_url}">Log in</a>
             #{google_button}
             <a class="btn secondary" href="#{signup_url}">Create account</a>
-            <div class="note">This page uses the main sign-in.</div>
+            <div class="note">This page uses the main sign-in for #{site_name}.</div>
           </div>
         </body>
         </html>
       HTML
+    end
+
+    def site_title
+      SiteSetting.title.presence || SiteSetting.site_name.presence || "Forum"
     end
 
     def relax_security_headers
