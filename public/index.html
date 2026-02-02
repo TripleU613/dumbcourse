@@ -28,7 +28,7 @@ input[type=text],input[type=search],input[type=email],input[type=password],input
 :focus{outline:3px solid var(--focus);outline-offset:2px;scroll-margin-top:calc(var(--top-h) + 8px)}
 
 /* Top bar */
-#topbar{position:fixed;top:0;left:0;right:0;height:var(--top-h);background:var(--bg2);
+#topbar{position:fixed;top:0;left:0;right:0;min-height:var(--top-h);height:auto;background:var(--bg2);
   display:flex;align-items:center;padding:0 8px;gap:8px;z-index:100;border-bottom:1px solid var(--border)}
 #topbar .back{display:none;background:none;color:var(--fg);min-height:36px;padding:4px 8px;font-size:1.2rem}
 #topbar .title-link{flex:1;display:flex;align-items:center;gap:8px;color:var(--fg);text-decoration:none;min-width:0}
@@ -69,7 +69,7 @@ input[type=text],input[type=search],input[type=email],input[type=password],input
 .cat{display:inline-block;font-size:.7rem;padding:1px 6px;border-radius:3px;color:#fff;font-weight:600}
 
 /* Post */
-.post{padding:12px;border-bottom:1px solid var(--border);cursor:pointer}
+.post{padding:12px;border-bottom:1px solid var(--border);cursor:pointer;scroll-margin-top:calc(var(--top-h) + 8px)}
 .post.active{background:var(--bg3)}
 .post-actions{display:none}
 .post.active .post-actions{display:flex}
@@ -282,6 +282,7 @@ var PROXY = location.hostname === 'localhost' || location.hostname === '127.0.0.
 var SITE = ORIGIN;
 var BASE_PATH = '/dumb';
 var SITE_ICON = '';
+var SITE_FAVICON = '';
 
 var SITE_TITLE = 'Forum';
 
@@ -369,6 +370,20 @@ function setSiteTitle(t) {
 function setSiteIcon(url) {
   SITE_ICON = url || '';
   updateSiteUI(SITE_TITLE);
+  if (!SITE_FAVICON && SITE_ICON) setFavicon(SITE_ICON);
+}
+function setFavicon(url) {
+  SITE_FAVICON = url || '';
+  if (!url) return;
+  var href = url;
+  if (href.indexOf('http') !== 0 && href.indexOf('//') !== 0) href = SITE + href;
+  var link = document.querySelector('link[rel="icon"]') || document.querySelector('link[rel="shortcut icon"]');
+  if (!link) {
+    link = document.createElement('link');
+    link.rel = 'icon';
+    document.head.appendChild(link);
+  }
+  link.href = href;
 }
 
 function loadSite() {
@@ -383,6 +398,8 @@ function loadSite() {
   }).then(function (d) {
     var name = d && d.site && (d.site.title || d.site.name) || (d && d.title);
     if (name) setSiteTitle(name);
+    var fav = d && d.site && d.site.favicon_url;
+    if (fav) setFavicon(fav);
     if (typeof d.full_name_required_for_signup === 'boolean') {
       SITE_SETTINGS.fullNameRequired = d.full_name_required_for_signup;
     }
@@ -411,6 +428,7 @@ function loadManifest() {
       var iconUrl = icons[0].src;
       if (iconUrl.indexOf('http') !== 0 && iconUrl.indexOf('//') !== 0) iconUrl = SITE + iconUrl;
       setSiteIcon(iconUrl);
+      if (!SITE_FAVICON) setFavicon(iconUrl);
     }
   }).catch(function () {});
 }
@@ -824,9 +842,10 @@ var $create = document.getElementById('createBtn');
 var createTarget = '';
 function setTitle(t) {
   var siteTitle = emojifyText(SITE_TITLE);
+  var baseTitle = siteTitle + ' Dumbcourse';
   var title = emojifyText(t || SITE_TITLE);
   $title.textContent = title;
-  document.title = title === siteTitle ? siteTitle : title + ' - ' + siteTitle;
+  document.title = title === siteTitle ? baseTitle : title + ' - ' + baseTitle;
 }
 function showBack(show) {
   $back.style.display = show ? 'block' : 'none';
@@ -1061,6 +1080,7 @@ route = function () {
   var p = routeRaw();
   var done = function () {
     ROUTE_BUSY = false;
+    syncTopbarHeight();
     if (ROUTE_QUEUED) {
       ROUTE_QUEUED = false;
       setTimeout(route, 120);
@@ -1074,6 +1094,12 @@ route = function () {
   return p;
 };
 window.addEventListener('popstate', route);
+var _topbarTimer = null;
+window.addEventListener('resize', function () {
+  if (_topbarTimer) clearTimeout(_topbarTimer);
+  _topbarTimer = setTimeout(syncTopbarHeight, 120);
+});
+setTimeout(syncTopbarHeight, 0);
 
 // ============ HELPERS ============
 var _escEl = document.createElement('div');
@@ -1081,6 +1107,12 @@ function esc(s) {
   if (!s) return '';
   _escEl.textContent = String(s);
   return _escEl.innerHTML;
+}
+function syncTopbarHeight() {
+  var tb = document.getElementById('topbar');
+  if (!tb) return;
+  var h = tb.offsetHeight || 48;
+  if (h) document.documentElement.style.setProperty('--top-h', h + 'px');
 }
 function decodeHtml(s) {
   if (!s) return '';
@@ -1406,7 +1438,7 @@ function confirm(msg) {
 function renderLogin() {
   document.body.classList.add('auth-mode');
   setTitle(SITE_TITLE);
-  document.title = 'Sign in - ' + SITE_TITLE;
+  document.title = 'Sign in - ' + SITE_TITLE + ' Dumbcourse';
   showBack(false);
   $app.innerHTML = `
     <div class="login-box">
@@ -1544,7 +1576,7 @@ function renderLogin() {
 function renderSignup() {
   document.body.classList.add('auth-mode');
   setTitle(SITE_TITLE);
-  document.title = 'Create account - ' + SITE_TITLE;
+  document.title = 'Create account - ' + SITE_TITLE + ' Dumbcourse';
   showBack(true);
   if (SITE_SETTINGS.allowSignup === false) {
     $app.innerHTML = `<div class="login-box">
