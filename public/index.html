@@ -168,6 +168,7 @@ button svg,.icon svg{vertical-align:middle}
 .search-bar button{min-width:70px;min-height:40px;border-radius:10px}
 body.search-mode #siteIcon{display:none !important}
 body.search-mode .title-link{gap:6px}
+body.auth-mode #searchBtn{display:none !important}
 
 /* Utility */
 .loading{text-align:center;padding:24px;color:var(--fg2)}
@@ -927,6 +928,7 @@ function _route() {
           m = hash.split('?')[0];
           path = m || '/';
           document.body.classList.remove('search-mode');
+          document.body.classList.remove('auth-mode');
           showCreate('');
           topicInfo = parseTopicPath(path);
           _context13.p = 2;
@@ -1385,6 +1387,7 @@ function confirm(msg) {
 
 // ============ LOGIN ============
 function renderLogin() {
+  document.body.classList.add('auth-mode');
   setTitle(SITE_TITLE);
   document.title = 'Sign in - ' + SITE_TITLE;
   showBack(false);
@@ -1522,6 +1525,7 @@ function renderLogin() {
   // Don't auto-focus input — brings up keyboard on mobile
 }
 function renderSignup() {
+  document.body.classList.add('auth-mode');
   setTitle(SITE_TITLE);
   document.title = 'Create account - ' + SITE_TITLE;
   showBack(true);
