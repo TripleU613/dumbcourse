@@ -121,6 +121,9 @@ input[type=text],input[type=search],input[type=email],input[type=password],input
 .post-body a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
 .post-actions{gap:8px;margin-top:8px;flex-wrap:wrap}
 .post-actions button{background:none;color:var(--fg2);min-height:32px;padding:4px 8px;font-size:.85rem;border:1px solid var(--border);display:inline-flex;align-items:center;gap:4px}
+.post-actions .action-label{line-height:1}
+.post-actions.compact button{padding:4px 6px;min-width:32px;justify-content:center}
+.post-actions.compact .action-label{display:none}
 button svg,.icon svg{vertical-align:middle}
 .post-actions button.liked{color:var(--danger);border-color:var(--danger)}
 
@@ -3061,11 +3064,11 @@ function renderPost(p, topicData) {
     }).join('') + '</div>' : '';
   }()}
     <div class="post-actions">
-      <button data-react-open="${p.id}" tabindex="${getNavMode() === 'touch' ? '0' : '-1'}">${IC.heart} React</button>
-      <button data-reply-to="${p.id}" data-reply-user="${esc(p.username)}" tabindex="${getNavMode() === 'touch' ? '0' : '-1'}">${IC.reply} Reply</button>
-      <button data-quote-post="${p.id}" data-quote-user="${esc(p.username)}" tabindex="${getNavMode() === 'touch' ? '0' : '-1'}">${IC.quote} Quote</button>
-      ${isOwn ? `<button data-edit-post="${p.id}" tabindex="${getNavMode() === 'touch' ? '0' : '-1'}">${IC.edit} Edit</button>
-      <button data-delete-post="${p.id}" tabindex="${getNavMode() === 'touch' ? '0' : '-1'}" style="color:var(--danger)">${IC.trash} Delete</button>` : `<button data-flag="${p.id}" tabindex="${getNavMode() === 'touch' ? '0' : '-1'}">${IC.flag} Flag</button>`}
+      <button data-react-open="${p.id}" tabindex="${getNavMode() === 'touch' ? '0' : '-1'}" aria-label="React" title="React">${IC.heart}<span class="action-label">React</span></button>
+      <button data-reply-to="${p.id}" data-reply-user="${esc(p.username)}" tabindex="${getNavMode() === 'touch' ? '0' : '-1'}" aria-label="Reply" title="Reply">${IC.reply}<span class="action-label">Reply</span></button>
+      <button data-quote-post="${p.id}" data-quote-user="${esc(p.username)}" tabindex="${getNavMode() === 'touch' ? '0' : '-1'}" aria-label="Quote" title="Quote">${IC.quote}<span class="action-label">Quote</span></button>
+      ${isOwn ? `<button data-edit-post="${p.id}" tabindex="${getNavMode() === 'touch' ? '0' : '-1'}" aria-label="Edit" title="Edit">${IC.edit}<span class="action-label">Edit</span></button>
+      <button data-delete-post="${p.id}" tabindex="${getNavMode() === 'touch' ? '0' : '-1'}" aria-label="Delete" title="Delete" style="color:var(--danger)">${IC.trash}<span class="action-label">Delete</span></button>` : `<button data-flag="${p.id}" tabindex="${getNavMode() === 'touch' ? '0' : '-1'}" aria-label="Flag" title="Flag">${IC.flag}<span class="action-label">Flag</span></button>`}
     </div>
   </div>`;
 }
@@ -3623,6 +3626,7 @@ var scale = parseInt(localStorage.getItem('jt_scale') || '100');
 function applyScale() {
   document.documentElement.style.fontSize = 15 * scale / 100 + 'px';
   document.getElementById('scaleLabel').textContent = scale + '%';
+  updatePostActionCompact();
 }
 applyScale();
 document.getElementById('scaleDown').addEventListener('click', function (e) {
@@ -3688,6 +3692,31 @@ function setNavMode(mode) {
   // Update existing post tabindexes
   updatePostTabindexes();
 }
+var postActionCompactTimer = null;
+function updatePostActionCompact() {
+  var actionRows = document.querySelectorAll('.post-actions');
+  for (var i = 0; i < actionRows.length; i++) {
+    var row = actionRows[i];
+    row.classList.remove('compact');
+    var buttons = row.querySelectorAll('button');
+    if (!buttons.length) continue;
+    var firstTop = buttons[0].offsetTop;
+    var wraps = false;
+    for (var j = 1; j < buttons.length; j++) {
+      if (buttons[j].offsetTop > firstTop) {
+        wraps = true;
+        break;
+      }
+    }
+    if (wraps) row.classList.add('compact');
+  }
+}
+function schedulePostActionCompact() {
+  if (postActionCompactTimer) clearTimeout(postActionCompactTimer);
+  postActionCompactTimer = setTimeout(function () {
+    updatePostActionCompact();
+  }, 50);
+}
 function updatePostTabindexes() {
   var mode = getNavMode();
   if (mode === 'touch') {
@@ -3709,12 +3738,14 @@ function updatePostTabindexes() {
       }
     });
   }
+  updatePostActionCompact();
 }
 // Initialize navigation mode
 setNavMode(navMode);
 navModeBtn.addEventListener('click', function () {
   setNavMode(getNavMode() === 'dpad' ? 'touch' : 'dpad');
 });
+window.addEventListener('resize', schedulePostActionCompact);
 
 // ============ SEARCH ============
 function renderSearch() {
