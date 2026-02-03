@@ -4269,9 +4269,17 @@ function _renderProfile() {
           });
           if (posts.length) {
             actHtml = posts.slice(0, 20).map(function (a) {
+              var ex = a.excerpt || a.cooked || '';
+              var exHtml = '';
+              if (ex) {
+                exHtml = `<div class="item-excerpt">${fixPostHtml(ex)}</div>`;
+              } else if (a.raw) {
+                exHtml = `<div class="item-excerpt">${esc(a.raw)}</div>`;
+              }
               return `
           <a class="list-item" href="${topicHref(a.topic_id, a.topic_slug)}" tabindex="0">
             <div class="item-title">${escEmoji(a.title)}</div>
+            ${exHtml}
             <div class="item-meta"><span>${timeAgo(a.created_at)}</span></div>
           </a>`;
             }).join('');
