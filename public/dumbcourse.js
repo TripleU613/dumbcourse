@@ -1018,6 +1018,13 @@ function currentTopicPost() {
   var t = parseTopicPath(currentPath());
   return t && t.post || '';
 }
+var CURRENT_TOPIC = null;
+var POST_REFRESHER = null;
+function refreshPostById(postId) {
+  if (POST_REFRESHER) return POST_REFRESHER(postId);
+  clearApiCache();
+  return renderTopic(currentTopicId());
+}
 function topicPath(id, slug, postNumber) {
   if (!id) return '/';
   var p = slug ? '/t/' + slug + '/' + id : '/t/' + id;
@@ -2875,6 +2882,11 @@ function _renderTopic() {
           return api(apiPath);
         case 1:
           d = _context22.v;
+          CURRENT_TOPIC = {
+            id: d && d.id ? d.id : parseInt(id, 10),
+            slug: d && d.slug ? d.slug : '',
+            title: d && d.title ? d.title : ''
+          };
           markTopicRead(d && d.id ? d.id : id);
           setTitle(d.title || 'Topic');
           lastPost = d.post_stream && d.post_stream.posts || [];
@@ -3407,6 +3419,29 @@ function _renderTopic() {
   return _renderTopic.apply(this, arguments);
 }
 function attachPostHandlers(container, topicId, replyBox, postNumberMap, setReplyTo) {
+  function refreshPost(postId) {
+    if (!postId) return Promise.resolve();
+    return api('/posts/' + postId + '.json', {
+      nocache: true
+    }).then(function (resp) {
+      var p = resp && resp.post ? resp.post : resp;
+      if (!p || !p.id) return;
+      postNumberMap[p.id] = p.post_number;
+      var oldEl = document.getElementById('post-' + p.id);
+      if (!oldEl || !oldEl.parentNode) return;
+      var wasActive = oldEl.classList.contains('active');
+      var tmp = document.createElement('div');
+      tmp.innerHTML = renderPost(p, CURRENT_TOPIC || { id: topicId, slug: '' });
+      var newEl = tmp.firstElementChild;
+      if (!newEl) return;
+      oldEl.parentNode.replaceChild(newEl, oldEl);
+      enhanceCooked(newEl);
+      if (wasActive) newEl.classList.add('active');
+      updatePostTabindexes();
+      attachPostHandlers(newEl, topicId, replyBox, postNumberMap, setReplyTo);
+    }).catch(function () {});
+  }
+  POST_REFRESHER = refreshPost;
   container.querySelectorAll('[data-react-open]').forEach(function (btn) {
     if (btn._bound) return;
     btn._bound = true;
@@ -3675,7 +3710,7 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
               }, _callee4, this, [[2, 5]]);
             })));
             bodyEl.querySelector('.cancel-edit').addEventListener('click', function () {
-              return renderTopic(currentTopicId());
+              return refreshPostById(postId);
             });
             _context5.n = 5;
             break;
@@ -3713,7 +3748,7 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
             });
           case 2:
             _context6.n = 3;
-            return renderTopic(currentTopicId());
+            return refreshPost(postId);
           case 3:
             _context6.n = 5;
             break;
@@ -3804,7 +3839,7 @@ function showReactionPicker(postId) {
           case 3:
             close();
             _context7.n = 4;
-            return renderTopic(currentTopicId());
+            return refreshPostById(postId);
           case 4:
             _context7.n = 6;
             break;
