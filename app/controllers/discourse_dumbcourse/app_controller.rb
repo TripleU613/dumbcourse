@@ -56,7 +56,7 @@ module DiscourseDumbcourse
     def login_path_request?
       path = params[:path]
       path = path.to_s
-      path = path.split("?").first
+      path = path.split("?", 2).first.to_s
       if path.empty?
         raw_path = request.path.to_s
         dumb_prefix = "#{Discourse.base_path}/dumb"
