@@ -46,7 +46,7 @@ input[type=text],input[type=search],input[type=email],input[type=password],input
 .list-item{display:block;padding:12px;border-bottom:1px solid var(--border);min-height:44px;
   color:var(--fg);text-decoration:none;cursor:pointer}
 .list-item:hover,.list-item:focus{background:var(--bg3)}
-.list-item .item-title{font-weight:600;margin-bottom:4px;line-height:1.3;display:flex;align-items:center;gap:6px}
+.list-item .item-title{font-weight:400;margin-bottom:4px;line-height:1.3;display:flex;align-items:center;gap:6px}
 .list-item .item-title-text{flex:1;min-width:0}
 .list-item .item-meta{font-size:.8rem;color:var(--fg2);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .meta-icon{display:inline-flex;align-items:center;gap:4px}
