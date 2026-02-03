@@ -63,7 +63,9 @@ input[type=text],input[type=search],input[type=email],input[type=password],input
 .list-item:hover,.list-item:focus{background:var(--bg3)}
 .list-item .item-title{font-weight:600;margin-bottom:4px;line-height:1.3;display:flex;align-items:center;gap:6px}
 .list-item .item-title-text{flex:1;min-width:0}
-.list-item .item-meta{font-size:.8rem;color:var(--fg2);display:flex;gap:8px;flex-wrap:wrap}
+.list-item .item-meta{font-size:.8rem;color:var(--fg2);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.meta-icon{display:inline-flex;align-items:center;gap:4px}
+.meta-icon svg{width:13px;height:13px;stroke:currentColor}
 .list-item .item-excerpt{font-size:.85rem;color:var(--fg2);margin-top:4px;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
@@ -2067,7 +2069,9 @@ var IC = {
   lock: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
   pin: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v8"/><circle cx="12" cy="14" r="4"/><path d="M12 18v4"/></svg>',
   smile: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>',
-  shield: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'
+  shield: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+  eye: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M21 12c-2.5 4.5-5.5 6.5-9 6.5S5.5 16.5 3 12c2.5-4.5 5.5-6.5 9-6.5s6.5 2 9 6.5z"/></svg>',
+  clock: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
 };
 var REACTION_EMOJI = {
   '+1': '\uD83D\uDC4D',
@@ -2644,9 +2648,9 @@ function topicItemHtml(t) {
         <div class="item-title"><span class="item-title-text">${escEmoji(t.title)}</span>${statusIcons}</div>
         <div class="item-meta">
           ${catBadge(t.category_id)}
-          <span>${t.posts_count - 1} replies</span>
-          ${views}
-          <span>${timeAgo(t.last_posted_at)}</span>
+          <span class="meta-icon" title="Replies">${IC.msg}<span>${t.posts_count - 1}</span></span>
+          ${views ? `<span class="meta-icon" title="Views">${IC.eye}<span>${t.views}</span></span>` : ''}
+          <span class="meta-icon" title="Last active">${IC.clock}<span>${timeAgo(t.last_posted_at)}</span></span>
         </div>
         ${t.excerpt ? `<div class="item-excerpt">${t.excerpt}</div>` : ''}
       </div>
