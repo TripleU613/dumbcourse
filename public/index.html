@@ -5030,19 +5030,17 @@ document.addEventListener('focusin', function () {
       var rect = el.getBoundingClientRect();
       var topH = document.getElementById('topbar').offsetHeight;
       var vh = window.innerHeight;
-
-      // D-pad mode: aggressive scrolling for better navigation
-      // If element is taller than viewport or top is above topbar, scroll to start
-      if (rect.height > vh - topH || rect.top < topH) {
-        el.scrollIntoView({
-          block: 'start',
-          behavior: 'smooth'
-        });
-      } else {
-        el.scrollIntoView({
-          block: 'nearest',
-          behavior: 'smooth'
-        });
+      var topLimit = topH + 6;
+      var bottomLimit = vh - 6;
+      // Keep focused items visible without jumping the list.
+      if (rect.height > vh - topLimit - 6) {
+        window.scrollBy(0, rect.top - topLimit);
+        return;
+      }
+      if (rect.top < topLimit) {
+        window.scrollBy(0, rect.top - topLimit);
+      } else if (rect.bottom > bottomLimit) {
+        window.scrollBy(0, rect.bottom - bottomLimit);
       }
     });
   }
