@@ -134,13 +134,13 @@ button svg,.icon svg{vertical-align:middle}
 .compose .field{margin-bottom:12px}
 .compose label{display:block;font-size:.85rem;color:var(--fg2);margin-bottom:4px}
 .compose .actions{display:flex;gap:8px;margin-top:8px;align-items:center}
-.compose .actions button{display:inline-flex;align-items:center;gap:6px}
+.compose .actions button{display:inline-flex;align-items:center;justify-content:center;gap:0;min-width:36px;min-height:36px;padding:6px 8px}
 .compose .actions .discard{background:var(--danger);color:#fff}
 .compose .chip-actions{flex-wrap:wrap;overflow:hidden}
-.compose .chip-actions .btn-label{display:inline-block}
+.compose .actions .btn-label{display:none}
 .compose .chip-actions.compact{flex-wrap:nowrap}
-.compose .chip-actions.compact .btn-label{display:none}
 .compose .chip-actions.compact button{padding:4px 8px}
+.compose .primary-actions{justify-content:flex-end}
 
 /* Reply indicator */
 .reply-indicator{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg3);
@@ -1504,8 +1504,9 @@ function bindPreview(textareaId, previewId, toggleId, opts) {
   function setPreviewButton(state) {
     var label = state ? 'Hide Preview' : 'Preview';
     var icon = state ? IC.hidePreview : IC.preview;
-    btn.innerHTML = '<span class="btn-icon">' + icon + '</span><span class="btn-label">' + label + '</span>';
+    btn.innerHTML = '<span class="btn-icon">' + icon + '</span>';
     btn.setAttribute('aria-label', label);
+    btn.setAttribute('title', label);
   }
   function render() {
     var raw = ta.value || '';
@@ -1626,6 +1627,7 @@ var IC = {
   quote: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17H5a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3h6v6H7v6z"/><path d="M19 17h-2a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3h6v6h-4v6z"/></svg>',
   edit: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
   trash: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+  send: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
   x: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
   plus: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
   upload: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
@@ -2307,14 +2309,14 @@ function _renderTopic() {
           html += `<div class="compose" id="replyArea">
     <textarea id="replyBox" placeholder="Press Enter or tap to type a reply..." tabindex="0" readonly>${esc(getDraft('reply_' + id))}</textarea>
     <div class="actions chip-actions">
-      <button id="uploadBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)"><span class="btn-icon">${IC.upload}</span><span class="btn-label">Upload</span></button>
+      <button id="uploadBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Upload" title="Upload"><span class="btn-icon">${IC.upload}</span></button>
       <input type="file" id="uploadFile" style="display:none">
       <button id="emojiBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Emoji">${IC.smile}</button>
-      <button id="replyPreviewBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)"></button>
+      <button id="replyPreviewBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Preview" title="Preview"></button>
     </div>
     <div class="actions primary-actions">
-      <button id="discardReply" class="discard" tabindex="0">Discard</button>
-      <button id="sendReply" tabindex="0">Post Reply</button>
+      <button id="discardReply" class="discard" tabindex="0" aria-label="Discard reply draft" title="Discard">${IC.trash}</button>
+      <button id="sendReply" tabindex="0" aria-label="Post reply" title="Post reply">${IC.send}</button>
     </div>
     <div id="replyPreview" class="md-preview" style="display:none"></div>
   </div>`;
@@ -2327,13 +2329,20 @@ function _renderTopic() {
           // State for reply-to
           replyToPostNumber = null; // Auto-save draft
           replyBox = document.getElementById('replyBox');
+          var discardReplyBtn = document.getElementById('discardReply');
+          function updateReplyDiscard() {
+            if (!discardReplyBtn) return;
+            discardReplyBtn.style.display = replyBox.value.trim() ? 'inline-flex' : 'none';
+          }
           replyBox.addEventListener('input', function () {
-            return saveDraft('reply_' + id, replyBox.value, {
+            saveDraft('reply_' + id, replyBox.value, {
               type: 'reply',
               topicId: id,
               topicTitle: d.title || ''
             });
+            updateReplyDiscard();
           });
+          updateReplyDiscard();
           // Enter on readonly textarea opens it for editing (brings up keyboard)
           function enableReplyBoxEditing() {
             if (!replyBox.readOnly) return;
@@ -2613,7 +2622,9 @@ function _renderTopic() {
                   return _context20.a(2);
                 case 1:
                   this.disabled = true;
-                  this.textContent = 'Posting...';
+                  this.innerHTML = IC.send;
+                  this.setAttribute('aria-label', 'Posting...');
+                  this.setAttribute('title', 'Posting...');
                   _context20.p = 2;
                   postBody = {
                     topic_id: parseInt(id),
@@ -2639,7 +2650,9 @@ function _renderTopic() {
                   _t18 = _context20.v;
                   showAlert('Error: ' + _t18.message);
                   this.disabled = false;
-                  this.textContent = 'Post Reply';
+                  this.innerHTML = IC.send;
+                  this.setAttribute('aria-label', 'Post reply');
+                  this.setAttribute('title', 'Post reply');
                 case 6:
                   return _context20.a(2);
               }
@@ -3397,28 +3410,38 @@ function renderNewTopic() {
     <div class="field"><label for="ntBody">Body</label>
       <textarea id="ntBody" placeholder="Write your topic..." tabindex="0">${esc(getDraft('new_topic_body'))}</textarea></div>
     <div class="actions chip-actions">
-      <button id="uploadNt" tabindex="0" style="background:var(--bg3);color:var(--fg)"><span class="btn-icon">${IC.upload}</span><span class="btn-label">Upload</span></button>
+      <button id="uploadNt" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Upload" title="Upload"><span class="btn-icon">${IC.upload}</span></button>
       <input type="file" id="uploadNtFile" style="display:none">
-      <button id="previewNt" tabindex="0" style="background:var(--bg3);color:var(--fg)"></button>
+      <button id="previewNt" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Preview" title="Preview"></button>
     </div>
     <div class="actions primary-actions">
-      <button id="discardNt" class="discard" tabindex="0">Discard</button>
-      <button id="postTopic" tabindex="0">Create Topic</button>
+      <button id="discardNt" class="discard" tabindex="0" aria-label="Discard topic draft" title="Discard">${IC.trash}</button>
+      <button id="postTopic" tabindex="0" aria-label="Create topic" title="Create topic">${IC.send}</button>
     </div>
     <div id="ntPreview" class="md-preview" style="display:none"></div>
   </div>`;
   refreshComposeActions();
-  document.getElementById('ntTitle').focus();
-  document.getElementById('ntTitle').addEventListener('input', function (e) {
-    return saveDraft('new_topic_title', e.target.value, {
+  var ntTitleEl = document.getElementById('ntTitle');
+  var ntBodyEl = document.getElementById('ntBody');
+  var discardNtBtn = document.getElementById('discardNt');
+  function updateNtDiscard() {
+    if (!discardNtBtn) return;
+    discardNtBtn.style.display = ntTitleEl.value.trim() || ntBodyEl.value.trim() ? 'inline-flex' : 'none';
+  }
+  ntTitleEl.focus();
+  ntTitleEl.addEventListener('input', function (e) {
+    saveDraft('new_topic_title', e.target.value, {
       type: 'topic'
     });
+    updateNtDiscard();
   });
-  document.getElementById('ntBody').addEventListener('input', function (e) {
-    return saveDraft('new_topic_body', e.target.value, {
+  ntBodyEl.addEventListener('input', function (e) {
+    saveDraft('new_topic_body', e.target.value, {
       type: 'topic'
     });
+    updateNtDiscard();
   });
+  updateNtDiscard();
   bindPreview('ntBody', 'ntPreview', 'previewNt', {
     titleId: 'ntTitle',
     categoryId: 'ntCat'
@@ -3499,7 +3522,9 @@ function renderNewTopic() {
           return _context0.a(2, showAlert('Title and body are required'));
         case 1:
           this.disabled = true;
-          this.textContent = 'Creating...';
+          this.innerHTML = IC.send;
+          this.setAttribute('aria-label', 'Creating...');
+          this.setAttribute('title', 'Creating...');
           _context0.p = 2;
           _context0.n = 3;
           return api('/posts.json', {
@@ -3522,7 +3547,9 @@ function renderNewTopic() {
           _t1 = _context0.v;
           showAlert('Error: ' + _t1.message);
           this.disabled = false;
-          this.textContent = 'Create Topic';
+          this.innerHTML = IC.send;
+          this.setAttribute('aria-label', 'Create topic');
+          this.setAttribute('title', 'Create topic');
         case 5:
           return _context0.a(2);
       }
@@ -3542,31 +3569,43 @@ function renderNewMessage() {
     <div class="field"><label for="pmBody">Message</label>
       <textarea id="pmBody" placeholder="Write your message..." tabindex="0">${esc(getDraft('new_message_body'))}</textarea></div>
     <div class="actions chip-actions">
-      <button id="previewPm" tabindex="0" style="background:var(--bg3);color:var(--fg)"></button>
+      <button id="previewPm" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Preview" title="Preview"></button>
     </div>
     <div class="actions primary-actions">
-      <button id="discardPm" class="discard" tabindex="0">Discard</button>
-      <button id="sendPm" tabindex="0">Send Message</button>
+      <button id="discardPm" class="discard" tabindex="0" aria-label="Discard message draft" title="Discard">${IC.trash}</button>
+      <button id="sendPm" tabindex="0" aria-label="Send message" title="Send message">${IC.send}</button>
     </div>
     <div id="pmPreview" class="md-preview" style="display:none"></div>
   </div>`;
   refreshComposeActions();
-  document.getElementById('pmTo').focus();
-  document.getElementById('pmTo').addEventListener('input', function (e) {
-    return saveDraft('new_message_to', e.target.value, {
+  var pmToEl = document.getElementById('pmTo');
+  var pmTitleEl = document.getElementById('pmTitle');
+  var pmBodyEl = document.getElementById('pmBody');
+  var discardPmBtn = document.getElementById('discardPm');
+  function updatePmDiscard() {
+    if (!discardPmBtn) return;
+    discardPmBtn.style.display = pmToEl.value.trim() || pmTitleEl.value.trim() || pmBodyEl.value.trim() ? 'inline-flex' : 'none';
+  }
+  pmToEl.focus();
+  pmToEl.addEventListener('input', function (e) {
+    saveDraft('new_message_to', e.target.value, {
       type: 'message'
     });
+    updatePmDiscard();
   });
-  document.getElementById('pmTitle').addEventListener('input', function (e) {
-    return saveDraft('new_message_title', e.target.value, {
+  pmTitleEl.addEventListener('input', function (e) {
+    saveDraft('new_message_title', e.target.value, {
       type: 'message'
     });
+    updatePmDiscard();
   });
-  document.getElementById('pmBody').addEventListener('input', function (e) {
-    return saveDraft('new_message_body', e.target.value, {
+  pmBodyEl.addEventListener('input', function (e) {
+    saveDraft('new_message_body', e.target.value, {
       type: 'message'
     });
+    updatePmDiscard();
   });
+  updatePmDiscard();
   document.getElementById('discardPm').addEventListener('click', /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _calleePmDiscard() {
     return _regenerator().w(function (_contextPmDiscard) {
       while (1) switch (_contextPmDiscard.p = _contextPmDiscard.n) {
@@ -3608,7 +3647,9 @@ function renderNewMessage() {
           return _context1.a(2, showAlert('All fields required'));
         case 1:
           this.disabled = true;
-          this.textContent = 'Sending...';
+          this.innerHTML = IC.send;
+          this.setAttribute('aria-label', 'Sending...');
+          this.setAttribute('title', 'Sending...');
           _context1.p = 2;
           _context1.n = 3;
           return api('/posts.json', {
@@ -3633,7 +3674,9 @@ function renderNewMessage() {
           _t10 = _context1.v;
           showAlert('Error: ' + _t10.message);
           this.disabled = false;
-          this.textContent = 'Send Message';
+          this.innerHTML = IC.send;
+          this.setAttribute('aria-label', 'Send message');
+          this.setAttribute('title', 'Send message');
         case 5:
           return _context1.a(2);
       }
