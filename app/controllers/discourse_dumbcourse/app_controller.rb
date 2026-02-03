@@ -54,7 +54,9 @@ module DiscourseDumbcourse
 
     def login_path_request?
       path = params[:path].to_s
+      path = path.split("?").first
       return true if path == "dumbcourse.css" || path == "dumbcourse.js"
+      return true if path.start_with?("dumbcourse.css") || path.start_with?("dumbcourse.js")
       return true if path == "login" || path.start_with?("login/")
       return true if path == "signup" || path.start_with?("signup/")
       return true if path == "register" || path.start_with?("register/")
