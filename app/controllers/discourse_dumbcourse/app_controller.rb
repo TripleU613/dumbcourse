@@ -57,6 +57,15 @@ module DiscourseDumbcourse
       path = params[:path]
       path = path.to_s
       path = path.split("?").first
+      if path.empty?
+        raw_path = request.path.to_s
+        dumb_prefix = "#{Discourse.base_path}/dumb"
+        if raw_path == dumb_prefix
+          path = ""
+        elsif raw_path.start_with?("#{dumb_prefix}/")
+          path = raw_path.sub("#{dumb_prefix}/", "")
+        end
+      end
       return true if path == "dumbcourse.css" || path == "dumbcourse.js"
       return true if path&.start_with?("dumbcourse.css") || path&.start_with?("dumbcourse.js")
       return true if path == "login" || path&.start_with?("login/")
