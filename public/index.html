@@ -86,6 +86,12 @@ input[type=text],input[type=search],input[type=email],input[type=password],input
 .post-body img.emoji{display:inline;width:1.2em;height:1.2em;vertical-align:middle;border-radius:0}
 .post-body pre{background:var(--bg3);padding:8px;border-radius:var(--radius);overflow-x:auto;font-size:.8rem}
 .post-body blockquote{border-left:3px solid var(--border);padding-left:12px;color:var(--fg2);margin:8px 0}
+.post-body table{width:100%;border-collapse:collapse;margin:8px 0;font-size:.9rem}
+.post-body th,.post-body td{border:1px solid var(--border);padding:6px 8px;text-align:left;vertical-align:top}
+.post-body .spoiler,.post-body .spoiler-blurred{filter:blur(4px);transition:filter .15s ease;cursor:pointer}
+.post-body .spoiler:hover,.post-body .spoiler:focus,.post-body .spoiler-blurred:hover,.post-body .spoiler-blurred:focus{filter:none}
+.post-body .math{background:var(--bg3);padding:2px 6px;border-radius:4px;font-family:"Times New Roman",serif}
+.post-body div.math{display:block;text-align:center;margin:8px 0}
 /* Discourse lightbox */
 .post-body .lightbox-wrapper{margin:8px 0}
 .post-body .lightbox-wrapper .meta{display:none}
@@ -246,6 +252,20 @@ body.auth-mode #searchBtn{display:none !important}
 .md-preview h1,.md-preview h2,.md-preview h3{margin:8px 0 4px}
 .md-preview ul,.md-preview ol{padding-left:18px;margin:6px 0}
 .md-preview blockquote{border-left:3px solid var(--border);padding-left:8px;color:var(--fg2);margin:6px 0}
+.md-preview table{width:100%;border-collapse:collapse;margin:8px 0;font-size:.9rem}
+.md-preview th,.md-preview td{border:1px solid var(--border);padding:6px 8px;text-align:left;vertical-align:top}
+.md-preview details{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:0;margin:8px 0}
+.md-preview details summary{padding:8px 12px;font-weight:600;font-size:.85rem;cursor:pointer;list-style:none;
+  display:flex;align-items:center;gap:6px;min-height:36px}
+.md-preview details summary::-webkit-details-marker{display:none}
+.md-preview details summary::before{content:'▶';font-size:.7rem;transition:transform .15s}
+.md-preview details[open] summary::before{transform:rotate(90deg)}
+.md-preview details summary:focus{outline:3px solid var(--focus);outline-offset:-1px}
+.md-preview details > :not(summary){padding:0 12px 8px}
+.md-preview .spoiler,.md-preview .spoiler-blurred{filter:blur(4px);transition:filter .15s ease;cursor:pointer}
+.md-preview .spoiler:hover,.md-preview .spoiler:focus,.md-preview .spoiler-blurred:hover,.md-preview .spoiler-blurred:focus{filter:none}
+.md-preview .math{background:var(--bg3);padding:2px 6px;border-radius:4px;font-family:"Times New Roman",serif}
+.md-preview div.math{display:block;text-align:center;margin:8px 0}
 
 /* Navigation Mode Styles */
 [data-nav-mode="dpad"] .post{cursor:pointer}
@@ -1436,13 +1456,51 @@ function mdBasic(src) {
   closeBq();
   return out || '';
 }
-function bindPreview(textareaId, previewId, toggleId) {
+function getPreviewContext(opts) {
+  if (!opts) return {};
+  if (typeof opts === 'function') return opts() || {};
+  var ctx = {};
+  if (opts.titleId) {
+    var titleEl = document.getElementById(opts.titleId);
+    if (titleEl) ctx.title = titleEl.value.trim();
+  }
+  if (opts.categoryId) {
+    var catEl = document.getElementById(opts.categoryId);
+    if (catEl && catEl.value) ctx.category = parseInt(catEl.value, 10);
+  }
+  if (opts.topicId) ctx.topicId = opts.topicId;
+  if (opts.archetype) ctx.archetype = opts.archetype;
+  if (opts.replyToPostNumber) {
+    ctx.replyToPostNumber = typeof opts.replyToPostNumber === 'function' ? opts.replyToPostNumber() : opts.replyToPostNumber;
+  }
+  return ctx;
+}
+function renderDiscoursePreview(raw, opts) {
+  var body = {
+    raw: raw
+  };
+  var ctx = getPreviewContext(opts);
+  if (ctx.title) body.title = ctx.title;
+  if (ctx.category) body.category = ctx.category;
+  if (ctx.topicId) body.topic_id = ctx.topicId;
+  if (ctx.replyToPostNumber) body.reply_to_post_number = ctx.replyToPostNumber;
+  if (ctx.archetype) body.archetype = ctx.archetype;
+  return api('/posts/preview.json', {
+    method: 'POST',
+    body: body,
+    nodup: true
+  }).then(function (d) {
+    return fixPostHtml(d && d.cooked ? d.cooked : '');
+  });
+}
+function bindPreview(textareaId, previewId, toggleId, opts) {
   var ta = document.getElementById(textareaId);
   var pv = document.getElementById(previewId);
   var btn = document.getElementById(toggleId);
   if (!ta || !pv || !btn) return;
   var on = false;
   var timer = null;
+  var previewToken = 0;
   function setPreviewButton(state) {
     var label = state ? 'Hide Preview' : 'Preview';
     var icon = state ? IC.hidePreview : IC.preview;
@@ -1450,12 +1508,26 @@ function bindPreview(textareaId, previewId, toggleId) {
     btn.setAttribute('aria-label', label);
   }
   function render() {
-    pv.innerHTML = mdBasic(ta.value);
+    var raw = ta.value || '';
+    if (!raw.trim()) {
+      pv.innerHTML = '';
+      return;
+    }
+    var token = ++previewToken;
+    renderDiscoursePreview(raw, opts).then(function (html) {
+      if (token !== previewToken) return;
+      pv.innerHTML = html || mdBasic(raw);
+    }).catch(function () {
+      if (token !== previewToken) return;
+      pv.innerHTML = mdBasic(raw);
+    });
   }
   function schedule() {
     if (!on) return;
     if (timer) clearTimeout(timer);
-    timer = setTimeout(render, 200);
+    timer = setTimeout(function () {
+      return render();
+    }, 200);
   }
   btn.addEventListener('click', function () {
     on = !on;
@@ -2286,7 +2358,13 @@ function _renderTopic() {
               replyBox.placeholder = 'Press Enter or tap to type a reply...';
             }
           });
-          bindPreview('replyBox', 'replyPreview', 'replyPreviewBtn');
+          bindPreview('replyBox', 'replyPreview', 'replyPreviewBtn', function () {
+            return {
+              topicId: parseInt(id, 10),
+              title: d.title || '',
+              replyToPostNumber: replyToPostNumber
+            };
+          });
           refreshComposeActions();
           document.getElementById('discardReply').addEventListener('click', /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _calleeReplyDiscard() {
             return _regenerator().w(function (_contextReplyDiscard) {
@@ -3341,7 +3419,10 @@ function renderNewTopic() {
       type: 'topic'
     });
   });
-  bindPreview('ntBody', 'ntPreview', 'previewNt');
+  bindPreview('ntBody', 'ntPreview', 'previewNt', {
+    titleId: 'ntTitle',
+    categoryId: 'ntCat'
+  });
   document.getElementById('discardNt').addEventListener('click', /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _calleeNtDiscard() {
     return _regenerator().w(function (_contextNtDiscard) {
       while (1) switch (_contextNtDiscard.p = _contextNtDiscard.n) {
@@ -3507,7 +3588,10 @@ function renderNewMessage() {
       }
     }, _calleePmDiscard);
   })));
-  bindPreview('pmBody', 'pmPreview', 'previewPm');
+  bindPreview('pmBody', 'pmPreview', 'previewPm', {
+    titleId: 'pmTitle',
+    archetype: 'private_message'
+  });
   refreshComposeActions();
   document.getElementById('sendPm').addEventListener('click', /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee1() {
     var to, title, raw, d, _t10;
