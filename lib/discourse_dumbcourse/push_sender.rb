@@ -31,7 +31,7 @@ module DiscourseDumbcourse
     end
 
     def self.send_notification(server:, topic:, title:, message:, click_url: nil, priority: "default")
-      uri = URI.parse("#{server}/#{topic}")
+      uri = URI.parse(server)
 
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = uri.scheme == "https"
