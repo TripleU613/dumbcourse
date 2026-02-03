@@ -27,11 +27,23 @@ module DiscourseDumbcourse
         file_path = public_root.join(safe_path)
 
         if file_path.file?
+          ext = file_path.extname.downcase
+          mime =
+            case ext
+            when ".css"
+              "text/css; charset=utf-8"
+            when ".js"
+              "text/javascript; charset=utf-8"
+            when ".json"
+              "application/json; charset=utf-8"
+            else
+              Rack::Mime.mime_type(file_path.to_s, "application/octet-stream")
+            end
           response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
           return send_data(
             File.binread(file_path),
             disposition: "inline",
-            type: Rack::Mime.mime_type(file_path.to_s, "application/octet-stream"),
+            type: mime,
           )
         end
       end
