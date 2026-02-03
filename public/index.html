@@ -49,6 +49,7 @@ input[type=text],input[type=search],input[type=email],input[type=password],input
   align-items:center;gap:10px;border-bottom:1px solid var(--border)}
 .menu-drop a:last-child{border-bottom:none}
 .menu-drop a:focus,.menu-drop a:hover{background:var(--bg3)}
+.menu-drop a.active{background:var(--bg3);color:var(--accent)}
 
 /* Content */
 #app{max-width:640px;margin:0 auto;padding:8px}
@@ -280,7 +281,8 @@ body.auth-mode #searchBtn{display:none !important}
 .poll-pct{font-size:.75rem;color:var(--fg2)}
 
 /* Topic status icons */
-.topic-status-icon{opacity:.6;display:inline-flex;align-items:center;justify-content:center}
+.topic-status-group{display:inline-flex;gap:4px;align-items:center;margin-left:6px;opacity:.7}
+.topic-status-icon{display:inline-flex;align-items:center;justify-content:center}
 .topic-status-icon svg{vertical-align:middle}
 
 /* Reactions */
@@ -364,6 +366,18 @@ body.auth-mode #searchBtn{display:none !important}
     <span class="title" id="topTitle">Forum</span>
   </a>
   <button class="search-btn" id="searchBtn" aria-label="Search" tabindex="0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+  <div class="menu-wrap">
+    <button class="search-btn" id="viewBtn" aria-label="View" tabindex="0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M21 12c-2.5 4.5-5.5 6.5-9 6.5S5.5 16.5 3 12c2.5-4.5 5.5-6.5 9-6.5s6.5 2 9 6.5z"/></svg></button>
+    <div class="menu-drop" id="viewDrop">
+      <a href="/dumb/" data-view="latest" tabindex="0">Latest</a>
+      <a href="/dumb/new" data-view="new" tabindex="0">New</a>
+      <a href="/dumb/top" data-view="top" tabindex="0">Top</a>
+      <a href="/dumb/unseen" data-view="unseen" tabindex="0">Unseen</a>
+      <a href="/dumb/hot" data-view="hot" tabindex="0">Hot</a>
+      <a href="/dumb/my" data-view="my" tabindex="0">My Posts</a>
+      <a href="/dumb/categories" data-view="categories" tabindex="0">Categories</a>
+    </div>
+  </div>
   <button class="search-btn" id="createBtn" aria-label="Create" style="display:none" tabindex="0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
   <button class="search-btn" id="refreshBtn" aria-label="Refresh" tabindex="0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>
   <div class="menu-wrap">
@@ -1081,7 +1095,7 @@ function setUrl(path, replace) {
   if (replace && history.replaceState) history.replaceState(null, '', url);else if (history.pushState) history.pushState(null, '', url);else location.href = url;
 }
 function navigate(path, replace) {
-  if (topicScrollCleanup && currentPath() === '/' && path !== '/') {
+  if (topicScrollCleanup && isTopicListPath(currentPath()) && !isTopicListPath(path)) {
     topicScrollCleanup();
   }
   setUrl(path, replace);
@@ -1165,6 +1179,8 @@ var $searchBtn = document.getElementById('searchBtn');
 var $back = document.getElementById('backBtn');
 var $menu = document.getElementById('menuDrop');
 var $menuBtn = document.getElementById('menuBtn');
+var $view = document.getElementById('viewDrop');
+var $viewBtn = document.getElementById('viewBtn');
 var $create = document.getElementById('createBtn');
 var $siteIcon = document.getElementById('siteIcon');
 var createTarget = '';
@@ -1181,6 +1197,12 @@ function setTitle(t) {
 }
 function showBack(show) {
   $back.style.display = show ? 'block' : 'none';
+}
+function setActiveView(viewKey) {
+  if (!$view) return;
+  $view.querySelectorAll('a[data-view]').forEach(function (a) {
+    a.classList.toggle('active', a.getAttribute('data-view') === viewKey);
+  });
 }
 function showCreate(target) {
   createTarget = target;
@@ -1215,6 +1237,11 @@ if ($searchBtn) {
     navigate('/search');
   });
 }
+if ($viewBtn) {
+  bindTap($viewBtn, function () {
+    toggleView();
+  });
+}
 bindTap(document.getElementById('refreshBtn'), function () {
   return route();
 });
@@ -1243,6 +1270,12 @@ document.addEventListener('keydown', function (e) {
     }
   }
   if ((e.key === 'Backspace' || e.key === 'Escape') && !inInput) {
+    if ($view && $view.classList.contains('open')) {
+      toggleView(false);
+      if ($viewBtn) $viewBtn.focus();
+      e.preventDefault();
+      return;
+    }
     // Escape closes menu first
     if ($menu.classList.contains('open')) {
       toggleMenu(false);
@@ -1278,151 +1311,62 @@ document.addEventListener('keydown', function (e) {
   }
 });
 function route() {
-  return _route.apply(this, arguments);
+  return routeLogic();
 }
-function _route() {
-  _route = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee13() {
-    var hash, m, path, topicInfo, _t13;
-    return _regenerator().w(function (_context13) {
-      while (1) switch (_context13.p = _context13.n) {
-        case 0:
-          hash = currentPath();
-          if (currentQuery()) hash += '?' + currentQuery();
-          if (S.history[S.history.length - 1] !== hash) S.history.push(hash);
-          if (isLoggedIn()) {
-            _context13.n = 2;
-            break;
-          }
-          if (hash === '/signup' || hash === '/register') {
-            showCreate('');
-            renderSignup();
-            return _context13.a(2);
-          }
-          showCreate('');
-          renderLogin();
-          return _context13.a(2);
-        case 2:
-          m = hash.split('?')[0];
-          path = m || '/';
-          document.body.classList.remove('search-mode');
-          document.body.classList.remove('auth-mode');
-          showCreate('');
-          topicInfo = parseTopicPath(path);
-          _context13.p = 2;
-          if (!(path === '/')) {
-            _context13.n = 4;
-            break;
-          }
-          _context13.n = 3;
-          return renderTopics();
-        case 3:
-          _context13.n = 20;
-          break;
-        case 4:
-          if (!topicInfo) {
-            _context13.n = 6;
-            break;
-          }
-          _context13.n = 5;
-          return renderTopic(topicInfo.id, topicInfo.post);
-        case 5:
-          _context13.n = 20;
-          break;
-        case 6:
-          if (!(path === '/new-topic')) {
-            _context13.n = 7;
-            break;
-          }
-          renderNewTopic();
-          _context13.n = 20;
-          break;
-        case 7:
-          if (!(path === '/messages')) {
-            _context13.n = 9;
-            break;
-          }
-          _context13.n = 8;
-          return renderMessages();
-        case 8:
-          _context13.n = 20;
-          break;
-        case 9:
-          if (!path.match(/^\/messages\/(\d+)/)) {
-            _context13.n = 11;
-            break;
-          }
-          _context13.n = 10;
-          return renderTopic(path.match(/^\/messages\/(\d+)/)[1], '');
-        case 10:
-          _context13.n = 20;
-          break;
-        case 11:
-          if (!(path === '/drafts')) {
-            _context13.n = 12;
-            break;
-          }
-          renderDrafts();
-          _context13.n = 20;
-          break;
-        case 12:
-          if (!(path === '/new-message')) {
-            _context13.n = 13;
-            break;
-          }
-          renderNewMessage();
-          _context13.n = 20;
-          break;
-        case 13:
-          if (!(path === '/notifications')) {
-            _context13.n = 15;
-            break;
-          }
-          _context13.n = 14;
-          return renderNotifications();
-        case 14:
-          _context13.n = 20;
-          break;
-        case 15:
-          if (!path.match(/^\/u\/(.+)/)) {
-            _context13.n = 17;
-            break;
-          }
-          _context13.n = 16;
-          return renderProfile(decodeURIComponent(path.match(/^\/u\/(.+)/)[1]));
-        case 16:
-          _context13.n = 20;
-          break;
-        case 17:
-          if (!(path === '/settings')) {
-            _context13.n = 18;
-            break;
-          }
-          renderSettings();
-          _context13.n = 20;
-          break;
-        case 18:
-          if (!path.match(/^\/search/)) {
-            _context13.n = 19;
-            break;
-          }
-          _context13.n = 20;
-          return renderSearch();
-        case 19:
-          _context13.n = 20;
-          return renderTopics();
-        case 20:
-          _context13.n = 22;
-          break;
-        case 21:
-          _context13.p = 21;
-          _t13 = _context13.v;
-          $app.innerHTML = `<div class="error">${esc(formatErrorMessage(_t13))}</div>`;
-        case 22:
-          return _context13.a(2);
+function routeLogic() {
+  try {
+    var hash = currentPath();
+    if (currentQuery()) hash += '?' + currentQuery();
+    if (S.history[S.history.length - 1] !== hash) S.history.push(hash);
+    if (!isLoggedIn()) {
+      if (hash === '/signup' || hash === '/register') {
+        showCreate('');
+        renderSignup();
+        return Promise.resolve();
       }
-    }, _callee13, null, [[2, 21]]);
-  }));
-  return _route.apply(this, arguments);
+      showCreate('');
+      renderLogin();
+      return Promise.resolve();
+    }
+    var path = hash.split('?')[0] || '/';
+    document.body.classList.remove('search-mode');
+    document.body.classList.remove('auth-mode');
+    showCreate('');
+    var topicInfo = parseTopicPath(path);
+    var viewKey = viewFromPath(path);
+    if (path === '/') {
+      if (defaultView === 'categories') return renderCategories();
+      return renderTopics(defaultView);
+    }
+    if (path === '/categories') return renderCategories();
+    if (viewKey) return renderTopics(viewKey);
+    if (topicInfo) return renderTopic(topicInfo.id, topicInfo.post);
+    if (path === '/new-topic') {
+      renderNewTopic();
+      return Promise.resolve();
+    }
+    if (path === '/messages') return renderMessages();
+    if (path.match(/^\/messages\/(\d+)/)) return renderTopic(path.match(/^\/messages\/(\d+)/)[1], '');
+    if (path === '/drafts') {
+      renderDrafts();
+      return Promise.resolve();
+    }
+    if (path === '/new-message') {
+      renderNewMessage();
+      return Promise.resolve();
+    }
+    if (path === '/notifications') return renderNotifications();
+    if (path.match(/^\/u\/(.+)/)) return renderProfile(decodeURIComponent(path.match(/^\/u\/(.+)/)[1]));
+    if (path === '/settings') {
+      renderSettings();
+      return Promise.resolve();
+    }
+    if (path.match(/^\/search/)) return renderSearch();
+    return renderTopics(defaultView === 'categories' ? 'latest' : defaultView);
+  } catch (err) {
+    $app.innerHTML = `<div class="error">${esc(formatErrorMessage(err))}</div>`;
+    return Promise.resolve();
+  }
 }
 var ROUTE_BUSY = false;
 var ROUTE_QUEUED = false;
@@ -2625,6 +2569,46 @@ function _logout() {
   }));
   return _logout.apply(this, arguments);
 }
+var TOPIC_VIEWS = [
+  { key: 'latest', label: 'Latest', path: '/latest.json' },
+  { key: 'new', label: 'New', path: '/new.json' },
+  { key: 'top', label: 'Top', path: '/top.json?period=weekly' },
+  { key: 'unseen', label: 'Unseen', path: '/unread.json' },
+  { key: 'hot', label: 'Hot', path: '/hot.json' },
+  { key: 'my', label: 'My Posts', path: function () { return S.username ? '/topics/created-by/' + encodeURIComponent(S.username) + '.json' : '/latest.json'; } }
+];
+var topicView = 'latest';
+function viewConfig(key) {
+  var v = (key || '').toLowerCase();
+  for (var i = 0; i < TOPIC_VIEWS.length; i++) {
+    if (TOPIC_VIEWS[i].key === v) return TOPIC_VIEWS[i];
+  }
+  return TOPIC_VIEWS[0];
+}
+function isTopicListPath(path) {
+  var p = path || '/';
+  if (p === '/' || p === '') return true;
+  p = p.replace(/^\/+/, '');
+  for (var i = 0; i < TOPIC_VIEWS.length; i++) {
+    if (TOPIC_VIEWS[i].key === p) return true;
+  }
+  return false;
+}
+function viewFromPath(path) {
+  var p = (path || '').replace(/^\/+/, '');
+  for (var i = 0; i < TOPIC_VIEWS.length; i++) {
+    if (TOPIC_VIEWS[i].key === p) return TOPIC_VIEWS[i].key;
+  }
+  return '';
+}
+function buildViewUrl(viewKey, page) {
+  var cfg = viewConfig(viewKey);
+  var base = typeof cfg.path === 'function' ? cfg.path() : cfg.path;
+  if (page && page > 0) {
+    base += (base.indexOf('?') >= 0 ? '&' : '?') + 'page=' + page;
+  }
+  return base;
+}
 var topicPage = 0,
   topicLoading = false,
   topicMore = true,
@@ -2634,6 +2618,7 @@ function topicItemHtml(t) {
   var statusIcons = '';
   if (t.pinned) statusIcons += '<span class="topic-status-icon" title="Pinned">' + IC.pin + '</span>';
   if (t.closed || t.archived) statusIcons += '<span class="topic-status-icon" title="Locked">' + IC.lock + '</span>';
+  if (statusIcons) statusIcons = '<span class="topic-status-group">' + statusIcons + '</span>';
   var views = t.views != null ? '<span>' + t.views + ' views</span>' : '';
   return `<a class="list-item" href="${topicHref(t.id, t.slug)}" tabindex="0">
     <div style="display:flex;align-items:flex-start;gap:8px">
@@ -2671,7 +2656,7 @@ function _loadMoreTopics() {
           if (loader) loader.style.display = 'block';
           _context16.p = 2;
           _context16.n = 3;
-          return api('/latest.json' + (topicPage > 0 ? `?page=${topicPage}` : ''));
+          return api(buildViewUrl(topicView, topicPage));
         case 3:
           d = _context16.v;
           topics = d.topic_list && d.topic_list.topics || [];
@@ -2698,15 +2683,18 @@ function _loadMoreTopics() {
   }));
   return _loadMoreTopics.apply(this, arguments);
 }
-function renderTopics() {
+function renderTopics(_x2) {
   return _renderTopics.apply(this, arguments);
 } // ============ TOPIC DETAIL ============
 function _renderTopics() {
-  _renderTopics = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee17() {
-    var d, topics, html, onScroll, _cleanup;
+  _renderTopics = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee17(viewKey) {
+    var d, topics, html, onScroll, _cleanup, cfg;
     return _regenerator().w(function (_context17) {
       while (1) switch (_context17.n) {
         case 0:
+          cfg = viewConfig(viewKey || defaultView);
+          topicView = cfg.key;
+          setActiveView(topicView);
           setTitle(SITE_TITLE);
           showBack(false);
           $app.innerHTML = '';
@@ -2716,7 +2704,7 @@ function _renderTopics() {
           topicPage = 0;
           topicMore = true;
           _context17.n = 2;
-          return api('/latest.json');
+          return api(buildViewUrl(topicView, 0));
         case 2:
           d = _context17.v;
           mergeCategories(d.topic_list && d.topic_list.categories || []);
@@ -2758,6 +2746,65 @@ function _renderTopics() {
     }, _callee17);
   }));
   return _renderTopics.apply(this, arguments);
+}
+function categoryItemHtml(c) {
+  var color = c.color ? '#' + c.color : '#666';
+  var desc = c.description_text || c.description || '';
+  var topics = c.topic_count != null ? c.topic_count : c.topics_all_time != null ? c.topics_all_time : '';
+  var subs = (c.subcategory_ids || []).map(function (id) {
+    return S.categories[id] ? S.categories[id].name : '';
+  }).filter(Boolean);
+  var subsHtml = subs.length ? `<div class="item-meta"><span>${subs.length} subcategories</span><span>${subs.join(', ')}</span></div>` : '';
+  return `<div class="list-item" tabindex="0" style="border-left:4px solid ${color};padding-left:10px">
+    <div class="item-title">${esc(c.name)}</div>
+    <div class="item-meta">${topics !== '' ? `<span>${topics} topics</span>` : ''}</div>
+    ${desc ? `<div class="item-excerpt">${esc(desc)}</div>` : ''}
+    ${subsHtml}
+  </div>`;
+}
+function renderCategories() {
+  return _renderCategories.apply(this, arguments);
+} // ============ CATEGORY LIST ============
+function _renderCategories() {
+  _renderCategories = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee17b() {
+    var d, cats, html, _t17b;
+    return _regenerator().w(function (_context17b) {
+      while (1) switch (_context17b.n) {
+        case 0:
+          setActiveView('categories');
+          setTitle('Categories');
+          showBack(true);
+          showCreate('');
+          $app.innerHTML = '';
+          _context17b.n = 1;
+          return loadCategories();
+        case 1:
+          _context17b.p = 1;
+          _context17b.n = 2;
+          return api('/categories.json');
+        case 2:
+          d = _context17b.v;
+          mergeCategories(d.category_list && d.category_list.categories || []);
+          cats = d.category_list && d.category_list.categories || [];
+          if (!cats.length) {
+            $app.innerHTML = '<div class="empty">No categories found</div>';
+            return _context17b.a(2);
+          }
+          html = `<div id="categoryList">` + cats.map(categoryItemHtml).join('') + `</div>`;
+          $app.innerHTML = html;
+          focusContent();
+          _context17b.n = 4;
+          break;
+        case 3:
+          _context17b.p = 3;
+          _t17b = _context17b.v;
+          $app.innerHTML = `<div class="error">${esc(formatErrorMessage(_t17b))}</div>`;
+        case 4:
+          return _context17b.a(2);
+      }
+    }, _callee17b, null, [[1, 3]]);
+  }));
+  return _renderCategories.apply(this, arguments);
 }
 function renderTopic(_x2, _x3) {
   return _renderTopic.apply(this, arguments);
@@ -4591,6 +4638,8 @@ function renderSettings() {
 // ============ MENU ============
 var menuOpen = false;
 var menuJustToggled = false;
+var viewOpen = false;
+var viewJustToggled = false;
 function updateMenuItems() {
   var logged = isLoggedIn();
   $menu.querySelectorAll('[data-auth]').forEach(function (el) {
@@ -4623,7 +4672,33 @@ function toggleMenu(open) {
     if (first) first.focus();
   }
 }
+function toggleView(open) {
+  if (!$view || !$viewBtn) return;
+  if (menuOpen) toggleMenu(false);
+  var show = open !== undefined ? open : !viewOpen;
+  viewOpen = show;
+  viewJustToggled = true;
+  setTimeout(function() { viewJustToggled = false; }, 100);
+  $view.classList.toggle('open', show);
+  if (show) {
+    setActiveView(topicView);
+    if (history && history.pushState) {
+      history.pushState({
+        view: true
+      }, '');
+    }
+    var first = $view.querySelector('a[data-view]');
+    if (first) first.focus();
+  }
+}
 window.addEventListener('popstate', function (e) {
+  if (viewOpen) {
+    viewOpen = false;
+    $view.classList.remove('open');
+    $viewBtn && $viewBtn.focus();
+    e.stopImmediatePropagation();
+    return;
+  }
   if (menuOpen) {
     menuOpen = false;
     $menu.classList.remove('open');
@@ -4633,8 +4708,16 @@ window.addEventListener('popstate', function (e) {
 });
 $menuBtn.addEventListener('click', function (e) {
   e.stopPropagation();
+  if (viewOpen) toggleView(false);
   toggleMenu();
 });
+if ($view) {
+  $view.querySelectorAll('a').forEach(function (a) {
+    return a.addEventListener('click', function () {
+      return toggleView(false);
+    });
+  });
+}
 // Close menu on item click
 $menu.querySelectorAll('a').forEach(function (a) {
   return a.addEventListener('click', function () {
@@ -4652,6 +4735,9 @@ document.getElementById('menuAuthBtn').addEventListener('click', function (e) {
 document.addEventListener('click', function (e) {
   if (!menuJustToggled && $menu.classList.contains('open') && !$menu.contains(e.target) && e.target !== $menuBtn) {
     toggleMenu(false);
+  }
+  if ($view && !viewJustToggled && $view.classList.contains('open') && !$view.contains(e.target) && e.target !== $viewBtn) {
+    toggleView(false);
   }
 });
 
@@ -4682,6 +4768,7 @@ var sunSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke
 var moonSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
 var DUMBCOURSE_SETTINGS = window.DUMBCOURSE_SETTINGS || {};
 var defaultTheme = DUMBCOURSE_SETTINGS.defaultTheme || '';
+var defaultView = (DUMBCOURSE_SETTINGS.defaultView || 'latest').toLowerCase();
 if (!storageGet('jt_theme', '')) {
   if (defaultTheme === 'light' || defaultTheme === 'dark') {
     storageSet('jt_theme', defaultTheme);

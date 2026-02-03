@@ -2,4 +2,5 @@ en:
   site_settings:
     dumbcourse_enabled: "Enable Dumbcourse"
     dumbcourse_default_theme: "Default Dumbcourse theme"
+    dumbcourse_default_view: "Default Dumbcourse view"
     dumbcourse_sidebar_link_enabled: "Show Dumbcourse link in sidebar"

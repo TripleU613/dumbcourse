@@ -9,6 +9,18 @@ plugins:
     choices:
       - dark
       - light
+  dumbcourse_default_view:
+    default: "latest"
+    client: true
+    type: enum
+    choices:
+      - latest
+      - new
+      - top
+      - unseen
+      - hot
+      - my
+      - categories
   dumbcourse_sidebar_link_enabled:
     default: true
     client: true
