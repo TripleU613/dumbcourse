@@ -77,6 +77,8 @@ input[type=text],input[type=search],input[type=email],input[type=password],input
 .post-actions{display:none}
 .post.active .post-actions{display:flex}
 .post-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.post-reply-link{background:none;border:1px solid transparent;color:var(--fg2);font-size:.75rem;margin-left:auto;display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:999px}
+.post-reply-link:focus{outline:3px solid var(--focus);outline-offset:1px;border-color:var(--focus)}
 .post-avatar{width:32px;height:32px;border-radius:50%;background:var(--bg3)}
 .post-author{font-weight:600;font-size:.9rem}
 .post-date{font-size:.75rem;color:var(--fg2)}
@@ -133,14 +135,24 @@ button svg,.icon svg{vertical-align:middle}
 .compose{padding:12px}
 .compose .field{margin-bottom:12px}
 .compose label{display:block;font-size:.85rem;color:var(--fg2);margin-bottom:4px}
-.compose .actions{display:flex;gap:8px;margin-top:8px;align-items:center}
-.compose .actions button{display:inline-flex;align-items:center;justify-content:center;gap:0;min-width:36px;min-height:36px;padding:6px 8px}
+.compose .actions{display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:nowrap}
+.compose .actions button{display:inline-flex;align-items:center;justify-content:center;gap:0;min-width:36px;min-height:36px;padding:6px 8px;flex:0 1 auto}
 .compose .actions .discard{background:var(--danger);color:#fff}
-.compose .chip-actions{flex-wrap:wrap;overflow:hidden}
+.compose .actions .actions-spacer{flex:1;min-width:8px}
+.compose .chip-actions{overflow:hidden}
 .compose .actions .btn-label{display:none}
-.compose .chip-actions.compact{flex-wrap:nowrap}
-.compose .chip-actions.compact button{padding:4px 8px}
-.compose .primary-actions{justify-content:flex-end}
+.compose .chip-actions.compact{gap:6px}
+.compose .chip-actions.compact button{min-width:32px;min-height:32px;padding:4px 6px}
+.compose .chip-actions.compact2{gap:4px}
+.compose .chip-actions.compact2 button{min-width:28px;min-height:28px;padding:3px 4px}
+@media (max-width: 480px){
+  .compose .actions{gap:6px}
+  .compose .actions button{min-width:32px;min-height:32px;padding:4px 6px}
+}
+@media (max-width: 360px){
+  .compose .actions{gap:4px}
+  .compose .actions button{min-width:28px;min-height:28px;padding:3px 4px}
+}
 
 /* Reply indicator */
 .reply-indicator{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg3);
@@ -239,14 +251,16 @@ body.auth-mode #searchBtn{display:none !important}
 /* Mention dropdown */
 .mention-dropdown{position:absolute;left:0;right:0;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);z-index:150;max-height:200px;overflow-y:auto}
 .mention-item{padding:8px 12px;cursor:pointer;display:flex;align-items:center;gap:6px;min-height:36px;font-size:.85rem}
-.mention-item:focus,.mention-item:hover{background:var(--bg3);outline:3px solid var(--focus)}
+.mention-item:focus,.mention-item:hover,.mention-item.active{background:var(--bg3);outline:3px solid var(--focus)}
 
 /* Emoji picker */
 .emoji-picker{background:var(--bg2);border-radius:var(--radius);padding:12px;max-width:320px;width:100%;max-height:60vh;overflow-y:auto}
 .emoji-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
 .emoji-item{font-size:1.4rem;background:none;border:none;min-height:36px;min-width:36px;padding:4px;cursor:pointer;border-radius:var(--radius)}
 .emoji-item:focus,.emoji-item:hover{background:var(--bg3);outline:3px solid var(--focus)}
-.md-preview{padding:12px;border:1px solid var(--border);background:var(--bg2);border-radius:var(--radius);margin-top:8px;font-size:.9rem;line-height:1.4}
+.md-preview{padding:12px;border:1px solid var(--border);background:var(--bg2);border-radius:var(--radius);margin-top:0;font-size:.9rem;line-height:1.4;min-height:100px}
+.compose-body{width:100%}
+.compose-body textarea,.compose-body .md-preview{width:100%}
 .md-preview pre{white-space:pre-wrap;background:var(--bg3);padding:8px;border-radius:var(--radius);overflow-x:auto}
 .md-preview code{background:var(--bg3);padding:2px 4px;border-radius:4px}
 .md-preview h1,.md-preview h2,.md-preview h3{margin:8px 0 4px}
@@ -1533,26 +1547,175 @@ function bindPreview(textareaId, previewId, toggleId, opts) {
   btn.addEventListener('click', function () {
     on = !on;
     pv.style.display = on ? 'block' : 'none';
+    ta.style.display = on ? 'none' : 'block';
     setPreviewButton(on);
-    if (on) render();
+    if (on) {
+      render();
+      if (pv && pv.focus) pv.focus();
+    } else {
+      ta.focus();
+    }
   });
   setPreviewButton(on);
   ta.addEventListener('input', schedule);
 }
-function updateChipActions(container) {
-  if (!container) return;
-  container.classList.remove('compact');
-  var buttons = container.querySelectorAll('button');
-  if (!buttons.length) return;
-  var firstTop = buttons[0].offsetTop;
-  var wrapped = false;
-  for (var i = 1; i < buttons.length; i++) {
-    if (buttons[i].offsetTop > firstTop) {
-      wrapped = true;
-      break;
+function attachMentionAutocomplete(textarea, opts) {
+  if (!textarea) return;
+  var topicId = opts && opts.topicId ? opts.topicId : '';
+  var localSuggestions = opts && opts.suggestions ? opts.suggestions : [];
+  var mentionTimer = null;
+  var mentionDrop = document.createElement('div');
+  mentionDrop.className = 'mention-dropdown';
+  mentionDrop.style.display = 'none';
+  var parent = textarea.parentNode || textarea;
+  if (parent && parent.style) parent.style.position = 'relative';
+  if (parent && parent.insertBefore) parent.insertBefore(mentionDrop, textarea.nextSibling);
+  var mentionIdx = -1;
+  var mentionItems = [];
+  var mentionStart = -1;
+  var lastTerm = '';
+  function closeMention() {
+    mentionDrop.style.display = 'none';
+    mentionDrop.innerHTML = '';
+    mentionIdx = -1;
+    mentionItems = [];
+    mentionStart = -1;
+    lastTerm = '';
+  }
+  function setActive(idx) {
+    if (!mentionItems.length) return;
+    if (idx < 0) idx = 0;
+    if (idx >= mentionItems.length) idx = mentionItems.length - 1;
+    mentionIdx = idx;
+    for (var i = 0; i < mentionItems.length; i++) {
+      if (i === idx) mentionItems[i].classList.add('active');else mentionItems[i].classList.remove('active');
     }
   }
-  if (wrapped) container.classList.add('compact');
+  function insertMention(username) {
+    var val = textarea.value;
+    var pos = textarea.selectionStart || 0;
+    var before = val.substring(0, pos);
+    var after = val.substring(pos);
+    var start = mentionStart >= 0 ? mentionStart : before.lastIndexOf('@');
+    if (start < 0) return;
+    var newBefore = before.substring(0, start) + '@' + username + ' ';
+    textarea.value = newBefore + after;
+    textarea.selectionStart = textarea.selectionEnd = newBefore.length;
+    closeMention();
+    textarea.focus();
+    textarea.dispatchEvent(new Event('input'));
+  }
+  function renderUsers(users) {
+    mentionDrop.innerHTML = users.map(function (u) {
+      return '<div class="mention-item" data-username="' + esc(u.username) + '" tabindex="0">' + (u.avatar_template ? '<img src="' + avatarUrl(u.avatar_template, 20) + '" alt="" style="width:16px;height:16px;border-radius:50%;vertical-align:middle"> ' : '') + esc(u.username) + '</div>';
+    }).join('');
+    mentionDrop.style.display = 'block';
+    mentionItems = mentionDrop.querySelectorAll('.mention-item');
+    mentionIdx = -1;
+    for (var i = 0; i < mentionItems.length; i++) {
+      mentionItems[i].addEventListener('click', function () {
+        insertMention(this.dataset.username);
+      });
+    }
+  }
+  function filterLocal(term) {
+    if (!localSuggestions || !localSuggestions.length) return [];
+    if (!term) return localSuggestions.slice(0, 5);
+    var lower = term.toLowerCase();
+    var out = [];
+    for (var i = 0; i < localSuggestions.length; i++) {
+      var u = localSuggestions[i];
+      if (!u || !u.username) continue;
+      if (u.username.toLowerCase().indexOf(lower) === 0) out.push(u);
+      if (out.length >= 5) break;
+    }
+    return out;
+  }
+  mentionDrop.addEventListener('mousedown', function (e) {
+    e.preventDefault();
+  });
+  textarea.addEventListener('input', function () {
+    if (textarea.readOnly) return;
+    clearTimeout(mentionTimer);
+    var val = textarea.value;
+    var pos = textarea.selectionStart || 0;
+    var before = val.substring(0, pos);
+    var match = before.match(/(?:^|\\s)@([\\w.-]*)$/);
+    if (!match) {
+      closeMention();
+      return;
+    }
+    var term = match[1];
+    if (!term || term.length < 1) {
+      var localEmpty = filterLocal('');
+      if (localEmpty.length) {
+        mentionStart = before.length - 1;
+        renderUsers(localEmpty);
+        return;
+      }
+      closeMention();
+      return;
+    }
+    mentionStart = before.length - term.length - 1;
+    if (term === lastTerm && mentionDrop.style.display === 'block') return;
+    lastTerm = term;
+    mentionTimer = setTimeout(function () {
+      var url = '/u/search/users.json?term=' + encodeURIComponent(term) + '&include_groups=false';
+      if (topicId) url += '&topic_id=' + encodeURIComponent(topicId);
+      api(url).then(function (d) {
+        var users = d.users || [];
+        if (!users.length) {
+          var localUsers = filterLocal(term);
+          if (localUsers.length) {
+            renderUsers(localUsers);
+            return;
+          }
+          closeMention();
+          return;
+        }
+        renderUsers(users.slice(0, 5));
+      }).catch(function () {
+        var localUsers = filterLocal(term);
+        if (localUsers.length) {
+          renderUsers(localUsers);
+          return;
+        }
+        closeMention();
+      });
+    }, 200);
+  });
+  textarea.addEventListener('keydown', function (e) {
+    if (mentionDrop.style.display === 'none') return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActive(mentionIdx < 0 ? 0 : mentionIdx + 1);
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!mentionItems.length) return;
+      setActive(mentionIdx <= 0 ? mentionItems.length - 1 : mentionIdx - 1);
+    }
+    if (e.key === 'Enter' && mentionIdx >= 0 && mentionItems[mentionIdx]) {
+      e.preventDefault();
+      insertMention(mentionItems[mentionIdx].dataset.username);
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closeMention();
+    }
+  });
+}
+function updateChipActions(container) {
+  if (!container) return;
+  container.classList.remove('compact', 'compact2');
+  var buttons = container.querySelectorAll('button');
+  if (!buttons.length) return;
+  if (container.scrollWidth > container.clientWidth) {
+    container.classList.add('compact');
+  }
+  if (container.scrollWidth > container.clientWidth) {
+    container.classList.add('compact2');
+  }
 }
 function refreshComposeActions() {
   var containers = document.querySelectorAll('.chip-actions');
@@ -2307,18 +2470,19 @@ function _renderTopic() {
     <button class="cancel-reply" id="cancelReply" tabindex="0">${IC.x}</button>
   </div>`;
           html += `<div class="compose" id="replyArea">
-    <textarea id="replyBox" placeholder="Press Enter or tap to type a reply..." tabindex="0" readonly>${esc(getDraft('reply_' + id))}</textarea>
+    <div class="compose-body">
+      <textarea id="replyBox" placeholder="Press Enter or tap to type a reply..." tabindex="0" readonly>${esc(getDraft('reply_' + id))}</textarea>
+      <div id="replyPreview" class="md-preview" style="display:none" tabindex="0"></div>
+    </div>
     <div class="actions chip-actions">
       <button id="uploadBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Upload" title="Upload"><span class="btn-icon">${IC.upload}</span></button>
       <input type="file" id="uploadFile" style="display:none">
       <button id="emojiBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Emoji">${IC.smile}</button>
       <button id="replyPreviewBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Preview" title="Preview"></button>
-    </div>
-    <div class="actions primary-actions">
+      <span class="actions-spacer" aria-hidden="true"></span>
       <button id="discardReply" class="discard" tabindex="0" aria-label="Discard reply draft" title="Discard">${IC.trash}</button>
       <button id="sendReply" tabindex="0" aria-label="Post reply" title="Post reply">${IC.send}</button>
     </div>
-    <div id="replyPreview" class="md-preview" style="display:none"></div>
   </div>`;
           $app.innerHTML = html;
           refreshComposeActions();
@@ -2400,119 +2564,23 @@ function _renderTopic() {
           })));
 
           // @Mention autocomplete
-          (function () {
-            var mentionTimer = null;
-            var mentionDrop = document.createElement('div');
-            mentionDrop.className = 'mention-dropdown';
-            mentionDrop.style.display = 'none';
-            replyBox.parentNode.style.position = 'relative';
-            replyBox.parentNode.insertBefore(mentionDrop, replyBox.nextSibling);
-            var mentionIdx = -1;
-            function closeMention() {
-              mentionDrop.style.display = 'none';
-              mentionDrop.innerHTML = '';
-              mentionIdx = -1;
+          var mentionSeeds = [];
+          if (loadedPosts && loadedPosts.length) {
+            var seenMentions = {};
+            for (var mi = 0; mi < loadedPosts.length; mi++) {
+              var mp = loadedPosts[mi];
+              if (!mp || !mp.username || seenMentions[mp.username]) continue;
+              seenMentions[mp.username] = true;
+              mentionSeeds.push({
+                username: mp.username,
+                avatar_template: mp.avatar_template
+              });
             }
-            replyBox.addEventListener('input', function () {
-              if (replyBox.readOnly) return;
-              clearTimeout(mentionTimer);
-              var val = replyBox.value;
-              var pos = replyBox.selectionStart;
-              // Find @query before cursor
-              var before = val.substring(0, pos);
-              var match = before.match(/@(\w{2,})$/);
-              if (!match) {
-                closeMention();
-                return;
-              }
-              var term = match[1];
-              mentionTimer = setTimeout(/*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee18() {
-                var d, users, _t16;
-                return _regenerator().w(function (_context18) {
-                  while (1) switch (_context18.p = _context18.n) {
-                    case 0:
-                      _context18.p = 0;
-                      _context18.n = 1;
-                      return api('/u/search/users.json?term=' + encodeURIComponent(term) + '&topic_id=' + id + '&include_groups=false');
-                    case 1:
-                      d = _context18.v;
-                      users = d.users || [];
-                      if (users.length) {
-                        _context18.n = 2;
-                        break;
-                      }
-                      closeMention();
-                      return _context18.a(2);
-                    case 2:
-                      users = users.slice(0, 5);
-                      mentionDrop.innerHTML = users.map(function (u, i) {
-                        return '<div class="mention-item" data-username="' + esc(u.username) + '" tabindex="0">' + (u.avatar_template ? '<img src="' + avatarUrl(u.avatar_template, 20) + '" alt="" style="width:16px;height:16px;border-radius:50%;vertical-align:middle"> ' : '') + esc(u.username) + '</div>';
-                      }).join('');
-                      mentionDrop.style.display = 'block';
-                      mentionIdx = -1;
-                      mentionDrop.querySelectorAll('.mention-item').forEach(function (item) {
-                        item.addEventListener('click', function () {
-                          insertMention(item.dataset.username);
-                        });
-                        item.addEventListener('keydown', function (e) {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            insertMention(item.dataset.username);
-                          }
-                          if (e.key === 'Escape') {
-                            e.preventDefault();
-                            closeMention();
-                            replyBox.focus();
-                          }
-                          if (e.key === 'ArrowDown') {
-                            e.preventDefault();
-                            var next = item.nextElementSibling;
-                            if (next) next.focus();
-                          }
-                          if (e.key === 'ArrowUp') {
-                            e.preventDefault();
-                            var prev = item.previousElementSibling;
-                            if (prev) prev.focus();else replyBox.focus();
-                          }
-                        });
-                      });
-                      _context18.n = 4;
-                      break;
-                    case 3:
-                      _context18.p = 3;
-                      _t16 = _context18.v;
-                      closeMention();
-                    case 4:
-                      return _context18.a(2);
-                  }
-                }, _callee18, null, [[0, 3]]);
-              })), 300);
-            });
-            function insertMention(username) {
-              var val = replyBox.value;
-              var pos = replyBox.selectionStart;
-              var before = val.substring(0, pos);
-              var after = val.substring(pos);
-              var newBefore = before.replace(/@\w{2,}$/, '@' + username + ' ');
-              replyBox.value = newBefore + after;
-              replyBox.selectionStart = replyBox.selectionEnd = newBefore.length;
-              closeMention();
-              replyBox.focus();
-              replyBox.dispatchEvent(new Event('input'));
-            }
-            replyBox.addEventListener('keydown', function (e) {
-              if (mentionDrop.style.display === 'none') return;
-              if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                var first = mentionDrop.querySelector('.mention-item');
-                if (first) first.focus();
-              }
-              if (e.key === 'Escape') {
-                e.preventDefault();
-                closeMention();
-              }
-            });
-          })();
+          }
+          attachMentionAutocomplete(replyBox, {
+            topicId: id,
+            suggestions: mentionSeeds
+          });
 
           // Cancel reply-to
           document.getElementById('cancelReply').addEventListener('click', function () {
@@ -2888,6 +2956,25 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
     });
   });
 
+  // Jump to replied post
+  container.querySelectorAll('[data-jump-post]').forEach(function (btn) {
+    if (btn._bound) return;
+    btn._bound = true;
+    btn.addEventListener('click', function () {
+      var targetNum = parseInt(btn.dataset.jumpPost, 10);
+      if (!targetNum) return;
+      var target = container.querySelector('.post[data-post-number="' + targetNum + '"]');
+      if (target && target.scrollIntoView) {
+        target.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        target.focus();
+        return;
+      }
+      var slug = btn.dataset.topicSlug || '';
+      var tid = btn.dataset.topicId || topicId;
+      if (tid) navigate(topicPath(tid, slug, targetNum), true);
+    });
+  });
+
   // Quote post
   container.querySelectorAll('[data-quote-post]').forEach(function (btn) {
     if (btn._bound) return;
@@ -3015,6 +3102,9 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
             <button class="save-edit" data-post-id="${postId}" tabindex="0">Save</button>
             <button class="cancel-edit" data-post-id="${postId}" tabindex="0" style="background:var(--bg3);color:var(--fg)">Cancel</button>
           </div>`;
+            attachMentionAutocomplete(document.getElementById('editBox-' + postId), {
+              topicId: topicId
+            });
             bodyEl.querySelector('.save-edit').addEventListener('click', /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee4() {
               var newRaw, te, _t5;
               return _regenerator().w(function (_context4) {
@@ -3361,7 +3451,9 @@ function renderPost(p, topicData) {
   var replyInfo = '';
   if (p.reply_to_post_number) {
     var replyAvatar = p.reply_to_user && p.reply_to_user.avatar_template ? `<img src="${avatarUrl(p.reply_to_user.avatar_template, 20)}" alt="" style="width:16px;height:16px;border-radius:50%;vertical-align:middle">` : '';
-    replyInfo = `<span style="font-size:.75rem;color:var(--fg2);margin-left:auto;display:inline-flex;align-items:center;gap:3px">${IC.reply} ${replyAvatar}#${p.reply_to_post_number}</span>`;
+    var replySlug = topicData && topicData.slug ? topicData.slug : '';
+    var replyTopicId = topicData && topicData.id ? topicData.id : '';
+    replyInfo = `<button class="post-reply-link" data-jump-post="${p.reply_to_post_number}" data-topic-id="${replyTopicId}" data-topic-slug="${esc(replySlug)}" tabindex="-1" aria-label="Jump to reply #${p.reply_to_post_number}" title="Jump to reply #${p.reply_to_post_number}">${IC.reply} ${replyAvatar}#${p.reply_to_post_number}</button>`;
   }
   return `<div class="post" id="post-${p.id}" data-post-number="${p.post_number}" tabindex="0">
     <div class="post-header">
@@ -3408,17 +3500,19 @@ function renderNewTopic() {
   }).join('')}
       </select></div>
     <div class="field"><label for="ntBody">Body</label>
-      <textarea id="ntBody" placeholder="Write your topic..." tabindex="0">${esc(getDraft('new_topic_body'))}</textarea></div>
+      <div class="compose-body">
+        <textarea id="ntBody" placeholder="Write your topic..." tabindex="0">${esc(getDraft('new_topic_body'))}</textarea>
+        <div id="ntPreview" class="md-preview" style="display:none" tabindex="0"></div>
+      </div>
+    </div>
     <div class="actions chip-actions">
       <button id="uploadNt" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Upload" title="Upload"><span class="btn-icon">${IC.upload}</span></button>
       <input type="file" id="uploadNtFile" style="display:none">
       <button id="previewNt" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Preview" title="Preview"></button>
-    </div>
-    <div class="actions primary-actions">
+      <span class="actions-spacer" aria-hidden="true"></span>
       <button id="discardNt" class="discard" tabindex="0" aria-label="Discard topic draft" title="Discard">${IC.trash}</button>
       <button id="postTopic" tabindex="0" aria-label="Create topic" title="Create topic">${IC.send}</button>
     </div>
-    <div id="ntPreview" class="md-preview" style="display:none"></div>
   </div>`;
   refreshComposeActions();
   var ntTitleEl = document.getElementById('ntTitle');
@@ -3442,6 +3536,7 @@ function renderNewTopic() {
     updateNtDiscard();
   });
   updateNtDiscard();
+  attachMentionAutocomplete(ntBodyEl, {});
   bindPreview('ntBody', 'ntPreview', 'previewNt', {
     titleId: 'ntTitle',
     categoryId: 'ntCat'
@@ -3567,15 +3662,17 @@ function renderNewMessage() {
     <div class="field"><label for="pmTitle">Subject</label>
       <input type="text" id="pmTitle" placeholder="Subject" tabindex="0" value="${esc(getDraft('new_message_title'))}"></div>
     <div class="field"><label for="pmBody">Message</label>
-      <textarea id="pmBody" placeholder="Write your message..." tabindex="0">${esc(getDraft('new_message_body'))}</textarea></div>
+      <div class="compose-body">
+        <textarea id="pmBody" placeholder="Write your message..." tabindex="0">${esc(getDraft('new_message_body'))}</textarea>
+        <div id="pmPreview" class="md-preview" style="display:none" tabindex="0"></div>
+      </div>
+    </div>
     <div class="actions chip-actions">
       <button id="previewPm" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Preview" title="Preview"></button>
-    </div>
-    <div class="actions primary-actions">
+      <span class="actions-spacer" aria-hidden="true"></span>
       <button id="discardPm" class="discard" tabindex="0" aria-label="Discard message draft" title="Discard">${IC.trash}</button>
       <button id="sendPm" tabindex="0" aria-label="Send message" title="Send message">${IC.send}</button>
     </div>
-    <div id="pmPreview" class="md-preview" style="display:none"></div>
   </div>`;
   refreshComposeActions();
   var pmToEl = document.getElementById('pmTo');
@@ -3606,6 +3703,7 @@ function renderNewMessage() {
     updatePmDiscard();
   });
   updatePmDiscard();
+  attachMentionAutocomplete(pmBodyEl, {});
   document.getElementById('discardPm').addEventListener('click', /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _calleePmDiscard() {
     return _regenerator().w(function (_contextPmDiscard) {
       while (1) switch (_contextPmDiscard.p = _contextPmDiscard.n) {
@@ -4247,7 +4345,7 @@ function updatePostTabindexes() {
   // In dpad mode, only active post actions are accessible
   document.querySelectorAll('.post').forEach(function(post) {
     if (!post.classList.contains('active')) {
-      post.querySelectorAll('.post-actions button, .post-reactions button').forEach(function(btn) {
+      post.querySelectorAll('.post-actions button, .post-reactions button, .post-reply-link').forEach(function(btn) {
         btn.setAttribute('tabindex', '-1');
       });
     }
@@ -4542,6 +4640,9 @@ function activatePost(post) {
   post.querySelectorAll('.post-reactions button').forEach(function (b) {
     return b.setAttribute('tabindex', '0');
   });
+  post.querySelectorAll('.post-reply-link').forEach(function (b) {
+    return b.setAttribute('tabindex', '0');
+  });
   post.querySelectorAll('.post-body a').forEach(function (a) {
     return a.setAttribute('tabindex', '0');
   });
@@ -4559,6 +4660,9 @@ function deactivatePost(post) {
   post.querySelectorAll('.post-reactions button').forEach(function (b) {
     return b.setAttribute('tabindex', '-1');
   });
+  post.querySelectorAll('.post-reply-link').forEach(function (b) {
+    return b.setAttribute('tabindex', '-1');
+  });
   post.querySelectorAll('.post-body a').forEach(function (a) {
     return a.setAttribute('tabindex', '-1');
   });
@@ -4570,6 +4674,7 @@ document.addEventListener('click', function (e) {
   var post = e.target.closest('.post');
   // Don't intercept clicks on links, images, or action buttons inside posts
   if (e.target.closest('.post-actions')) return;
+  if (e.target.closest('.post-reply-link')) return;
   if (e.target.closest('.post-body img') || e.target.tagName === 'IMG') return;
   if (e.target.closest('.post-body a') || e.target.tagName === 'A') return;
   if (post && post.classList.contains('active')) {

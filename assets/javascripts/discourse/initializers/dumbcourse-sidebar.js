@@ -15,11 +15,13 @@ export default apiInitializer((api) => {
     (BaseCustomSidebarSection, BaseCustomSidebarSectionLink) => {
       class DumbcourseLink extends BaseCustomSidebarSectionLink {
         name = "dumbcourse";
-        linkDragCss = "raw-link";
+        linkClass = "raw-link";
         text = i18n("dumbcourse.sidebar_link_text");
         title = i18n("dumbcourse.sidebar_link_title");
         href = getURL("/dumb");
-        prefixValue = "link";
+        prefixType = "icon";
+        prefixValue = "mobile-screen-button";
+        prefixCSSClass = "fa-regular";
       }
 
       return class DumbcourseSection extends BaseCustomSidebarSection {
