@@ -72,8 +72,15 @@ input[type=text],input[type=search],input[type=email],input[type=password],input
 .post-author{font-weight:600;font-size:.95rem}
 .post-sub{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .post-date{font-size:.7rem;color:var(--fg2)}
-.post-trust{font-size:.55rem;color:var(--fg2);border:1px solid var(--border);padding:1px 5px;border-radius:999px;letter-spacing:.04em;text-transform:uppercase;opacity:.85;display:inline-flex;align-items:center;gap:4px}
+.post-trust{font-size:.6rem;color:var(--fg2);border:1px solid var(--border);padding:2px 7px;border-radius:999px;letter-spacing:.02em;opacity:.9;display:inline-flex;align-items:center;gap:5px;background:var(--bg2);line-height:1}
+.post-trust .label{display:inline-block}
 .post-trust svg{width:12px;height:12px;stroke:currentColor}
+.post-trust.role-admin{border-color:#7aa2ff;color:#cfd8ff}
+.post-trust.role-mod{border-color:#59b7ff;color:#bfe3ff}
+.post-trust.level-1{border-color:#6ccf7a;color:#cdebd2}
+.post-trust.level-2{border-color:#8bc34a;color:#d8f2b8}
+.post-trust.level-3{border-color:#d2b83f;color:#f3e5a4}
+.post-trust.level-4{border-color:#7bd3ff;color:#cbefff}
 .post-meta-right{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:.7rem;color:var(--fg2);white-space:nowrap}
 .post-num{font-size:.7rem;color:var(--fg2)}
 .post-body{font-size:.9rem;line-height:1.5;word-break:break-word}

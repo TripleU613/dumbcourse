@@ -1955,7 +1955,7 @@ var IC = {
   diamond: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9z"/></svg>',
   star: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 8.5 22 9.3 17 14 18.5 21 12 17.5 5.5 21 7 14 2 9.3 9 8.5 12 2"/></svg>',
   check: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
-  thumb: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-6 0v4"/><path d="M5 15h14a2 2 0 0 0 2-2v-1a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v1a2 2 0 0 0 2 2z"/></svg>'
+  thumb: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v12"/><path d="M15 5v5a2 2 0 0 0 2 2h3l-2 8H7V10l4-7 4 2z"/></svg>'
 };
 var REACTION_EMOJI = {
   '+1': '\uD83D\uDC4D',
@@ -3932,7 +3932,13 @@ function renderPost(p, topicData) {
     else if (trust === 2) trustIcon = IC.thumb;
     else if (trust === 1) trustIcon = IC.check;
   }
-  var trustHtml = roleLabel ? `<span class="post-trust">${roleIcon}${roleLabel}</span>` : trustIcon ? `<span class="post-trust">${trustIcon}Level ${trust}</span>` : '';
+  var trustClass = '';
+  if (roleLabel) {
+    trustClass = roleLabel === 'Admin' ? 'role-admin' : 'role-mod';
+  } else if (trustIcon) {
+    trustClass = 'level level-' + trust;
+  }
+  var trustHtml = roleLabel ? `<span class="post-trust ${trustClass}">${roleIcon}<span class="label">${roleLabel}</span></span>` : trustIcon ? `<span class="post-trust ${trustClass}">${trustIcon}<span class="label">Level ${trust}</span></span>` : '';
   var curReact = p.current_user_reaction;
   var curReactId = curReact && curReact.id ? curReact.id : typeof curReact === 'string' ? curReact : null;
   var usedMain = !!p.current_user_used_main_reaction;
