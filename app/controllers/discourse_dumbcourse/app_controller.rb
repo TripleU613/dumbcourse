@@ -66,7 +66,7 @@ module DiscourseDumbcourse
           Time.now.to_i
         end
       )
-      html = html.gsub(/(dumbcourse\.(?:js|css)\?v=)\d+/, "\1#{asset_version}")
+      html = html.gsub(/(dumbcourse\.(?:js|css)\?v=)\d+/) { |m| Regexp.last_match(1) + asset_version.to_s }
       settings = {
         defaultTheme: SiteSetting.dumbcourse_default_theme,
         defaultView: SiteSetting.dumbcourse_default_view,
