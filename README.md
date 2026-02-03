@@ -111,16 +111,3 @@ This UI is intentionally “low-tech”:
 * everything stays on your Discourse host (no external services)
 
 ---
-
-## License
-
-GPL-3.0
-
-```
-
-If you post on Meta, the one extra thing that tends to get traction: add **2 screenshots** (topic list + topic view) and one sentence like “This gives old WebViews a usable doorway into Discourse.” That’s the whole pitch, clean and undeniable.
-::contentReference[oaicite:2]{index=2}
-```
-
-[1]: https://meta.discourse.org/t/install-plugins-on-a-self-hosted-site/19157?tl=en&utm_source=chatgpt.com "Install plugins on a self-hosted site"
-[2]: https://developer.android.com/develop/ui/views/touch-and-input/keyboard-input/navigation?utm_source=chatgpt.com "Support keyboard navigation | Views | Android Developers"
