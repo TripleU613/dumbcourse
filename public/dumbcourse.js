@@ -724,6 +724,26 @@ function parseTopicPath(path) {
   }
   return null;
 }
+function parseCategoryPath(path) {
+  if (!path) return null;
+  var p = path.split('?')[0];
+  var parts = p.split('/').filter(Boolean);
+  if (parts[0] === 'c') {
+    if (parts.length >= 2 && /^\d+$/.test(parts[1])) {
+      return {
+        id: parts[1],
+        slug: ''
+      };
+    }
+    if (parts.length >= 3 && /^\d+$/.test(parts[2])) {
+      return {
+        id: parts[2],
+        slug: parts[1] || ''
+      };
+    }
+  }
+  return null;
+}
 function currentTopicId() {
   var t = parseTopicPath(currentPath());
   return t && t.id || '';
@@ -741,6 +761,14 @@ function topicPath(id, slug, postNumber) {
 }
 function topicHref(id, slug, postNumber) {
   return makeUrl(topicPath(id, slug, postNumber));
+}
+function categoryPath(slug, id) {
+  if (!id) return '/categories';
+  if (slug) return '/c/' + slug + '/' + id;
+  return '/c/' + id;
+}
+function categoryHref(slug, id) {
+  return makeUrl(categoryPath(slug, id));
 }
 function userPath(username) {
   return '/u/' + encodeURIComponent(username);
@@ -901,12 +929,14 @@ function routeLogic() {
     document.body.classList.remove('auth-mode');
     showCreate('');
     var topicInfo = parseTopicPath(path);
+    var catInfo = parseCategoryPath(path);
     var viewKey = viewFromPath(path);
     if (path === '/') {
       if (defaultView === 'categories') return renderCategories();
       return renderTopics(defaultView);
     }
     if (path === '/categories') return renderCategories();
+    if (catInfo) return renderCategoryTopics(catInfo.id, catInfo.slug);
     if (viewKey) return renderTopics(viewKey);
     if (topicInfo) return renderTopic(topicInfo.id, topicInfo.post);
     if (path === '/new-topic') {
@@ -2153,6 +2183,7 @@ function isTopicListPath(path) {
   var p = path || '/';
   if (p === '/' || p === '') return true;
   p = p.replace(/^\/+/, '');
+  if (p === 'categories' || p.indexOf('c/') === 0) return true;
   for (var i = 0; i < TOPIC_VIEWS.length; i++) {
     if (TOPIC_VIEWS[i].key === p) return true;
   }
@@ -2194,6 +2225,67 @@ var topicPage = 0,
   topicLoading = false,
   topicMore = true,
   topicScrollCleanup = null;
+var categoryPage = 0,
+  categoryLoading = false,
+  categoryMore = true,
+  categoryView = null;
+
+function buildCategoryUrl(cat, page) {
+  if (!cat || !cat.id) return '/latest.json';
+  var base = cat.slug ? '/c/' + cat.slug + '/' + cat.id + '.json' : '/c/' + cat.id + '.json';
+  if (page && page > 0) {
+    base += (base.indexOf('?') >= 0 ? '&' : '?') + 'page=' + page;
+  }
+  return base;
+}
+
+function loadMoreCategoryTopics() {
+  return _loadMoreCategoryTopics.apply(this, arguments);
+}
+function _loadMoreCategoryTopics() {
+  _loadMoreCategoryTopics = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee16c() {
+    var loader, d, topics, list, _t16c;
+    return _regenerator().w(function (_context16c) {
+      while (1) switch (_context16c.p = _context16c.n) {
+        case 0:
+          if (!(categoryLoading || !categoryMore || !categoryView)) {
+            _context16c.n = 1;
+            break;
+          }
+          return _context16c.a(2);
+        case 1:
+          categoryLoading = true;
+          loader = document.getElementById('topicLoader');
+          if (loader) loader.style.display = 'block';
+          _context16c.p = 2;
+          _context16c.n = 3;
+          return api(buildCategoryUrl(categoryView, categoryPage));
+        case 3:
+          d = _context16c.v;
+          topics = d.topic_list && d.topic_list.topics || [];
+          if (!topics.length) {
+            categoryMore = false;
+            if (loader) loader.textContent = 'No more topics in this category.';
+          } else {
+            list = document.getElementById('topicList');
+            if (list) list.insertAdjacentHTML('beforeend', topics.map(topicItemHtml).join(''));
+            categoryPage++;
+          }
+          _context16c.n = 5;
+          break;
+        case 4:
+          _context16c.p = 4;
+          _t16c = _context16c.v;
+        case 5:
+          categoryLoading = false;
+          if (loader && categoryMore) loader.style.display = 'none';
+        case 6:
+          return _context16c.a(2);
+      }
+    }, _callee16c, null, [[2, 4]]);
+  }));
+  return _loadMoreCategoryTopics.apply(this, arguments);
+}
 function topicItemHtml(t) {
   var unread = (t.unread_posts || 0) + (t.new_posts || 0);
   var statusIcons = '';
@@ -2330,16 +2422,17 @@ function categoryItemHtml(c) {
   var color = c.color ? '#' + c.color : '#666';
   var desc = c.description_text || c.description || '';
   var topics = c.topic_count != null ? c.topic_count : c.topics_all_time != null ? c.topics_all_time : '';
+  var slug = c.slug || '';
   var subs = (c.subcategory_ids || []).map(function (id) {
     return S.categories[id] ? S.categories[id].name : '';
   }).filter(Boolean);
   var subsHtml = subs.length ? `<div class="item-meta"><span>${subs.length} subcategories</span><span>${subs.join(', ')}</span></div>` : '';
-  return `<div class="list-item" tabindex="0" style="border-left:4px solid ${color};padding-left:10px">
+  return `<a class="list-item" href="${categoryHref(slug, c.id)}" style="border-left:4px solid ${color};padding-left:10px">
     <div class="item-title">${esc(c.name)}</div>
     <div class="item-meta">${topics !== '' ? `<span>${topics} topics</span>` : ''}</div>
     ${desc ? `<div class="item-excerpt">${esc(desc)}</div>` : ''}
     ${subsHtml}
-  </div>`;
+  </a>`;
 }
 function renderCategories() {
   return _renderCategories.apply(this, arguments);
@@ -2384,6 +2477,82 @@ function _renderCategories() {
     }, _callee17b, null, [[1, 3]]);
   }));
   return _renderCategories.apply(this, arguments);
+}
+function renderCategoryTopics(catId, slug) {
+  return _renderCategoryTopics.apply(this, arguments);
+}
+function _renderCategoryTopics() {
+  _renderCategoryTopics = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee17c(catId, slug) {
+    var d, topics, html, onScroll, _cleanup, cat, catName, _t17c;
+    return _regenerator().w(function (_context17c) {
+      while (1) switch (_context17c.n) {
+        case 0:
+          setActiveView('categories');
+          showBack(true);
+          showCreate('/new-topic');
+          $app.innerHTML = '';
+          categoryPage = 0;
+          categoryMore = true;
+          categoryLoading = false;
+          cat = {
+            id: parseInt(catId, 10),
+            slug: slug || ''
+          };
+          categoryView = cat;
+          _context17c.n = 1;
+          return loadCategories();
+        case 1:
+          if (S.categories[cat.id] && S.categories[cat.id].slug) cat.slug = S.categories[cat.id].slug;
+          catName = S.categories[cat.id] && S.categories[cat.id].name ? S.categories[cat.id].name : 'Category';
+          setTitle(catName);
+          _context17c.p = 2;
+          _context17c.n = 3;
+          return api(buildCategoryUrl(cat, 0));
+        case 3:
+          d = _context17c.v;
+          mergeCategories(d.category_list && d.category_list.categories || []);
+          if (d.category && d.category.name) setTitle(d.category.name);
+          topics = d.topic_list && d.topic_list.topics || [];
+          if (topics.length) {
+            _context17c.n = 4;
+            break;
+          }
+          $app.innerHTML = '<div class="empty">No topics in this category yet.</div>';
+          return _context17c.a(2);
+        case 4:
+          categoryPage = 1;
+          html = `<div id="topicList">`;
+          html += topics.map(topicItemHtml).join('');
+          html += '</div>';
+          html += '<div id="topicLoader" class="loading" style="display:none">Loading more...</div>';
+          $app.innerHTML = html;
+          if (topicScrollCleanup) topicScrollCleanup();
+          onScroll = function onScroll() {
+            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
+              loadMoreCategoryTopics();
+            }
+          };
+          window.addEventListener('scroll', onScroll);
+          _cleanup = function cleanup() {
+            window.removeEventListener('scroll', onScroll);
+            window.removeEventListener('popstate', _cleanup);
+            topicScrollCleanup = null;
+          };
+          topicScrollCleanup = _cleanup;
+          window.addEventListener('popstate', _cleanup);
+          focusContent();
+          _context17c.n = 6;
+          break;
+        case 5:
+          _context17c.p = 5;
+          _t17c = _context17c.v;
+          $app.innerHTML = `<div class="error">${esc(formatErrorMessage(_t17c))}</div>`;
+        case 6:
+          return _context17c.a(2);
+      }
+    }, _callee17c, null, [[2, 5]]);
+  }));
+  return _renderCategoryTopics.apply(this, arguments);
 }
 function renderTopic(_x2, _x3) {
   return _renderTopic.apply(this, arguments);
