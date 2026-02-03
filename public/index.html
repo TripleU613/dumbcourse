@@ -995,6 +995,23 @@ function _api() {
   }));
   return _api.apply(this, arguments);
 }
+var OFFLINE_MSG = 'Forums are down right now. Try again later.';
+function friendlyErrorMessage(err) {
+  var msg = err && err.message ? err.message : String(err || '');
+  var lower = msg.toLowerCase();
+  if (lower.indexOf('failed to fetch') !== -1 || lower.indexOf('networkerror') !== -1 || lower.indexOf('load failed') !== -1) {
+    return OFFLINE_MSG;
+  }
+  if (/(\s|^)(502|503|504|521|522|524)\b/.test(msg) || lower.indexOf('discourse offline') !== -1 || lower.indexOf('errorpages/') !== -1 || lower.indexOf('<!doctype') !== -1 || lower.indexOf('<html') !== -1) {
+    return OFFLINE_MSG;
+  }
+  return msg;
+}
+function formatErrorMessage(err) {
+  var msg = friendlyErrorMessage(err);
+  if (msg === OFFLINE_MSG) return msg;
+  return 'Error: ' + msg;
+}
 function uploadFile(file, btn) {
   return new Promise(function (resolve, reject) {
     var orig = btn.innerHTML;
@@ -1392,7 +1409,7 @@ function _route() {
         case 21:
           _context13.p = 21;
           _t13 = _context13.v;
-          $app.innerHTML = `<div class="error">Error: ${esc(_t13.message)}</div>`;
+          $app.innerHTML = `<div class="error">${esc(formatErrorMessage(_t13))}</div>`;
         case 22:
           return _context13.a(2);
       }
@@ -3059,7 +3076,7 @@ function _renderTopic() {
                 case 5:
                   _context20.p = 5;
                   _t18 = _context20.v;
-                  showAlert('Error: ' + _t18.message);
+                  showAlert(formatErrorMessage(_t18));
                   this.disabled = false;
                   this.innerHTML = IC.send;
                   this.setAttribute('aria-label', 'Post reply');
@@ -3985,7 +4002,7 @@ function renderNewTopic() {
         case 4:
           _context0.p = 4;
           _t1 = _context0.v;
-          showAlert('Error: ' + _t1.message);
+          showAlert(formatErrorMessage(_t1));
           this.disabled = false;
           this.innerHTML = IC.send;
           this.setAttribute('aria-label', 'Create topic');
@@ -4115,7 +4132,7 @@ function renderNewMessage() {
         case 4:
           _context1.p = 4;
           _t10 = _context1.v;
-          showAlert('Error: ' + _t10.message);
+          showAlert(formatErrorMessage(_t10));
           this.disabled = false;
           this.innerHTML = IC.send;
           this.setAttribute('aria-label', 'Send message');
@@ -4541,7 +4558,7 @@ function renderSettings() {
         case 4:
           _context10.p = 4;
           _t11 = _context10.v;
-          showAlert('Error: ' + _t11.message);
+          showAlert(formatErrorMessage(_t11));
           this.disabled = false;
           this.textContent = 'Save';
         case 5:
