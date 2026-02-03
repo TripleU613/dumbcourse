@@ -59,6 +59,8 @@ module DiscourseDumbcourse
       settings = {
         defaultTheme: SiteSetting.dumbcourse_default_theme,
         defaultView: SiteSetting.dumbcourse_default_view,
+        hcaptchaEnabled: SiteSetting.discourse_hcaptcha_enabled,
+        hcaptchaSiteKey: SiteSetting.hcaptcha_site_key.to_s,
       }
       settings_script = "<script>window.DUMBCOURSE_SETTINGS=#{settings.to_json};</script>"
       if html.include?("</head>")
