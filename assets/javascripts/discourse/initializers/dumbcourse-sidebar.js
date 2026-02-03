@@ -20,7 +20,7 @@ export default apiInitializer((api) => {
         title = i18n("dumbcourse.sidebar_link_title");
         href = getURL("/dumb");
         prefixType = "icon";
-        prefixValue = "far-mobile-screen-button";
+        prefixValue = "mobile-screen-button";
       }
 
       return class DumbcourseSection extends BaseCustomSidebarSection {
