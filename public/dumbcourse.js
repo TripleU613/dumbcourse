@@ -3039,6 +3039,43 @@ function _renderTopic() {
             topicId: id,
             suggestions: mentionSeeds
           });
+          function appendPostsFromStream(posts, topicData, expectedId) {
+            var container = document.getElementById('postsContainer');
+            if (!container || !posts || !posts.length) return null;
+            var lastEl = null;
+            posts.forEach(function (p) {
+              if (!p || postNumberMap[p.id]) return;
+              postNumberMap[p.id] = p.post_number;
+              container.insertAdjacentHTML('beforeend', renderPost(p, topicData || d));
+              lastEl = container.lastElementChild;
+            });
+            if (lastEl) {
+              enhanceCooked(container);
+              updatePostTabindexes();
+              attachPostHandlers(container, id, replyBox, postNumberMap, function (n) {
+                replyToPostNumber = n;
+              });
+            }
+            if (expectedId) {
+              var expectedEl = container.querySelector('#post-' + expectedId);
+              if (expectedEl) {
+                try { expectedEl.scrollIntoView({ behavior: 'smooth' }); } catch (e) { expectedEl.scrollIntoView(); }
+                expectedEl.focus();
+                return expectedEl;
+              }
+            }
+            if (lastEl) {
+              try { lastEl.scrollIntoView({ behavior: 'smooth' }); } catch (e) { lastEl.scrollIntoView(); }
+              lastEl.focus();
+            }
+            return lastEl;
+          }
+          function syncLatestPosts(expectedId) {
+            return api('/t/' + id + '/last.json', { nocache: true }).then(function (latest) {
+              var posts = latest && latest.post_stream && latest.post_stream.posts || [];
+              return appendPostsFromStream(posts, latest, expectedId);
+            }).catch(function () {});
+          }
           document.getElementById('cancelReply').addEventListener('click', function () {
             replyToPostNumber = null;
             document.getElementById('replyIndicator').style.display = 'none';
@@ -3187,7 +3224,30 @@ function _renderTopic() {
                   fetched = _context20.v;
                   postData = fetched && fetched.post ? fetched.post : fetched;
                 case 5:
-                  // Always reload topic to show new post reliably
+                  if (postData && postData.id) {
+                    postNumberMap[postData.id] = postData.post_number;
+                    container = document.getElementById('postsContainer');
+                    if (container) {
+                      container.insertAdjacentHTML('beforeend', renderPost(postData, d));
+                      enhanceCooked(container);
+                      updatePostTabindexes();
+                      attachPostHandlers(container, id, replyBox, postNumberMap, function (n) {
+                        replyToPostNumber = n;
+                      });
+                      posts = container.querySelectorAll('.post');
+                      if (posts.length) {
+                        last = posts[posts.length - 1];
+                        try { last.scrollIntoView({ behavior: 'smooth' }); } catch (e) { last.scrollIntoView(); }
+                        last.focus();
+                      }
+                    }
+                    syncLatestPosts(postData.id);
+                    markTopicRead(id);
+                    this.disabled = false;
+                    this.innerHTML = IC.send;
+                    this.setAttribute('aria-label', 'Post reply');
+                    this.setAttribute('title', 'Post reply');
+                  }
                   _context20.n = 6;
                   return renderTopic(id, postData && postData.post_number ? postData.post_number : null);
                 case 6:
