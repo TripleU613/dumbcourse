@@ -72,9 +72,9 @@ input[type=text],input[type=search],input[type=email],input[type=password],input
 .post-author{font-weight:600;font-size:.95rem}
 .post-sub{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .post-date{font-size:.7rem;color:var(--fg2)}
-.post-trust{font-size:.6rem;color:var(--fg2);border:1px solid var(--border);padding:2px 7px;border-radius:999px;letter-spacing:.02em;opacity:.9;display:inline-flex;align-items:center;gap:5px;background:var(--bg2);line-height:1}
+.post-trust{font-size:.48rem;color:var(--fg2);border:1px solid var(--border);padding:1px 4px;border-radius:999px;letter-spacing:.02em;opacity:.9;display:inline-flex;align-items:center;gap:4px;background:var(--bg2);line-height:1}
 .post-trust .label{display:inline-block}
-.post-trust svg{width:12px;height:12px;stroke:currentColor}
+.post-trust svg{width:10px;height:10px;stroke:currentColor}
 .post-trust.role-admin{border-color:#7aa2ff;color:#cfd8ff}
 .post-trust.role-mod{border-color:#59b7ff;color:#bfe3ff}
 .post-trust.level-1{border-color:#6ccf7a;color:#cdebd2}
