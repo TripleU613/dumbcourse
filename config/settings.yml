@@ -24,3 +24,13 @@ plugins:
   dumbcourse_sidebar_link_enabled:
     default: true
     client: true
+  dumbcourse_push_enabled:
+    default: true
+    client: false
+  dumbcourse_ntfy_server:
+    default: "https://ntfy.sh"
+    client: true
+  dumbcourse_ntfy_token:
+    default: ""
+    secret: true
+    client: false

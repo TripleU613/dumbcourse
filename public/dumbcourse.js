@@ -363,10 +363,107 @@ var S = {
   honeypotExpiresAt: 0,
   categories: {},
   drafts: JSON.parse(storageGet('jt_drafts', '{}') || '{}'),
-  history: []
+  history: [],
+  pushRegistered: false
 };
 function isLoggedIn() {
   return !!S.loggedIn;
+}
+// Push notification registration for native app (ES5 compatible for Chrome 44+)
+var PUSH_REGISTERED = false;
+function isNativeApp() {
+  try {
+    return !!(window.NtfyBridge && typeof window.NtfyBridge.isNativeApp === 'function' && window.NtfyBridge.isNativeApp());
+  } catch (e) {
+    return false;
+  }
+}
+function generatePushTopic() {
+  var deviceId = '';
+  try {
+    deviceId = window.NtfyBridge.getDeviceId() || '';
+  } catch (e) {}
+  if (!deviceId) deviceId = 'web-' + Math.random().toString(36).substring(2, 15);
+  var topic = 'dumbcourse-' + deviceId.substring(0, 8) + '-' + Math.random().toString(36).substring(2, 10);
+  return topic;
+}
+function registerPushNotifications() {
+  if (PUSH_REGISTERED || !isNativeApp() || !isLoggedIn()) {
+    return Promise.resolve(false);
+  }
+  var existingTopic = '';
+  try {
+    existingTopic = window.NtfyBridge.getTopic() || '';
+  } catch (e) {}
+  return fetch(PROXY + '/dumb/push/info', {
+    headers: { 'Accept': 'application/json' },
+    credentials: 'same-origin'
+  }).then(function (resp) {
+    if (!resp || !resp.ok) return null;
+    return resp.json();
+  }).then(function (info) {
+    if (!info || !info.enabled) return false;
+    var server = info.server || 'https://ntfy.sh';
+    var topic = existingTopic || generatePushTopic();
+    var deviceId = '';
+    try {
+      deviceId = window.NtfyBridge.getDeviceId() || '';
+    } catch (e) {}
+    return fetch(PROXY + '/dumb/push/register', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': S.csrf || ''
+      },
+      credentials: 'same-origin',
+      body: JSON.stringify({ topic: topic, device_id: deviceId })
+    }).then(function (resp) {
+      if (!resp || !resp.ok) return false;
+      return resp.json();
+    }).then(function (result) {
+      if (result && result.success) {
+        try {
+          window.NtfyBridge.registerPush(server, topic);
+          PUSH_REGISTERED = true;
+          S.pushRegistered = true;
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }
+      return false;
+    });
+  }).catch(function () {
+    return false;
+  });
+}
+function unregisterPushNotifications() {
+  if (!isNativeApp()) return Promise.resolve(false);
+  var deviceId = '';
+  try {
+    deviceId = window.NtfyBridge.getDeviceId() || '';
+  } catch (e) {}
+  return fetch(PROXY + '/dumb/push/unregister', {
+    method: 'DELETE',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': S.csrf || ''
+    },
+    credentials: 'same-origin',
+    body: JSON.stringify({ device_id: deviceId })
+  }).then(function (resp) {
+    if (!resp || !resp.ok) return false;
+    try {
+      window.NtfyBridge.unregisterPush();
+    } catch (e) {}
+    PUSH_REGISTERED = false;
+    S.pushRegistered = false;
+    return true;
+  }).catch(function () {
+    return false;
+  });
 }
 function refreshCurrentUser() {
   var now = Date.now();
@@ -2319,6 +2416,9 @@ function _logout() {
           }
           return _context15.a(2);
         case 2:
+          try {
+            unregisterPushNotifications().catch(function () {});
+          } catch (e) {}
           try {
             api('/session/' + encodeURIComponent(S.username) + '.json', {
               method: 'DELETE'
@@ -5248,7 +5348,11 @@ function init() {
     return t && t.catch ? t.catch(function () {}) : Promise.resolve();
   })).then(function () {
     return checkSession();
-  }).then(function () {
+  }).then(function (loggedIn) {
+    // Register push notifications if logged in and in native app
+    if (loggedIn && isNativeApp()) {
+      registerPushNotifications().catch(function () {});
+    }
     route();
   });
 }
