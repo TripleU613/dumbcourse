@@ -16,6 +16,11 @@ module DiscourseDumbcourse
       request_path = params[:path].to_s
       request_path = request_path.split("?", 2).first.to_s
 
+      format = params[:format].to_s
+      if format != "" && request_path != "" && !request_path.end_with?(".#{format}")
+        request_path = "#{request_path}.#{format}"
+      end
+
       if request_path != ""
         safe_path = Pathname.new(request_path).cleanpath.to_s
         safe_path = safe_path.sub(%r{\A\.+/}, "")
@@ -65,6 +70,10 @@ module DiscourseDumbcourse
         elsif raw_path.start_with?("#{dumb_prefix}/")
           path = raw_path.sub("#{dumb_prefix}/", "")
         end
+      end
+      format = params[:format].to_s
+      if format != "" && path != "" && !path.end_with?(".#{format}")
+        path = "#{path}.#{format}"
       end
       return true if path == "dumbcourse.css" || path == "dumbcourse.js"
       return true if path&.start_with?("dumbcourse.css") || path&.start_with?("dumbcourse.js")
