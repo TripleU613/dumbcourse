@@ -77,12 +77,17 @@ input[type=text],input[type=search],input[type=email],input[type=password],input
 .post.active{background:var(--bg3)}
 .post-actions{display:none}
 .post.active .post-actions{display:flex}
-.post-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.post-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}
 .post-reply-link{background:none;border:1px solid transparent;color:var(--fg2);font-size:.75rem;margin-left:auto;display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:999px}
 .post-reply-link:focus{outline:3px solid var(--focus);outline-offset:1px;border-color:var(--focus)}
-.post-avatar{width:32px;height:32px;border-radius:50%;background:var(--bg3)}
-.post-author{font-weight:600;font-size:.9rem}
+.post-avatar-link{display:inline-flex;align-items:center;border-radius:50%}
+.post-avatar-link:focus{outline:3px solid var(--focus);outline-offset:2px}
+.post-avatar{width:36px;height:36px;border-radius:50%;background:var(--bg3)}
+.post-meta{display:flex;flex-direction:column;gap:2px}
+.post-author{font-weight:600;font-size:.95rem}
+.post-sub{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .post-date{font-size:.75rem;color:var(--fg2)}
+.post-trust{font-size:.65rem;color:var(--fg2);border:1px solid var(--border);padding:1px 6px;border-radius:999px;letter-spacing:.02em;text-transform:uppercase}
 .post-num{font-size:.7rem;color:var(--fg2);margin-left:auto}
 .post-body{font-size:.9rem;line-height:1.5;word-break:break-word}
 .post-body img{max-width:100%;height:auto;border-radius:var(--radius)}
@@ -3817,12 +3822,19 @@ function renderPost(p, topicData) {
     var replyTopicId = topicData && topicData.id ? topicData.id : '';
     replyInfo = `<button class="post-reply-link" data-jump-post="${p.reply_to_post_number}" data-topic-id="${replyTopicId}" data-topic-slug="${esc(replySlug)}" tabindex="-1" aria-label="Jump to reply #${p.reply_to_post_number}" title="Jump to reply #${p.reply_to_post_number}">${IC.reply} ${replyAvatar}#${p.reply_to_post_number}</button>`;
   }
+  var trust = typeof p.trust_level === 'number' ? p.trust_level : typeof p.user_trust_level === 'number' ? p.user_trust_level : null;
+  var trustHtml = trust !== null ? `<span class="post-trust">Level ${trust}</span>` : '';
   return `<div class="post" id="post-${p.id}" data-post-number="${p.post_number}" tabindex="0">
     <div class="post-header">
-      <img class="post-avatar" src="${avatarUrl(p.avatar_template, 48)}" alt="" loading="lazy">
-      <div>
+      <a class="post-avatar-link" href="${userHref(p.username)}" tabindex="-1" aria-label="${esc(p.username)} profile">
+        <img class="post-avatar" src="${avatarUrl(p.avatar_template, 48)}" alt="" loading="lazy">
+      </a>
+      <div class="post-meta">
         <a class="post-author" href="${userHref(p.username)}" tabindex="-1">${esc(p.username)}</a>
-        <div class="post-date">${timeAgo(p.created_at)}</div>
+        <div class="post-sub">
+          <span class="post-date">${timeAgo(p.created_at)}</span>
+          ${trustHtml}
+        </div>
       </div>
       <span class="post-num">#${p.post_number}</span>
       ${replyInfo}
@@ -4753,6 +4765,9 @@ function updatePostTabindexes() {
         btn.setAttribute('tabindex', '-1');
       });
     }
+    post.querySelectorAll('.post-author, .post-avatar-link').forEach(function (a) {
+      a.setAttribute('tabindex', active ? '0' : '-1');
+    });
     setPostBodyTabindex(post, active);
   });
   updatePostActionCompact();
@@ -5048,6 +5063,9 @@ function activatePost(post) {
   post.querySelectorAll('.post-reply-link').forEach(function (b) {
     return b.setAttribute('tabindex', '0');
   });
+  post.querySelectorAll('.post-author, .post-avatar-link').forEach(function (a) {
+    return a.setAttribute('tabindex', '0');
+  });
   setPostBodyTabindex(post, true);
   var first = post.querySelector('.post-reactions button') || post.querySelector('.post-actions button') || post.querySelector('.post-body a, .post-body button, .post-body input, .post-body textarea, .post-body select, .post-body summary, .post-body .spoiler, .post-body .spoiler-blurred, .post-body .poll-option, .post-body img, .post-body iframe, .post-body video, .post-body audio');
   if (first) first.focus();
@@ -5063,6 +5081,9 @@ function deactivatePost(post) {
   post.querySelectorAll('.post-reply-link').forEach(function (b) {
     return b.setAttribute('tabindex', '-1');
   });
+  post.querySelectorAll('.post-author, .post-avatar-link').forEach(function (a) {
+    return a.setAttribute('tabindex', '-1');
+  });
   setPostBodyTabindex(post, false);
 }
 document.addEventListener('click', function (e) {
@@ -5072,7 +5093,7 @@ document.addEventListener('click', function (e) {
   var inActions = e.target.closest('.post-actions') || e.target.closest('.post-reactions') || e.target.closest('.post-reply-link');
   if (!isActive) {
     if (!inActions) {
-      if (e.target.closest('.post-body a, .post-body button, .post-body input, .post-body textarea, .post-body select, .post-body summary, .post-body details, .post-body .poll, .post-body .poll-option, .post-body .spoiler, .post-body .spoiler-blurred, .post-body img, .post-body iframe, .post-body video, .post-body audio')) {
+      if (e.target.closest('.post-author, .post-avatar-link, .post-body a, .post-body button, .post-body input, .post-body textarea, .post-body select, .post-body summary, .post-body details, .post-body .poll, .post-body .poll-option, .post-body .spoiler, .post-body .spoiler-blurred, .post-body img, .post-body iframe, .post-body video, .post-body audio')) {
         e.preventDefault();
         e.stopPropagation();
       }
@@ -5081,7 +5102,7 @@ document.addEventListener('click', function (e) {
     return;
   }
   if (inActions) return;
-  if (e.target.closest('.post-body a, .post-body button, .post-body input, .post-body textarea, .post-body select, .post-body summary, .post-body details, .post-body .poll, .post-body .poll-option, .post-body .spoiler, .post-body .spoiler-blurred, .post-body img, .post-body iframe, .post-body video, .post-body audio')) return;
+  if (e.target.closest('.post-author, .post-avatar-link, .post-body a, .post-body button, .post-body input, .post-body textarea, .post-body select, .post-body summary, .post-body details, .post-body .poll, .post-body .poll-option, .post-body .spoiler, .post-body .spoiler-blurred, .post-body img, .post-body iframe, .post-body video, .post-body audio')) return;
   deactivatePost(post);
   post.focus();
 });
