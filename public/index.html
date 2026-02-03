@@ -93,7 +93,8 @@ input[type=text],input[type=search],input[type=email],input[type=password],input
 .post-author{font-weight:600;font-size:.95rem}
 .post-sub{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .post-date{font-size:.7rem;color:var(--fg2)}
-.post-trust{font-size:.55rem;color:var(--fg2);border:1px solid var(--border);padding:1px 5px;border-radius:999px;letter-spacing:.04em;text-transform:uppercase;opacity:.85}
+.post-trust{font-size:.55rem;color:var(--fg2);border:1px solid var(--border);padding:1px 5px;border-radius:999px;letter-spacing:.04em;text-transform:uppercase;opacity:.85;display:inline-flex;align-items:center;gap:4px}
+.post-trust svg{width:12px;height:12px;stroke:currentColor}
 .post-meta-right{margin-left:auto;display:flex;align-items:center;gap:8px}
 .post-num{font-size:.7rem;color:var(--fg2)}
 .post-body{font-size:.9rem;line-height:1.5;word-break:break-word}
@@ -2072,7 +2073,12 @@ var IC = {
   smile: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>',
   shield: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
   eye: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M21 12c-2.5 4.5-5.5 6.5-9 6.5S5.5 16.5 3 12c2.5-4.5 5.5-6.5 9-6.5s6.5 2 9 6.5z"/></svg>',
-  clock: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
+  clock: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+  wrench: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a5 5 0 0 0-6.4 6.4l-5.6 5.6 2.8 2.8 5.6-5.6a5 5 0 0 0 6.4-6.4z"/></svg>',
+  diamond: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9z"/></svg>',
+  star: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 8.5 22 9.3 17 14 18.5 21 12 17.5 5.5 21 7 14 2 9.3 9 8.5 12 2"/></svg>',
+  check: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  thumb: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 11v10"/><path d="M15 5l-1 6h6a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-7l-6-6V5a2 2 0 0 1 2-2h4.5a2 2 0 0 1 1.5 2z"/></svg>'
 };
 var REACTION_EMOJI = {
   '+1': '\uD83D\uDC4D',
@@ -3898,10 +3904,23 @@ function renderPost(p, topicData) {
     replyInfo = `<button class="post-reply-link" data-jump-post="${p.reply_to_post_number}" data-topic-id="${replyTopicId}" data-topic-slug="${esc(replySlug)}" tabindex="-1" aria-label="Jump to reply #${p.reply_to_post_number}" title="Jump to reply #${p.reply_to_post_number}">${IC.reply} ${replyAvatar}#${p.reply_to_post_number}</button>`;
   }
   var roleLabel = '';
-  if (p.admin) roleLabel = 'Admin';
-  else if (p.moderator) roleLabel = 'Mod';
+  var roleIcon = '';
+  if (p.admin) {
+    roleLabel = 'Admin';
+    roleIcon = IC.lock;
+  } else if (p.moderator) {
+    roleLabel = 'Mod';
+    roleIcon = IC.wrench;
+  }
   var trust = typeof p.trust_level === 'number' ? p.trust_level : typeof p.user_trust_level === 'number' ? p.user_trust_level : null;
-  var trustHtml = roleLabel ? `<span class="post-trust">${roleLabel}</span>` : trust !== null ? `<span class="post-trust">Level ${trust}</span>` : '';
+  var trustIcon = '';
+  if (!roleLabel && trust !== null) {
+    if (trust >= 4) trustIcon = IC.diamond;
+    else if (trust === 3) trustIcon = IC.star;
+    else if (trust === 2) trustIcon = IC.thumb;
+    else if (trust === 1) trustIcon = IC.check;
+  }
+  var trustHtml = roleLabel ? `<span class="post-trust">${roleIcon}${roleLabel}</span>` : trustIcon ? `<span class="post-trust">${trustIcon}Level ${trust}</span>` : '';
   return `<div class="post" id="post-${p.id}" data-post-number="${p.post_number}" tabindex="0">
     <div class="post-header">
       <a class="post-avatar-link" href="${userHref(p.username)}" tabindex="-1" aria-label="${esc(p.username)} profile">
