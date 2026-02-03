@@ -4232,13 +4232,13 @@ function _renderProfile() {
           ${u.title ? `<div class="profile-title">${esc(u.title)}</div>` : ''}
         </div>
       </div>
-      ${metaBits.length ? `<div class="profile-section" tabindex="0"><div class="profile-meta">${metaBits.join('')}</div></div>` : ''}
-      ${u.bio_cooked ? `<div class="profile-section profile-bio" tabindex="0">${fixPostHtml(u.bio_cooked)}</div>` : ''}
       <div class="profile-stats">
         <div class="profile-stat" tabindex="0"><span class="num">${u.post_count || 0}</span><span class="label">Posts</span></div>
         <div class="profile-stat" tabindex="0"><span class="num">${esc(levelVal)}</span><span class="label">Level</span></div>
         <div class="profile-stat" tabindex="0"><span class="num">${esc(joinedVal)}</span><span class="label">${joinedLabel}</span></div>
       </div>
+      ${metaBits.length ? `<div class="profile-section" tabindex="0"><div class="profile-meta">${metaBits.join('')}</div></div>` : ''}
+      ${u.bio_cooked ? `<div class="profile-section profile-bio" tabindex="0">${fixPostHtml(u.bio_cooked)}</div>` : ''}
       ${u.badges && u.badges.length ? '<div class="profile-section" tabindex="0" style="display:flex;flex-wrap:wrap;gap:4px">' + u.badges.map(function (b) {
             return '<span class="user-badge">' + esc(b.name) + '</span>';
           }).join('') + '</div>' : ''}</div>`;
