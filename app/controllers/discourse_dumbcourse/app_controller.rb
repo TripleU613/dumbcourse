@@ -14,7 +14,7 @@ module DiscourseDumbcourse
     def show
       public_root = DiscourseDumbcourse::Engine.root.join("public")
       request_path = params[:path].to_s
-      request_path = request_path.split("?").first
+      request_path = request_path.split("?", 2).first.to_s
 
       if request_path != ""
         safe_path = Pathname.new(request_path).cleanpath.to_s
