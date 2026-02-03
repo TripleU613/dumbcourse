@@ -2610,6 +2610,23 @@ function buildViewUrl(viewKey, page) {
   }
   return base;
 }
+function emptyMessageForView(viewKey) {
+  switch ((viewKey || '').toLowerCase()) {
+    case 'new':
+      return 'No new topics right now.';
+    case 'top':
+      return 'No top topics yet.';
+    case 'unseen':
+      return 'You read it all. No unseen topics.';
+    case 'hot':
+      return 'No hot topics right now.';
+    case 'my':
+      return 'You have not created any topics yet.';
+    case 'latest':
+    default:
+      return 'No topics to show.';
+  }
+}
 var topicPage = 0,
   topicLoading = false,
   topicMore = true,
@@ -2663,7 +2680,7 @@ function _loadMoreTopics() {
           topics = d.topic_list && d.topic_list.topics || [];
           if (!topics.length) {
             topicMore = false;
-            if (loader) loader.textContent = 'No more topics';
+            if (loader) loader.textContent = emptyMessageForView(topicView);
           } else {
             list = document.getElementById('topicList');
             if (list) list.insertAdjacentHTML('beforeend', topics.map(topicItemHtml).join(''));
@@ -2714,7 +2731,7 @@ function _renderTopics() {
             _context17.n = 3;
             break;
           }
-          $app.innerHTML = '<div class="empty">No topics found</div>';
+          $app.innerHTML = '<div class="empty">' + emptyMessageForView(topicView) + '</div>';
           return _context17.a(2);
         case 3:
           topicPage = 1;
@@ -2788,7 +2805,7 @@ function _renderCategories() {
           mergeCategories(d.category_list && d.category_list.categories || []);
           cats = d.category_list && d.category_list.categories || [];
           if (!cats.length) {
-            $app.innerHTML = '<div class="empty">No categories found</div>';
+            $app.innerHTML = '<div class="empty">No categories available.</div>';
             return _context17b.a(2);
           }
           html = `<div id="categoryList">` + cats.map(categoryItemHtml).join('') + `</div>`;
