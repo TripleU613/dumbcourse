@@ -35,7 +35,17 @@ module DiscourseDumbcourse
       end
 
       response.headers["Cache-Control"] = "no-store"
-      render plain: File.read(index_path), content_type: "text/html; charset=utf-8"
+      html = File.read(index_path)
+      settings = {
+        defaultTheme: SiteSetting.dumbcourse_default_theme,
+      }
+      settings_script = "<script>window.DUMBCOURSE_SETTINGS=#{settings.to_json};</script>"
+      if html.include?("</head>")
+        html = html.sub("</head>", "#{settings_script}</head>")
+      else
+        html = settings_script + html
+      end
+      render plain: html, content_type: "text/html; charset=utf-8"
     end
 
     private

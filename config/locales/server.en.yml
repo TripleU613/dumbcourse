@@ -1,0 +1,4 @@
+en:
+  site_settings:
+    dumbcourse_default_theme: "Default Dumbcourse theme"
+    dumbcourse_sidebar_link_enabled: "Show Dumbcourse link in sidebar"

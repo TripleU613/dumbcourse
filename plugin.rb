@@ -13,6 +13,8 @@ end
 
 require_relative "lib/discourse_dumbcourse/engine"
 
+register_asset "javascripts/discourse/initializers/dumbcourse-sidebar.js"
+
 after_initialize do
   # No extra initialization yet.
 end

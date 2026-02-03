@@ -1,0 +1,11 @@
+plugins:
+  dumbcourse_default_theme:
+    default: "dark"
+    client: true
+    type: enum
+    choices:
+      - dark
+      - light
+  dumbcourse_sidebar_link_enabled:
+    default: true
+    client: true
