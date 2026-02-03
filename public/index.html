@@ -92,9 +92,10 @@ input[type=text],input[type=search],input[type=email],input[type=password],input
 .post-meta{display:flex;flex-direction:column;gap:2px}
 .post-author{font-weight:600;font-size:.95rem}
 .post-sub{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.post-date{font-size:.75rem;color:var(--fg2)}
-.post-trust{font-size:.65rem;color:var(--fg2);border:1px solid var(--border);padding:1px 6px;border-radius:999px;letter-spacing:.02em;text-transform:uppercase}
-.post-num{font-size:.7rem;color:var(--fg2);margin-left:auto}
+.post-date{font-size:.7rem;color:var(--fg2)}
+.post-trust{font-size:.55rem;color:var(--fg2);border:1px solid var(--border);padding:1px 5px;border-radius:999px;letter-spacing:.04em;text-transform:uppercase;opacity:.85}
+.post-meta-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.post-num{font-size:.7rem;color:var(--fg2)}
 .post-body{font-size:.9rem;line-height:1.5;word-break:break-word}
 .post-body img{max-width:100%;height:auto;border-radius:var(--radius)}
 .post-body img.emoji{display:inline;width:1.2em;height:1.2em;vertical-align:middle;border-radius:0}
@@ -3896,8 +3897,11 @@ function renderPost(p, topicData) {
     var replyTopicId = topicData && topicData.id ? topicData.id : '';
     replyInfo = `<button class="post-reply-link" data-jump-post="${p.reply_to_post_number}" data-topic-id="${replyTopicId}" data-topic-slug="${esc(replySlug)}" tabindex="-1" aria-label="Jump to reply #${p.reply_to_post_number}" title="Jump to reply #${p.reply_to_post_number}">${IC.reply} ${replyAvatar}#${p.reply_to_post_number}</button>`;
   }
+  var roleLabel = '';
+  if (p.admin) roleLabel = 'Admin';
+  else if (p.moderator) roleLabel = 'Mod';
   var trust = typeof p.trust_level === 'number' ? p.trust_level : typeof p.user_trust_level === 'number' ? p.user_trust_level : null;
-  var trustHtml = trust !== null ? `<span class="post-trust">Level ${trust}</span>` : '';
+  var trustHtml = roleLabel ? `<span class="post-trust">${roleLabel}</span>` : trust !== null ? `<span class="post-trust">Level ${trust}</span>` : '';
   return `<div class="post" id="post-${p.id}" data-post-number="${p.post_number}" tabindex="0">
     <div class="post-header">
       <a class="post-avatar-link" href="${userHref(p.username)}" tabindex="-1" aria-label="${esc(p.username)} profile">
@@ -3906,11 +3910,13 @@ function renderPost(p, topicData) {
       <div class="post-meta">
         <a class="post-author" href="${userHref(p.username)}" tabindex="-1">${esc(p.username)}</a>
         <div class="post-sub">
-          <span class="post-date">${timeAgo(p.created_at)}</span>
           ${trustHtml}
         </div>
       </div>
-      <span class="post-num">#${p.post_number}</span>
+      <div class="post-meta-right">
+        <span class="post-date">${timeAgo(p.created_at)}</span>
+        <span class="post-num">#${p.post_number}</span>
+      </div>
       ${replyInfo}
     </div>
     <div class="post-body">${body}${pollsHtml}</div>
