@@ -68,6 +68,12 @@ try {
 } catch (e) {
   PERSISTENT_API_CACHE = {};
 }
+var READ_TOPICS_KEY = 'jt_read_topics';
+try {
+  READ_TOPICS = JSON.parse(storageGet(READ_TOPICS_KEY, '{}') || '{}') || {};
+} catch (e) {
+  READ_TOPICS = {};
+}
 var IMAGE_CACHE_KEY = 'jt_image_cache';
 var IMAGE_CACHE_MAX = 60;
 var IMAGE_CACHE = {};
@@ -120,6 +126,16 @@ function emojifyText(s) {
 function markTopicRead(id) {
   if (!id) return;
   READ_TOPICS[String(id)] = Date.now();
+  var keys = Object.keys(READ_TOPICS);
+  if (keys.length > 600) {
+    keys.sort(function (a, b) {
+      return READ_TOPICS[a] - READ_TOPICS[b];
+    });
+    for (var i = 0; i < keys.length - 400; i++) {
+      delete READ_TOPICS[keys[i]];
+    }
+  }
+  storageSet(READ_TOPICS_KEY, JSON.stringify(READ_TOPICS));
 }
 function isTopicRead(id) {
   return !!READ_TOPICS[String(id)];
@@ -563,34 +579,35 @@ function _api() {
             _context12.n = 4;
             break;
           }
-          if (!(resp.status === 401 || resp.status === 403)) {
-            _context12.n = 2;
-            break;
+          if (resp.status === 401) {
+            S.token = '';
+            S.csrf = '';
+            S.cookies = '';
+            S.loggedIn = false;
+            S.authChecked = true;
+            S.username = '';
+            S.userId = '';
+            storageRemove('jt_session_token');
+            storageRemove('jt_csrf');
+            storageRemove('jt_cookies');
+            storageRemove('jt_username');
+            storageRemove('jt_user_id');
+            storageSet('jt_logged_in', '0');
+            navigate('/', true);
+            throw new Error('Session expired. Please log in again.');
           }
-          S.token = '';
-          S.csrf = '';
-          S.cookies = '';
-          S.loggedIn = false;
-          S.authChecked = true;
-          S.username = '';
-          S.userId = '';
-          storageRemove('jt_session_token');
-          storageRemove('jt_csrf');
-          storageRemove('jt_cookies');
-          storageRemove('jt_username');
-          storageRemove('jt_user_id');
-          storageSet('jt_logged_in', '0');
-          navigate('/', true);
-          throw new Error('Session expired. Please log in again.');
-        case 2:
+          if (resp.status === 403 && path && path.indexOf('/session/') === 0) {
+            S.loggedIn = false;
+            storageSet('jt_logged_in', '0');
+          }
           if (resp.status === 429) {
             var ra = parseInt(resp.headers.get('Retry-After') || '0', 10);
             RATE_LIMIT_UNTIL = Date.now() + (ra > 0 ? ra * 1000 : 15000);
             throw new Error('Too many requests. Please wait and try again.');
           }
-          _context12.n = 3;
+          _context12.n = 2;
           return resp.text();
-        case 3:
+        case 2:
           text = _context12.v;
           try {
             j = JSON.parse(text);
@@ -599,14 +616,14 @@ function _api() {
             msg = text;
           }
           throw new Error(`${resp.status}: ${msg}`);
-        case 4:
+        case 3:
           ct = resp.headers.get('content-type') || '';
           if (!ct.includes('json')) {
-            _context12.n = 5;
+            _context12.n = 4;
             break;
           }
           return _context12.a(2, resp.json());
-        case 5:
+        case 4:
           return _context12.a(2, resp.text());
       }
     }, _callee12);
@@ -3463,22 +3480,25 @@ function showReactionPicker(postId) {
             btn.disabled = true;
             _context7.p = 1;
             _context7.n = 2;
+            return ensureCsrf();
+          case 2:
+            _context7.n = 3;
             return api('/discourse-reactions/posts/' + postId + '/custom-reactions/' + encodeURIComponent(btn.dataset.rid) + '/toggle.json', {
               method: 'PUT'
             });
-          case 2:
-            close();
-            _context7.n = 3;
-            return renderTopic(currentTopicId());
           case 3:
-            _context7.n = 5;
-            break;
+            close();
+            _context7.n = 4;
+            return renderTopic(currentTopicId());
           case 4:
-            _context7.p = 4;
+            _context7.n = 6;
+            break;
+          case 5:
+            _context7.p = 5;
             _t8 = _context7.v;
             close();
             showAlert(_t8.message);
-          case 5:
+          case 6:
             return _context7.a(2);
         }
       }, _callee7, null, [[1, 4]]);
