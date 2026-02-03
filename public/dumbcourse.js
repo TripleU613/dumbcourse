@@ -8,12 +8,9 @@ function _regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present,
 function _regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { i({}, "", {}); } catch (e) { i = 0; } _regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) { function o(r, n) { _regeneratorDefine2(e, r, function (e) { return this._invoke(r, n, e); }); } r ? i ? i(e, r, { value: n, enumerable: !t, configurable: !t, writable: !t }) : e[r] = n : (o("next", 0), o("throw", 1), o("return", 2)); }, _regeneratorDefine2(e, r, n, t); }
 function asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.value; } catch (n) { return void e(n); } i.done ? t(u) : Promise.resolve(u).then(r, o); }
 function _asyncToGenerator(n) { return function () { var t = this, e = arguments; return new Promise(function (r, o) { var a = n.apply(t, e); function _next(n) { asyncGeneratorStep(a, r, o, _next, _throw, "next", n); } function _throw(n) { asyncGeneratorStep(a, r, o, _next, _throw, "throw", n); } _next(void 0); }); }; }
-// ============ POLYFILLS (Chrome 44) ============
 if (!NodeList.prototype.forEach) {
   NodeList.prototype.forEach = Array.prototype.forEach;
 }
-
-// ============ STORAGE HELPERS ============
 var STORAGE_OK = true;
 function storageGet(key, fallback) {
   try {
@@ -40,17 +37,13 @@ function storageRemove(key) {
     STORAGE_OK = false;
   }
 }
-
-// ============ CONFIG ============
 var ORIGIN = location.origin || location.protocol + '//' + location.host;
 var PROXY = location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? location.protocol + '//' + location.hostname + ':8080' : ORIGIN;
 var SITE = ORIGIN;
 var BASE_PATH = '/dumb';
 var SITE_ICON = '';
 var SITE_FAVICON = '';
-
 var SITE_TITLE = 'Forum';
-
 var SITE_SETTINGS = {
   allowSignup: true,
   fullNameRequired: false,
@@ -91,7 +84,6 @@ try {
     EMOJI_READY = true;
   }
 } catch (e) {}
-
 function fromCodePoint(cp) {
   if (String.fromCodePoint) return String.fromCodePoint(cp);
   if (cp <= 0xFFFF) return String.fromCharCode(cp);
@@ -124,7 +116,6 @@ function emojifyText(s) {
     return e || m;
   });
 }
-
 function updateSiteUI(prevTitle) {
   var t = emojifyText(SITE_TITLE || 'Forum');
   var top = document.getElementById('topTitle');
@@ -152,13 +143,11 @@ function updateSiteUI(prevTitle) {
   var signupNote = document.getElementById('signupNote');
   if (signupNote) signupNote.textContent = 'Create your account on ' + t + '.';
 }
-
 function setSiteTitle(t) {
   var prev = SITE_TITLE;
   SITE_TITLE = t || 'Forum';
   updateSiteUI(prev);
 }
-
 function setSiteIcon(url) {
   SITE_ICON = url || '';
   updateSiteUI(SITE_TITLE);
@@ -177,7 +166,6 @@ function setFavicon(url) {
   }
   link.href = href;
 }
-
 function loadSite() {
   return fetch(PROXY + '/site.json', {
     headers: {
@@ -209,7 +197,6 @@ function loadSite() {
     }
   }).catch(function () {});
 }
-
 function loadManifest() {
   return fetch(PROXY + '/manifest.json', {
     headers: {
@@ -230,7 +217,6 @@ function loadManifest() {
     }
   }).catch(function () {});
 }
-
 function loadEmojiMap() {
   return fetch(SITE + BASE_PATH + '/emoji_map.json', {
     headers: {
@@ -248,8 +234,6 @@ function loadEmojiMap() {
     }
   }).catch(function () {});
 }
-
-// ============ STATE ============
 var S = {
   token: storageGet('jt_session_token', '') || '',
   csrf: storageGet('jt_csrf', '') || '',
@@ -268,7 +252,6 @@ var S = {
 function isLoggedIn() {
   return !!S.loggedIn;
 }
-
 function refreshCurrentUser() {
   var now = Date.now();
   if (SESSION_CHECKING) return Promise.resolve(!!S.loggedIn);
@@ -306,13 +289,11 @@ function refreshCurrentUser() {
     return v;
   });
 }
-
 function checkSession() {
   if (S.authChecked) return Promise.resolve(isLoggedIn());
   S.authChecked = true;
   return refreshCurrentUser();
 }
-
 function ensureCsrf() {
   return fetch(PROXY + '/session/csrf.json', {
     headers: {
@@ -450,8 +431,6 @@ function hydrateImageCache() {
     rememberImage(url);
   });
 }
-
-// ============ API ============
 function api(path, opts) {
   var method = opts && opts.method ? String(opts.method).toUpperCase() : 'GET';
   var key = method + ' ' + path;
@@ -528,7 +507,6 @@ function _api() {
             headers['Content-Type'] = 'application/json';
             opts.body = JSON.stringify(opts.body);
           }
-          // For FormData, don't set Content-Type (browser sets boundary), but keep auth headers
           mergedHeaders = opts.body instanceof FormData ? _objectSpread({}, headers) // no Content-Type override
           : _objectSpread(_objectSpread({}, headers), opts.headers || {});
           delete opts.headers; // consumed
@@ -539,7 +517,6 @@ function _api() {
           }));
         case 1:
           resp = _context12.v;
-          // Capture session token and CSRF from response
           newToken = resp.headers.get('X-Session-Token');
           if (newToken) {
             S.token = newToken;
@@ -664,7 +641,6 @@ function uploadFile(file, btn) {
     xhr.send(fd);
   });
 }
-
 function useHashRouting() {
   return false;
 }
@@ -694,8 +670,6 @@ function navigate(path, replace) {
   setUrl(path, replace);
   route();
 }
-
-// Internal link handling for /dumb routes (avoid full page reloads when possible)
 document.addEventListener('click', function (e) {
   if (e.defaultPrevented) return;
   var a = e.target.closest ? e.target.closest('a') : null;
@@ -712,7 +686,6 @@ document.addEventListener('click', function (e) {
   e.preventDefault();
   navigate(url.slice(BASE_PATH.length) || '/');
 });
-
 function parseTopicPath(path) {
   if (!path) return null;
   var p = path.split('?')[0];
@@ -763,8 +736,6 @@ function userPath(username) {
 function userHref(username) {
   return makeUrl(userPath(username));
 }
-
-// ============ ROUTER ============
 var $app = document.getElementById('app');
 var $title = document.getElementById('topTitle');
 var $home = document.getElementById('homeLink');
@@ -845,13 +816,9 @@ function goBack() {
   } else history.back();
 }
 $back.addEventListener('click', goBack);
-
-// Global keyboard navigation
 document.addEventListener('keydown', function (e) {
-  // Backspace / Escape = go back (when not in an input)
   var tag = document.activeElement && document.activeElement.tagName;
   var inInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
-  // From top bar, Down should move into content (not sideways)
   if (e.key === 'ArrowDown') {
     var active = document.activeElement;
     var inTopbar = active && active.closest && active.closest('#topbar');
@@ -869,14 +836,12 @@ document.addEventListener('keydown', function (e) {
       e.preventDefault();
       return;
     }
-    // Escape closes menu first
     if ($menu.classList.contains('open')) {
       toggleMenu(false);
       $menuBtn.focus();
       e.preventDefault();
       return;
     }
-    // Escape deactivates active post
     var activePost = document.querySelector('.post.active');
     if (activePost) {
       deactivatePost(activePost);
@@ -884,7 +849,6 @@ document.addEventListener('keydown', function (e) {
       e.preventDefault();
       return;
     }
-    // Escape closes any overlay dialog
     var overlay = document.querySelector('.confirm-overlay');
     if (overlay) {
       var cb = overlay.querySelector('.cancel') || overlay.querySelector('.ok');
@@ -897,7 +861,6 @@ document.addEventListener('keydown', function (e) {
       goBack();
     }
   }
-  // Escape in input = blur it so user can navigate away
   if (e.key === 'Escape' && inInput) {
     document.activeElement.blur();
     e.preventDefault();
@@ -1003,8 +966,6 @@ window.addEventListener('resize', function () {
 });
 setTimeout(syncTopbarHeight, 0);
 hydrateImageCache();
-
-// ============ HELPERS ============
 var _escEl = document.createElement('div');
 function esc(s) {
   if (!s) return '';
@@ -1496,7 +1457,6 @@ function avatarUrl(tpl, size) {
   rememberImage(url);
   return url;
 }
-// Base for proxying assets (uploads, avatars, images) — uses origin root on Worker, PROXY on local
 var ASSET_BASE = location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? PROXY : ORIGIN;
 function isHttpUrl(url) {
   return url.indexOf('http://') === 0 || url.indexOf('https://') === 0;
@@ -1526,7 +1486,6 @@ function rewriteHref(url) {
   }
   return ORIGIN + u;
 }
-// Rewrite URLs in post HTML to go through proxy or /dumb routes
 function fixPostHtml(html) {
   if (!html) return '';
   return html.replace(/src="([^"]*?)"/g, function (m, url) {
@@ -1639,7 +1598,6 @@ function enhanceCooked(container) {
     });
   });
 }
-// SVG icons
 var IC = {
   heart: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
   bookmark: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>',
@@ -1742,7 +1700,6 @@ function confirm(msg) {
     el.onclick = function (e) {
       if (e.target === el) doCancel();
     };
-    // Trap focus within dialog and support Escape
     el.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') {
         e.stopPropagation();
@@ -1761,8 +1718,6 @@ function confirm(msg) {
     });
   });
 }
-
-// ============ LOGIN ============
 function renderLogin() {
   document.body.classList.add('auth-mode');
   setTitle(SITE_TITLE);
@@ -1813,7 +1768,6 @@ function renderLogin() {
             _context.p = 6;
             _t = _context.v;
           case 7:
-            // Login
             headers = {
               'Content-Type': 'application/x-www-form-urlencoded',
               'Accept': 'application/json',
@@ -1872,7 +1826,6 @@ function renderLogin() {
             S.authChecked = true;
             return refreshCurrentUser().then(function (ok) {
               if (!ok) throw new Error('Login failed. Please try again.');
-              // Refresh the page after successful login to ensure proper initialization
               window.location.href = makeUrl('/');
             });
             _context.n = 13;
@@ -1901,7 +1854,6 @@ function renderLogin() {
     if (e.key === 'Enter') document.getElementById('loginPass').focus();
   });
   updateSiteUI();
-  // Don't auto-focus input — brings up keyboard on mobile
 }
 function renderSignup() {
   document.body.classList.add('auth-mode');
@@ -2340,8 +2292,6 @@ function _renderTopics() {
           html += '<div id="topicLoader" class="loading" style="display:none">Loading more...</div>';
           $app.innerHTML = html;
           showCreate('/new-topic');
-
-          // Infinite scroll — clean up previous listener first
           if (topicScrollCleanup) topicScrollCleanup();
           onScroll = function onScroll() {
             if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
@@ -2434,7 +2384,6 @@ function _renderTopic() {
         case 0:
           showBack(true);
           $app.innerHTML = '';
-          // Load topic near a specific post (if provided) or last post
           postNumber = postNumber && String(postNumber).match(/^\d+$/) ? postNumber : '';
           apiPath = postNumber ? `/t/${id}/${postNumber}.json` : `/t/${id}/last.json`;
           _context22.n = 1;
@@ -2442,8 +2391,6 @@ function _renderTopic() {
         case 1:
           d = _context22.v;
           setTitle(d.title || 'Topic');
-
-          // Mark topic as read so unread badge clears on next topic list load
           lastPost = d.post_stream && d.post_stream.posts || [];
           highestNum = 0;
           lastPost.forEach(function (p) {
@@ -2461,16 +2408,12 @@ function _renderTopic() {
               }
             }).catch(function () {});
           }
-
-          // Build a map of post_number for all posts in the stream
           allPostIds = d.post_stream && d.post_stream.stream || [];
           loadedPosts = d.post_stream && d.post_stream.posts || [];
           postNumberMap = {};
           loadedPosts.forEach(function (p) {
             postNumberMap[p.id] = p.post_number;
           });
-
-          // Track where the current loaded posts sit within the full stream
           indexMap = {};
           allPostIds.forEach(function (pid, idx) {
             indexMap[pid] = idx;
@@ -2520,11 +2463,7 @@ function _renderTopic() {
           $app.innerHTML = html;
           refreshComposeActions();
           enhanceCooked($app);
-
-          // Update post tabindexes based on navigation mode
           updatePostTabindexes();
-
-          // State for reply-to
           replyToPostNumber = null; // Auto-save draft
           replyBox = document.getElementById('replyBox');
           var discardReplyBtn = document.getElementById('discardReply');
@@ -2541,7 +2480,6 @@ function _renderTopic() {
             updateReplyDiscard();
           });
           updateReplyDiscard();
-          // Enter on readonly textarea opens it for editing (brings up keyboard)
           function enableReplyBoxEditing() {
             if (!replyBox.readOnly) return;
             replyBox.readOnly = false;
@@ -2596,8 +2534,6 @@ function _renderTopic() {
               }
             }, _calleeReplyDiscard);
           })));
-
-          // @Mention autocomplete
           var mentionSeeds = [];
           if (loadedPosts && loadedPosts.length) {
             var seenMentions = {};
@@ -2615,14 +2551,10 @@ function _renderTopic() {
             topicId: id,
             suggestions: mentionSeeds
           });
-
-          // Cancel reply-to
           document.getElementById('cancelReply').addEventListener('click', function () {
             replyToPostNumber = null;
             document.getElementById('replyIndicator').style.display = 'none';
           });
-
-          // Upload
           uploadBtn = document.getElementById('uploadBtn');
           uploadBtn.addEventListener('click', function () {
             return document.getElementById('uploadFile').click();
@@ -2662,8 +2594,6 @@ function _renderTopic() {
               return _ref13.apply(this, arguments);
             };
           }());
-
-          // Emoji picker
           document.getElementById('emojiBtn').addEventListener('click', function () {
             var EMOJIS = ['\uD83D\uDC4D', '\uD83D\uDC4E', '\uD83D\uDE00', '\uD83D\uDE02', '\uD83D\uDE0A', '\uD83D\uDE0D', '\uD83E\uDD14', '\uD83D\uDE22', '\uD83D\uDE21', '\uD83D\uDE31', '\uD83D\uDE4F', '\uD83D\uDD25', '\u2764\uFE0F', '\uD83D\uDCAF', '\u2705', '\u274C', '\uD83C\uDF89', '\uD83D\uDC4B', '\uD83D\uDCAA', '\uD83D\uDE80', '\u2B50', '\uD83D\uDCA1', '\uD83C\uDFC6', '\uD83D\uDDE3\uFE0F', '\uD83D\uDCAC', '\uD83D\uDC40', '\uD83E\uDD1D', '\uD83C\uDF1F', '\uD83D\uDC9A', '\uD83D\uDC99', '\uD83D\uDC9C', '\uD83E\uDDE1', '\uD83D\uDC9B', '\uD83D\uDE07', '\uD83E\uDD23', '\uD83D\uDE09', '\uD83D\uDE0E', '\uD83E\uDD29', '\uD83D\uDE4C', '\uD83D\uDE18', '\uD83E\uDD17', '\uD83E\uDD2F', '\uD83E\uDD73', '\uD83D\uDE1C', '\uD83E\uDD7A', '\uD83D\uDE33', '\uD83D\uDE44', '\uD83D\uDE29', '\uD83E\uDD26', '\uD83D\uDE4B'];
             var overlay = document.createElement('div');
@@ -2709,8 +2639,6 @@ function _renderTopic() {
             var firstEmoji = overlay.querySelector('.emoji-item');
             if (firstEmoji) firstEmoji.focus();
           });
-
-          // Post reply
           document.getElementById('sendReply').addEventListener('click', /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee20() {
             var raw, postBody, _t18;
             return _regenerator().w(function (_context20) {
@@ -2743,7 +2671,6 @@ function _renderTopic() {
                   _context20.n = 4;
                   return renderTopic(id);
                 case 4:
-                  // Scroll to bottom to see new reply
                   window.scrollTo(0, document.body.scrollHeight);
                   _context20.n = 6;
                   break;
@@ -2760,8 +2687,6 @@ function _renderTopic() {
               }
             }, _callee20, this, [[2, 5]]);
           })));
-
-          // Load earlier posts
           loadEarlierBtn = document.getElementById('loadEarlierPosts');
           if (loadEarlierBtn) {
             loadEarlierBtn.addEventListener('click', /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee21() {
@@ -2772,7 +2697,6 @@ function _renderTopic() {
                     this.disabled = true;
                     this.textContent = 'Loading...';
                     _context21.p = 1;
-                    // Load last 20 from the earlier batch (closest to current view)
                     batch = remainingEarlierIds.splice(-20);
                     _context21.n = 2;
                     return api(`/t/${id}/posts.json?post_ids[]=${batch.join('&post_ids[]=')}`);
@@ -2788,9 +2712,7 @@ function _renderTopic() {
                       container.insertAdjacentHTML('afterbegin', renderPost(p, d));
                     });
                     enhanceCooked(container);
-                    // Update post tabindexes based on navigation mode
                     updatePostTabindexes();
-                    // Maintain scroll position so user doesn't jump
                     window.scrollBy(0, document.body.scrollHeight - beforeScrollH);
                     attachPostHandlers(container, id, replyBox, postNumberMap, function (n) {
                       replyToPostNumber = n;
@@ -2815,8 +2737,6 @@ function _renderTopic() {
               }, _callee21, this, [[1, 3]]);
             })));
           }
-
-          // Load later posts
           loadLaterBtn = document.getElementById('loadLaterPosts');
           if (loadLaterBtn) {
             loadLaterBtn.addEventListener('click', /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee21b() {
@@ -2827,7 +2747,6 @@ function _renderTopic() {
                     this.disabled = true;
                     this.textContent = 'Loading...';
                     _context21b.p = 1;
-                    // Load first 20 from the later batch (closest to current view)
                     batch = remainingLaterIds.splice(0, 20);
                     _context21b.n = 2;
                     return api(`/t/${id}/posts.json?post_ids[]=${batch.join('&post_ids[]=')}`);
@@ -2842,7 +2761,6 @@ function _renderTopic() {
                       container.insertAdjacentHTML('beforeend', renderPost(p, d));
                     });
                     enhanceCooked(container);
-                    // Update post tabindexes based on navigation mode
                     updatePostTabindexes();
                     attachPostHandlers(container, id, replyBox, postNumberMap, function (n) {
                       replyToPostNumber = n;
@@ -2867,12 +2785,9 @@ function _renderTopic() {
               }, _callee21b, this, [[1, 3]]);
             })));
           }
-
-          // Attach all post interaction handlers
           attachPostHandlers($app, id, replyBox, postNumberMap, function (n) {
             replyToPostNumber = n;
           });
-
           if (postNumber) {
             var pn = parseInt(postNumber, 10);
             if (pn) {
@@ -2884,8 +2799,6 @@ function _renderTopic() {
               }, 0);
             }
           }
-
-          // Scroll to last post and focus it
           posts = document.querySelectorAll('.post');
           if (posts.length) {
             last = posts[posts.length - 1];
@@ -2902,7 +2815,6 @@ function _renderTopic() {
   return _renderTopic.apply(this, arguments);
 }
 function attachPostHandlers(container, topicId, replyBox, postNumberMap, setReplyTo) {
-  // React button - open reaction picker
   container.querySelectorAll('[data-react-open]').forEach(function (btn) {
     if (btn._bound) return;
     btn._bound = true;
@@ -2910,8 +2822,6 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
       showReactionPicker(btn.dataset.reactOpen);
     });
   });
-
-  // Reaction pill click - short press toggles, or show who reacted
   container.querySelectorAll('[data-react]').forEach(function (btn) {
     if (btn._bound) return;
     btn._bound = true;
@@ -2970,8 +2880,6 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
       }, _callee2, null, [[1, 6]]);
     })));
   });
-
-  // Reply to post
   container.querySelectorAll('[data-reply-to]').forEach(function (btn) {
     if (btn._bound) return;
     btn._bound = true;
@@ -2991,8 +2899,6 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
       });
     });
   });
-
-  // Jump to replied post
   container.querySelectorAll('[data-jump-post]').forEach(function (btn) {
     if (btn._bound) return;
     btn._bound = true;
@@ -3010,8 +2916,6 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
       if (tid) navigate(topicPath(tid, slug, targetNum), true);
     });
   });
-
-  // Quote post
   container.querySelectorAll('[data-quote-post]').forEach(function (btn) {
     if (btn._bound) return;
     btn._bound = true;
@@ -3061,8 +2965,6 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
       }, _callee2b, null, [[1, 4]]);
     })));
   });
-
-  // Delete post
   container.querySelectorAll('[data-delete-post]').forEach(function (btn) {
     if (btn._bound) return;
     btn._bound = true;
@@ -3104,8 +3006,6 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
       }, _callee3, null, [[3, 6]]);
     })));
   });
-
-  // Edit post
   container.querySelectorAll('[data-edit-post]').forEach(function (btn) {
     if (btn._bound) return;
     btn._bound = true;
@@ -3123,7 +3023,6 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
             }
             return _context5.a(2);
           case 1:
-            // Fetch raw content
             btn.disabled = true;
             _context5.p = 2;
             _context5.n = 3;
@@ -3199,8 +3098,6 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
       }, _callee5, null, [[2, 4]]);
     })));
   });
-
-  // Poll vote
   container.querySelectorAll('[data-poll-vote]').forEach(function (opt) {
     if (opt._bound) return;
     opt._bound = true;
@@ -3238,8 +3135,6 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
       }, _callee6, null, [[1, 4]]);
     })));
   });
-
-  // Flag post
   container.querySelectorAll('[data-flag]').forEach(function (btn) {
     if (btn._bound) return;
     btn._bound = true;
@@ -3249,8 +3144,6 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
     });
   });
 }
-
-// Keyboard-friendly alert replacement
 function showAlert(msg) {
   return new Promise(function (resolve) {
     var prev = document.activeElement;
@@ -3464,8 +3357,6 @@ function showFlagDialog(postId) {
 function renderPost(p, topicData) {
   var body = fixPostHtml(p.cooked || '');
   var isOwn = p.username === S.username;
-
-  // Render polls
   var pollsHtml = '';
   if (p.polls && p.polls.length) {
     p.polls.forEach(function (poll) {
@@ -3482,8 +3373,6 @@ function renderPost(p, topicData) {
       pollsHtml += `<div style="font-size:.75rem;color:var(--fg2);margin-top:4px">${totalVotes} votes</div></div>`;
     });
   }
-
-  // Reply info
   var replyInfo = '';
   if (p.reply_to_post_number) {
     var replyAvatar = p.reply_to_user && p.reply_to_user.avatar_template ? `<img src="${avatarUrl(p.reply_to_user.avatar_template, 20)}" alt="" style="width:16px;height:16px;border-radius:50%;vertical-align:middle">` : '';
@@ -3544,8 +3433,6 @@ function renderPost(p, topicData) {
     </div>
   </div>`;
 }
-
-// ============ NEW TOPIC ============
 function renderNewTopic() {
   setTitle('New Topic');
   showBack(true);
@@ -3712,8 +3599,6 @@ function renderNewTopic() {
     }, _callee0, this, [[2, 4]]);
   })));
 }
-
-// ============ NEW MESSAGE ============
 function renderNewMessage() {
   setTitle('New Message');
   showBack(true);
@@ -3842,8 +3727,6 @@ function renderNewMessage() {
     }, _callee1, this, [[2, 4]]);
   })));
 }
-
-// ============ DRAFTS ============
 function draftSnippet(text) {
   if (!text) return '';
   var clean = String(text).replace(/\s+/g, ' ').trim();
@@ -3951,8 +3834,6 @@ function renderDrafts() {
   });
   focusContent();
 }
-
-// ============ MESSAGES ============
 function renderMessages() {
   return _renderMessages.apply(this, arguments);
 } // ============ NOTIFICATIONS ============
@@ -4174,8 +4055,6 @@ function _renderProfile() {
               return logout();
             });
           }
-
-          // Load activity
           _context26.p = 3;
           _context26.n = 4;
           return loadProfileActivity(uname);
@@ -4288,8 +4167,6 @@ function renderSettings() {
     return logout();
   });
 }
-
-// ============ MENU ============
 var menuOpen = false;
 var menuJustToggled = false;
 var viewOpen = false;
@@ -4372,7 +4249,6 @@ if ($view) {
     });
   });
 }
-// Close menu on item click
 $menu.querySelectorAll('a').forEach(function (a) {
   return a.addEventListener('click', function () {
     return toggleMenu(false);
@@ -4385,7 +4261,6 @@ document.getElementById('menuAuthBtn').addEventListener('click', function (e) {
     navigate('/');
   }
 });
-// Close menu on outside click
 document.addEventListener('click', function (e) {
   if (!menuJustToggled && $menu.classList.contains('open') && !$menu.contains(e.target) && e.target !== $menuBtn) {
     toggleMenu(false);
@@ -4394,8 +4269,6 @@ document.addEventListener('click', function (e) {
     toggleView(false);
   }
 });
-
-// ============ SCALE ============
 var scale = parseInt(storageGet('jt_scale', '100') || '100');
 function applyScale() {
   document.documentElement.style.fontSize = 15 * scale / 100 + 'px';
@@ -4415,8 +4288,6 @@ document.getElementById('scaleUp').addEventListener('click', function (e) {
   storageSet('jt_scale', scale);
   applyScale();
 });
-
-// ============ THEME ============
 var $menuThemeBtn = document.getElementById('menuThemeBtn');
 var sunSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
 var moonSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
@@ -4441,8 +4312,6 @@ if ($menuThemeBtn) {
     applyTheme(!document.documentElement.classList.contains('light'));
   });
 }
-
-// ============ NAVIGATION MODE ============
 var navMode = 'dpad';
 function getNavMode() {
   return navMode;
@@ -4450,10 +4319,8 @@ function getNavMode() {
 function setNavMode(mode) {
   navMode = mode;
   document.documentElement.setAttribute('data-nav-mode', mode);
-  // Update viewport meta for pinch zoom
   var viewport = document.querySelector('meta[name="viewport"]');
   viewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
-  // Update existing post tabindexes
   updatePostTabindexes();
 }
 var postActionCompactTimer = null;
@@ -4503,7 +4370,6 @@ function setPostBodyTabindex(post, active) {
   });
 }
 function updatePostTabindexes() {
-  // In dpad mode, only active post actions are accessible
   document.querySelectorAll('.post').forEach(function(post) {
     var active = post.classList.contains('active');
     if (!active) {
@@ -4518,11 +4384,8 @@ function updatePostTabindexes() {
   });
   updatePostActionCompact();
 }
-// Initialize navigation mode
 setNavMode(navMode);
 window.addEventListener('resize', schedulePostActionCompact);
-
-// ============ SEARCH ============
 function renderSearch() {
   return _renderSearch.apply(this, arguments);
 } // ============ PULL TO REFRESH ============
@@ -4564,7 +4427,6 @@ function _renderSearch() {
                       showAlert('Search needs at least 3 characters.');
                       return _context27.a(2);
                     }
-                    // Update URL without re-rendering
                     setUrl('/search?q=' + encodeURIComponent(query), true);
                     results = document.getElementById('searchResults');
                     results.innerHTML = '<div class="loading">Searching...</div>';
@@ -4620,8 +4482,6 @@ function _renderSearch() {
             if (e.key === 'Enter') doSearch();
           });
           document.getElementById('searchInput').focus();
-
-          // Auto-search if query present
           if (q) doSearch();
         case 1:
           return _context28.a(2);
@@ -4710,12 +4570,8 @@ function _renderSearch() {
     passive: true
   });
 })();
-
-// ============ FOCUS MANAGEMENT ============
-// D-pad arrow key navigation: move focus between focusable elements
 function getFocusables() {
   var sel = 'a[tabindex="0"],button:not(:disabled),[tabindex="0"],input,textarea,select';
-  // Check for open overlays first — if one exists, constrain focus to it
   var overlay = document.querySelector('.confirm-overlay');
   if (overlay) {
     var overlayEls = [].slice.call(overlay.querySelectorAll(sel));
@@ -4743,27 +4599,21 @@ function getFocusables() {
 document.addEventListener('keydown', function (e) {
   var tag = document.activeElement && document.activeElement.tagName;
   var inInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
-  // Enter/Space on div[tabindex] acts as click
   if ((e.key === 'Enter' || e.key === ' ') && tag === 'DIV' && document.activeElement.hasAttribute('tabindex')) {
     e.preventDefault();
     document.activeElement.click();
     return;
   }
-  // Arrow up/down move focus
-  // For inputs/textareas: allow escape at boundaries
   if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && inInput) {
     var el = document.activeElement;
     if (tag === 'SELECT') return;
     if (tag === 'TEXTAREA') {
-      // Only escape textarea if cursor is at very end (down) or very start (up)
       if (e.key === 'ArrowDown' && el.selectionStart < el.value.length) return;
       if (e.key === 'ArrowUp' && el.selectionStart > 0) return;
     }
-    // For INPUT or textarea at boundary, fall through to focus navigation
   }
   var isDown = e.key === 'ArrowDown' || e.key === 'ArrowRight';
   var isUp = e.key === 'ArrowUp' || e.key === 'ArrowLeft';
-  // Left/right in inputs control cursor, don't intercept
   if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && inInput) return;
   if (isDown || isUp) {
     var els = getFocusables();
@@ -4779,8 +4629,6 @@ document.addEventListener('keydown', function (e) {
     e.preventDefault();
   }
 });
-
-// Auto-scroll focused elements into view (mode-aware)
 document.addEventListener('focusin', function () {
   if (document.activeElement && document.activeElement !== document.body) {
     requestAnimationFrame(function () {
@@ -4800,7 +4648,6 @@ document.addEventListener('focusin', function () {
       var vh = window.innerHeight;
       var topLimit = topH + 6;
       var bottomLimit = vh - 6;
-      // Keep focused items visible without jumping the list.
       if (rect.height > vh - topLimit - 6) {
         window.scrollBy(0, rect.top - topLimit);
         return;
@@ -4813,8 +4660,6 @@ document.addEventListener('focusin', function () {
     });
   }
 });
-
-// Post activation: Enter on post shows actions, Escape goes back to post
 function activatePost(post) {
   document.querySelectorAll('.post.active').forEach(function (p) {
     return deactivatePost(p);
@@ -4872,16 +4717,12 @@ document.addEventListener('click', function (e) {
   deactivatePost(post);
   post.focus();
 });
-
-// Focus first interactive element in #app after route changes
 function focusContent() {
   requestAnimationFrame(function () {
     var el = $app.querySelector('a[tabindex="0"],button:not(:disabled),[tabindex="0"]');
     if (el) el.focus();
   });
 }
-
-// ============ INIT ============
 function init() {
   if (location.hash && location.hash.indexOf('#/') === 0) {
     var p = location.hash.slice(1);
