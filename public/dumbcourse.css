@@ -215,6 +215,7 @@ button svg,.icon svg{vertical-align:middle}
 body.search-mode #siteIcon{display:none !important}
 body.search-mode .title-link{gap:6px}
 body.auth-mode #searchBtn{display:none !important}
+body.auth-mode #viewBtn{display:none !important}
 .loading{text-align:center;padding:24px;color:var(--fg2)}
 .empty{text-align:center;padding:32px;color:var(--fg2);font-size:.9rem}
 .error{color:var(--danger);padding:12px;text-align:center;font-size:.9rem}
