@@ -2,6 +2,7 @@
 
 module DiscourseDumbcourse
   class PushController < ::ApplicationController
+    requires_plugin DiscourseDumbcourse::PLUGIN_NAME
     requires_login except: [:server_info]
     skip_before_action :verify_authenticity_token
 
@@ -21,7 +22,7 @@ module DiscourseDumbcourse
       device_id = params[:device_id].to_s.strip
 
       if topic.blank? || device_id.blank?
-        return render json: { error: "topic and device_id required" }, status: 400
+        return render json: { error: "topic and device_id required" }, status: :bad_request
       end
 
       # Store the mapping: user_id -> { device_id, topic }
@@ -42,7 +43,7 @@ module DiscourseDumbcourse
       device_id = params[:device_id].to_s.strip
 
       if device_id.blank?
-        return render json: { error: "device_id required" }, status: 400
+        return render json: { error: "device_id required" }, status: :bad_request
       end
 
       devices = PluginStore.get("dumbcourse", "push_devices_#{current_user.id}") || {}

@@ -4,6 +4,7 @@ require "rack/mime"
 
 module DiscourseDumbcourse
   class AppController < ::ActionController::Base
+    requires_plugin DiscourseDumbcourse::PLUGIN_NAME
     include ::CurrentUser
 
     layout false
@@ -51,7 +52,7 @@ module DiscourseDumbcourse
 
       index_path = public_root.join("index.html")
       unless index_path.file?
-        return render plain: "Dumbcourse index missing", status: 500
+        return render plain: "Dumbcourse index missing", status: :internal_server_error
       end
 
       response.headers["Cache-Control"] = "no-store"
