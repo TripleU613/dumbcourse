@@ -56,6 +56,17 @@ module DiscourseDumbcourse
 
       response.headers["Cache-Control"] = "no-store"
       html = File.read(index_path)
+      asset_version = (
+        begin
+          [
+            public_root.join("dumbcourse.js").mtime.to_i,
+            public_root.join("dumbcourse.css").mtime.to_i,
+          ].max
+        rescue
+          Time.now.to_i
+        end
+      )
+      html = html.gsub(/(dumbcourse\.(?:js|css)\?v=)\d+/, "\1#{asset_version}")
       settings = {
         defaultTheme: SiteSetting.dumbcourse_default_theme,
         defaultView: SiteSetting.dumbcourse_default_view,
