@@ -3175,36 +3175,23 @@ function _renderTopic() {
                   fetched = _context20.v;
                   postData = fetched && fetched.post ? fetched.post : fetched;
                 case 5:
-                  if (postData && postData.id) {
-                    postNumberMap[postData.id] = postData.post_number;
-                    container = document.getElementById('postsContainer');
-                    if (container) {
-                      container.insertAdjacentHTML('beforeend', renderPost(postData, d));
-                      enhanceCooked(container);
-                      updatePostTabindexes();
-                      attachPostHandlers(container, id, replyBox, postNumberMap, function (n) {
-                        replyToPostNumber = n;
-                      });
-                      posts = container.querySelectorAll('.post');
-                      if (posts.length) {
-                        last = posts[posts.length - 1];
-                        last.scrollIntoView({
-                          behavior: 'smooth'
-                        });
-                        last.focus();
-                      }
-                    }
-                    markTopicRead(id);
-                    this.disabled = false;
-                    this.innerHTML = IC.send;
-                    this.setAttribute('aria-label', 'Post reply');
-                    this.setAttribute('title', 'Post reply');
-                    return _context20.a(2);
-                  }
+                  // Always reload topic to show new post reliably
                   _context20.n = 6;
-                  return renderTopic(id);
+                  return renderTopic(id, postData && postData.post_number ? postData.post_number : null);
                 case 6:
-                  window.scrollTo(0, document.body.scrollHeight);
+                  this.disabled = false;
+                  this.innerHTML = IC.send;
+                  this.setAttribute('aria-label', 'Post reply');
+                  this.setAttribute('title', 'Post reply');
+                  // Scroll to bottom where new post is
+                  setTimeout(function() {
+                    var posts = document.querySelectorAll('.post');
+                    if (posts.length) {
+                      var last = posts[posts.length - 1];
+                      last.scrollIntoView({ behavior: 'smooth' });
+                      last.focus();
+                    }
+                  }, 100);
                   _context20.n = 8;
                   break;
                 case 7:
