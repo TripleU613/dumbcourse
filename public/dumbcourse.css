@@ -134,6 +134,10 @@ button svg,.icon svg{vertical-align:middle}
 .compose .actions .discard{background:var(--danger);color:#fff}
 .compose .actions .actions-spacer{flex:1;min-width:8px}
 .compose .chip-actions{overflow:hidden}
+.compose .attachment-list{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.compose .attachment-item{background:var(--bg3);color:var(--fg);border:1px solid var(--border);border-radius:10px;padding:6px 8px;font-size:.85rem;display:inline-flex;align-items:center;gap:6px;max-width:100%}
+.compose .attachment-item .attach-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
+.compose .attachment-item .attach-icon{display:inline-flex}
 .compose .actions .btn-label{display:none}
 .compose .chip-actions.compact{gap:6px}
 .compose .chip-actions.compact button{min-width:32px;min-height:32px;padding:4px 6px}

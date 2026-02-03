@@ -59,6 +59,7 @@ var SESSION_CHECKING = false;
 var EMOJI_MAP = {};
 var EMOJI_CACHE = {};
 var EMOJI_READY = false;
+var READ_TOPICS = {};
 var API_CACHE_KEY = 'jt_api_cache';
 var API_CACHE_TTL = 5 * 60 * 1000;
 var PERSISTENT_API_CACHE = {};
@@ -115,6 +116,13 @@ function emojifyText(s) {
     var e = emojiForName(name);
     return e || m;
   });
+}
+function markTopicRead(id) {
+  if (!id) return;
+  READ_TOPICS[String(id)] = Date.now();
+}
+function isTopicRead(id) {
+  return !!READ_TOPICS[String(id)];
 }
 function updateSiteUI(prevTitle) {
   var t = emojifyText(SITE_TITLE || 'Forum');
@@ -621,6 +629,43 @@ function formatErrorMessage(err) {
   var msg = friendlyErrorMessage(err);
   if (msg === OFFLINE_MSG) return msg;
   return 'Error: ' + msg;
+}
+function isImageUpload(file, upload) {
+  if (file && file.type && file.type.indexOf('image/') === 0) return true;
+  var name = file && file.name || upload && upload.original_filename || '';
+  return /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(name);
+}
+function buildUploadMarkdown(file, upload) {
+  var name = file && file.name || upload && upload.original_filename || 'file';
+  var url = upload && (upload.short_url || upload.url) || '';
+  if (!url) return '';
+  if (isImageUpload(file, upload)) {
+    return `![${name}](${url})`;
+  }
+  return `[${name}|attachment](${url})`;
+}
+function addAttachmentPreview(listId, file, upload) {
+  var list = document.getElementById(listId);
+  if (!list) return;
+  list.style.display = 'flex';
+  var item = document.createElement('div');
+  item.className = 'attachment-item';
+  item.tabIndex = 0;
+  var icon = document.createElement('span');
+  icon.className = 'attach-icon';
+  icon.innerHTML = IC.upload;
+  var name = document.createElement('span');
+  name.className = 'attach-name';
+  name.textContent = file && file.name || upload && upload.original_filename || 'attachment';
+  item.appendChild(icon);
+  item.appendChild(name);
+  list.appendChild(item);
+}
+function clearAttachmentPreview(listId) {
+  var list = document.getElementById(listId);
+  if (!list) return;
+  list.innerHTML = '';
+  list.style.display = 'none';
 }
 function uploadFile(file, btn) {
   return new Promise(function (resolve, reject) {
@@ -2306,6 +2351,7 @@ function _loadMoreCategoryTopics() {
 }
 function topicItemHtml(t) {
   var unread = (t.unread_posts || 0) + (t.new_posts || 0);
+  if (isTopicRead(t.id)) unread = 0;
   var statusIcons = '';
   if (t.pinned) statusIcons += '<span class="topic-status-icon" title="Pinned">' + IC.pin + '</span>';
   if (t.closed || t.archived) statusIcons += '<span class="topic-status-icon" title="Locked">' + IC.lock + '</span>';
@@ -2589,6 +2635,7 @@ function _renderTopic() {
           return api(apiPath);
         case 1:
           d = _context22.v;
+          markTopicRead(d && d.id ? d.id : id);
           setTitle(d.title || 'Topic');
           lastPost = d.post_stream && d.post_stream.posts || [];
           highestNum = 0;
@@ -2646,6 +2693,7 @@ function _renderTopic() {
   </div>`;
           html += `<div class="compose" id="replyArea">
     <div class="compose-body">
+      <div id="replyAttachments" class="attachment-list" style="display:none"></div>
       <textarea id="replyBox" placeholder="Press Enter or tap to type a reply..." tabindex="0" readonly>${esc(getDraft('reply_' + id))}</textarea>
       <div id="replyPreview" class="md-preview" style="display:none" tabindex="0"></div>
     </div>
@@ -2727,6 +2775,7 @@ function _renderTopic() {
                   replyBox.value = '';
                   replyToPostNumber = null;
                   document.getElementById('replyIndicator').style.display = 'none';
+                  clearAttachmentPreview('replyAttachments');
                   replyBox.dispatchEvent(new Event('input'));
                   replyBox.focus();
                   return _contextReplyDiscard.a(2);
@@ -2755,12 +2804,20 @@ function _renderTopic() {
             document.getElementById('replyIndicator').style.display = 'none';
           });
           uploadBtn = document.getElementById('uploadBtn');
-          uploadBtn.addEventListener('click', function () {
-            return document.getElementById('uploadFile').click();
+          var uploadInput = document.getElementById('uploadFile');
+          var openUpload = function openUpload() {
+            if (uploadInput) uploadInput.click();
+          };
+          bindTap(uploadBtn, openUpload);
+          uploadBtn.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              openUpload();
+            }
           });
-          document.getElementById('uploadFile').addEventListener('change', /*#__PURE__*/function () {
+          uploadInput.addEventListener('change', /*#__PURE__*/function () {
             var _ref13 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee19(e) {
-              var file, r, _t17;
+              var file, r, markdown, _t17;
               return _regenerator().w(function (_context19) {
                 while (1) switch (_context19.p = _context19.n) {
                   case 0:
@@ -2776,14 +2833,18 @@ function _renderTopic() {
                     return uploadFile(file, uploadBtn);
                   case 2:
                     r = _context19.v;
-                    replyBox.value += `\n![${file.name}](${r.short_url || r.url})`;
+                    addAttachmentPreview('replyAttachments', file, r);
+                    markdown = buildUploadMarkdown(file, r);
+                    if (markdown) replyBox.value += `\n${markdown}`;
                     replyBox.dispatchEvent(new Event('input'));
+                    e.target.value = '';
                     _context19.n = 4;
                     break;
                   case 3:
                     _context19.p = 3;
                     _t17 = _context19.v;
                     showAlert(_t17.message);
+                    e.target.value = '';
                   case 4:
                     return _context19.a(2);
                 }
@@ -3653,6 +3714,7 @@ function renderNewTopic() {
       </select></div>
     <div class="field"><label for="ntBody">Body</label>
       <div class="compose-body">
+        <div id="ntAttachments" class="attachment-list" style="display:none"></div>
         <textarea id="ntBody" placeholder="Write your topic..." tabindex="0">${esc(getDraft('new_topic_body'))}</textarea>
         <div id="ntPreview" class="md-preview" style="display:none" tabindex="0"></div>
       </div>
@@ -3708,6 +3770,7 @@ function renderNewTopic() {
         case 2:
           clearDraft('new_topic_title');
           clearDraft('new_topic_body');
+          clearAttachmentPreview('ntAttachments');
           navigate('/new-topic', true);
           return _contextNtDiscard.a(2);
       }
@@ -3715,12 +3778,20 @@ function renderNewTopic() {
   })));
   refreshComposeActions();
   var uploadNtBtn = document.getElementById('uploadNt');
-  uploadNtBtn.addEventListener('click', function () {
-    return document.getElementById('uploadNtFile').click();
+  var uploadNtInput = document.getElementById('uploadNtFile');
+  var openNtUpload = function openNtUpload() {
+    if (uploadNtInput) uploadNtInput.click();
+  };
+  bindTap(uploadNtBtn, openNtUpload);
+  uploadNtBtn.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      openNtUpload();
+    }
   });
-  document.getElementById('uploadNtFile').addEventListener('change', /*#__PURE__*/function () {
+  uploadNtInput.addEventListener('change', /*#__PURE__*/function () {
     var _ref9 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee9(e) {
-      var file, r, b, _t0;
+      var file, r, b, markdown, _t0;
       return _regenerator().w(function (_context9) {
         while (1) switch (_context9.p = _context9.n) {
           case 0:
@@ -3737,14 +3808,18 @@ function renderNewTopic() {
           case 2:
             r = _context9.v;
             b = document.getElementById('ntBody');
-            b.value += `\n![${file.name}](${r.short_url || r.url})`;
+            addAttachmentPreview('ntAttachments', file, r);
+            markdown = buildUploadMarkdown(file, r);
+            if (markdown) b.value += `\n${markdown}`;
             b.dispatchEvent(new Event('input'));
+            e.target.value = '';
             _context9.n = 4;
             break;
           case 3:
             _context9.p = 3;
             _t0 = _context9.v;
             showAlert(_t0.message);
+            e.target.value = '';
           case 4:
             return _context9.a(2);
         }
