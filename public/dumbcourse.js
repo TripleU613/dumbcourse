@@ -5347,7 +5347,7 @@ document.addEventListener('click', function (e) {
 });
 function focusContent() {
   requestAnimationFrame(function () {
-    var el = $app.querySelector('a[tabindex="0"],button:not(:disabled),[tabindex="0"]');
+    var el = $app.querySelector('a,button:not(:disabled),[tabindex="0"]');
     if (el) el.focus();
   });
 }
