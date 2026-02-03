@@ -2917,7 +2917,7 @@ function _renderTopic() {
             if (firstEmoji) firstEmoji.focus();
           });
           document.getElementById('sendReply').addEventListener('click', /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee20() {
-            var raw, postBody, _t18;
+            var raw, postBody, created, postData, fetched, container, posts, last, _t18;
             return _regenerator().w(function (_context20) {
               while (1) switch (_context20.p = _context20.n) {
                 case 0:
@@ -2944,25 +2944,70 @@ function _renderTopic() {
                     body: postBody
                   });
                 case 3:
+                  created = _context20.v;
                   clearDraft('reply_' + id);
+                  replyBox.value = '';
+                  replyToPostNumber = null;
+                  document.getElementById('replyIndicator').style.display = 'none';
+                  clearAttachmentPreview('replyAttachments');
+                  replyBox.dispatchEvent(new Event('input'));
+                  postData = created && created.post ? created.post : created;
+                  if (!(postData && postData.id && !postData.cooked)) {
+                    _context20.n = 5;
+                    break;
+                  }
                   _context20.n = 4;
-                  return renderTopic(id);
+                  return api('/posts/' + postData.id + '.json', {
+                    nocache: true
+                  });
                 case 4:
-                  window.scrollTo(0, document.body.scrollHeight);
-                  _context20.n = 6;
-                  break;
+                  fetched = _context20.v;
+                  postData = fetched && fetched.post ? fetched.post : fetched;
                 case 5:
-                  _context20.p = 5;
+                  if (postData && postData.id) {
+                    postNumberMap[postData.id] = postData.post_number;
+                    container = document.getElementById('postsContainer');
+                    if (container) {
+                      container.insertAdjacentHTML('beforeend', renderPost(postData, d));
+                      enhanceCooked(container);
+                      updatePostTabindexes();
+                      attachPostHandlers(container, id, replyBox, postNumberMap, function (n) {
+                        replyToPostNumber = n;
+                      });
+                      posts = container.querySelectorAll('.post');
+                      if (posts.length) {
+                        last = posts[posts.length - 1];
+                        last.scrollIntoView({
+                          behavior: 'smooth'
+                        });
+                        last.focus();
+                      }
+                    }
+                    markTopicRead(id);
+                    this.disabled = false;
+                    this.innerHTML = IC.send;
+                    this.setAttribute('aria-label', 'Post reply');
+                    this.setAttribute('title', 'Post reply');
+                    return _context20.a(2);
+                  }
+                  _context20.n = 6;
+                  return renderTopic(id);
+                case 6:
+                  window.scrollTo(0, document.body.scrollHeight);
+                  _context20.n = 8;
+                  break;
+                case 7:
+                  _context20.p = 7;
                   _t18 = _context20.v;
                   showAlert(formatErrorMessage(_t18));
                   this.disabled = false;
                   this.innerHTML = IC.send;
                   this.setAttribute('aria-label', 'Post reply');
                   this.setAttribute('title', 'Post reply');
-                case 6:
+                case 8:
                   return _context20.a(2);
               }
-            }, _callee20, this, [[2, 5]]);
+            }, _callee20, this, [[2, 7]]);
           })));
           loadEarlierBtn = document.getElementById('loadEarlierPosts');
           if (loadEarlierBtn) {
