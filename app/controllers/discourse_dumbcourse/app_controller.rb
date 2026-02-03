@@ -71,6 +71,25 @@ module DiscourseDumbcourse
       render plain: html, content_type: "text/html; charset=utf-8"
     end
 
+
+    def hcaptcha
+      raise Discourse::NotFound unless SiteSetting.discourse_hcaptcha_enabled
+      token = params[:token].to_s
+      raise Discourse::InvalidAccess.new if token.blank?
+
+      temp_id = SecureRandom.uuid
+      Discourse.redis.setex("hCaptchaToken_#{temp_id}", 2.minutes.to_i, token)
+      cookies.encrypted[:h_captcha_temp_id] = {
+        value: temp_id,
+        httponly: true,
+        secure: SiteSetting.force_https,
+        expires: 2.minutes.from_now,
+        same_site: :none,
+      }.compact
+
+      render json: { success: "OK" }
+    end
+
     private
 
     def login_path_request?
@@ -96,6 +115,7 @@ module DiscourseDumbcourse
       return true if path == "signup" || path&.start_with?("signup/")
       return true if path == "register" || path&.start_with?("register/")
       return true if path == "emoji_map.json"
+      return true if path == "hcaptcha"
       false
     end
 

@@ -270,7 +270,7 @@ function ensureHCaptchaToken() {
     token = window.hcaptcha.getResponse(HCAPTCHA_WIDGET_ID) || '';
   } catch (e) {}
   if (!token) return Promise.reject(new Error('Please complete the captcha'));
-  return api('/hcaptcha/create.json', {
+  return api(BASE_PATH + '/hcaptcha', {
     method: 'POST',
     body: {
       token: token

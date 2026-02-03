@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 DiscourseDumbcourse::Engine.routes.draw do
+  post "/hcaptcha" => "app#hcaptcha"
   get "/" => "app#show"
   get "/*path" => "app#show"
 end
