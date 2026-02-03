@@ -59,7 +59,8 @@ input[type=text],input[type=search],input[type=email],input[type=password],input
 .list-item{display:block;padding:12px;border-bottom:1px solid var(--border);min-height:44px;
   color:var(--fg);text-decoration:none;cursor:pointer}
 .list-item:hover,.list-item:focus{background:var(--bg3)}
-.list-item .item-title{font-weight:600;margin-bottom:4px;line-height:1.3}
+.list-item .item-title{font-weight:600;margin-bottom:4px;line-height:1.3;display:flex;align-items:center;gap:6px}
+.list-item .item-title-text{flex:1;min-width:0}
 .list-item .item-meta{font-size:.8rem;color:var(--fg2);display:flex;gap:8px;flex-wrap:wrap}
 .list-item .item-excerpt{font-size:.85rem;color:var(--fg2);margin-top:4px;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -70,7 +71,8 @@ input[type=text],input[type=search],input[type=email],input[type=password],input
   justify-content:center;padding:0 5px;flex-shrink:0;margin-top:2px}
 
 /* Category badge */
-.cat{display:inline-block;font-size:.7rem;padding:1px 6px;border-radius:3px;color:#fff;font-weight:600}
+.cat{display:inline-block;font-size:.7rem;padding:2px 8px;border-radius:999px;background:transparent;
+  border:1px solid currentColor;font-weight:600;line-height:1.1}
 
 /* Post */
 .post{padding:12px;border-bottom:1px solid var(--border);cursor:pointer;scroll-margin-top:calc(var(--top-h) + 8px)}
@@ -278,7 +280,7 @@ body.auth-mode #searchBtn{display:none !important}
 .poll-pct{font-size:.75rem;color:var(--fg2)}
 
 /* Topic status icons */
-.topic-status-icon{opacity:.5;margin-right:4px;display:inline;vertical-align:middle}
+.topic-status-icon{opacity:.6;display:inline-flex;align-items:center;justify-content:center}
 .topic-status-icon svg{vertical-align:middle}
 
 /* Reactions */
@@ -2134,8 +2136,7 @@ function catBadge(id) {
   var c = S.categories[id];
   if (!c) return '';
   var bg = c.color ? '#' + c.color : '#666';
-  var fg = c.text_color ? '#' + c.text_color : '#fff';
-  return `<span class="cat" style="background:${bg};color:${fg}">${esc(c.name)}</span>`;
+  return `<span class="cat" style="color:${bg};border-color:${bg}">${esc(c.name)}</span>`;
 }
 function mergeCategories(list) {
   (list || []).forEach(function (c) {
@@ -2630,14 +2631,18 @@ var topicPage = 0,
   topicScrollCleanup = null;
 function topicItemHtml(t) {
   var unread = (t.unread_posts || 0) + (t.new_posts || 0);
-  var statusIcons = (t.pinned ? '<span class="topic-status-icon">' + IC.pin + '</span>' : '') + (t.closed || t.archived ? '<span class="topic-status-icon">' + IC.lock + '</span>' : '');
+  var statusIcons = '';
+  if (t.pinned) statusIcons += '<span class="topic-status-icon" title="Pinned">' + IC.pin + '</span>';
+  if (t.closed || t.archived) statusIcons += '<span class="topic-status-icon" title="Locked">' + IC.lock + '</span>';
+  var views = t.views != null ? '<span>' + t.views + ' views</span>' : '';
   return `<a class="list-item" href="${topicHref(t.id, t.slug)}" tabindex="0">
     <div style="display:flex;align-items:flex-start;gap:8px">
       <div style="flex:1;min-width:0">
-        <div class="item-title">${statusIcons}${escEmoji(t.title)}</div>
+        <div class="item-title"><span class="item-title-text">${escEmoji(t.title)}</span>${statusIcons}</div>
         <div class="item-meta">
           ${catBadge(t.category_id)}
           <span>${t.posts_count - 1} replies</span>
+          ${views}
           <span>${timeAgo(t.last_posted_at)}</span>
         </div>
         ${t.excerpt ? `<div class="item-excerpt">${t.excerpt}</div>` : ''}
