@@ -688,7 +688,15 @@ function api(path, opts) {
     if (p && typeof p.then === 'function') {
       return p.then(function (v) {
         clear();
-        if (method === 'GET' && (!opts || !opts.nocache)) {
+        if (method === 'GET' && path && typeof v === 'string' && /\.json(\?|$)/.test(path)) {
+          var trimmed = v.trim();
+          if (trimmed && (trimmed[0] === '{' || trimmed[0] === '[')) {
+            try {
+              v = JSON.parse(trimmed);
+            } catch (e) {}
+          }
+        }
+        if (method === 'GET' && (!opts || !opts.nocache) && typeof v !== 'string') {
           API_CACHE[path] = {
             t: Date.now(),
             v: v
@@ -2135,6 +2143,7 @@ function renderLogin() {
             storageSet('jt_user_id', S.userId);
             storageSet('jt_logged_in', '1');
             S.authChecked = true;
+            clearApiCache();
             return refreshCurrentUser().then(function (ok) {
               if (!ok) throw new Error('Login failed. Please try again.');
               window.location.href = makeUrl('/');
