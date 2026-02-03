@@ -264,26 +264,38 @@ function refreshCurrentUser() {
     },
     credentials: 'same-origin'
   }).then(function (resp) {
-    if (!resp || !resp.ok) return false;
-    return resp.json();
-  }).then(function (d) {
-    if (d && d.current_user) {
+    if (!resp) return { state: 'error' };
+    if (resp.status === 401 || resp.status === 403) return { state: 'unauth' };
+    if (!resp.ok) return { state: 'error' };
+    return resp.json().then(function (d) {
+      return { state: 'ok', data: d };
+    }, function () {
+      return { state: 'error' };
+    });
+  }).then(function (r) {
+    if (r.state === 'unauth') {
+      S.loggedIn = false;
+      storageSet('jt_logged_in', '0');
+      return false;
+    }
+    if (r.state === 'ok' && r.data && r.data.current_user) {
       S.loggedIn = true;
       S.authChecked = true;
-      S.username = d.current_user.username || S.username;
-      S.userId = d.current_user.id || S.userId;
+      S.username = r.data.current_user.username || S.username;
+      S.userId = r.data.current_user.id || S.userId;
       if (S.username) storageSet('jt_username', S.username);
       if (S.userId) storageSet('jt_user_id', S.userId);
       storageSet('jt_logged_in', '1');
       return true;
     }
-    S.loggedIn = false;
-    storageSet('jt_logged_in', '0');
-    return false;
+    if (r.state === 'ok') {
+      S.loggedIn = false;
+      storageSet('jt_logged_in', '0');
+      return false;
+    }
+    return !!S.loggedIn;
   }).catch(function () {
-    S.loggedIn = false;
-    storageSet('jt_logged_in', '0');
-    return false;
+    return !!S.loggedIn;
   }).then(function (v) {
     SESSION_CHECKING = false;
     return v;
