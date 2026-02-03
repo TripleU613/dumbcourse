@@ -12,6 +12,7 @@ export default apiInitializer((api) => {
     (BaseCustomSidebarSection, BaseCustomSidebarSectionLink) => {
       class DumbcourseLink extends BaseCustomSidebarSectionLink {
         name = "dumbcourse";
+        linkDragCss = "raw-link";
         text = i18n("dumbcourse.sidebar_link_text");
         title = i18n("dumbcourse.sidebar_link_title");
         href = getURL("/dumb");
