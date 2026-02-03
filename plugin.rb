@@ -4,7 +4,7 @@
 # about: Serve the Dumbcourse SPA under /dumb with push notifications
 # version: 0.2
 # authors: TripleU
-# url: https://forums.dietdroid.com
+# url: https://github.com/TripleU613/dumbcourse
 # required_version: 2.7.0
 
 module ::DiscourseDumbcourse
