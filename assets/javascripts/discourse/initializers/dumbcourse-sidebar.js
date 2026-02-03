@@ -4,6 +4,9 @@ import { i18n } from "discourse-i18n";
 
 export default apiInitializer((api) => {
   const siteSettings = api.container.lookup("service:site-settings");
+  if (!siteSettings?.dumbcourse_enabled) {
+    return;
+  }
   if (!siteSettings?.dumbcourse_sidebar_link_enabled) {
     return;
   }

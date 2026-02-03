@@ -1,4 +1,7 @@
 plugins:
+  dumbcourse_enabled:
+    default: true
+    client: true
   dumbcourse_default_theme:
     default: "dark"
     client: true

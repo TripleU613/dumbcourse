@@ -7,6 +7,7 @@ module DiscourseDumbcourse
     include ::CurrentUser
 
     layout false
+    before_action :ensure_enabled
     before_action :relax_security_headers
     before_action :redirect_anonymous_to_login
 
@@ -64,6 +65,10 @@ module DiscourseDumbcourse
       return if login_path_request?
 
       redirect_to "#{Discourse.base_path}/dumb/login"
+    end
+
+    def ensure_enabled
+      raise Discourse::NotFound unless SiteSetting.dumbcourse_enabled
     end
 
     def authenticated?

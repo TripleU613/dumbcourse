@@ -14,5 +14,5 @@ end
 require_relative "lib/discourse_dumbcourse/engine"
 
 after_initialize do
-  # No extra initialization yet.
+  enabled_site_setting :dumbcourse_enabled
 end
