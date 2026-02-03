@@ -1903,6 +1903,18 @@ function enhanceCooked(container) {
     el.textContent = label;
     el.dataset.dumbDate = '1';
   });
+  var links = container.querySelectorAll('a');
+  links.forEach(function (a) {
+    if (a.dataset.dumbLink) return;
+    a.dataset.dumbLink = '1';
+    if (!a.hasAttribute('tabindex')) a.setAttribute('tabindex', '0');
+    a.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        a.click();
+      }
+    });
+  });
   var pollOptions = container.querySelectorAll('.poll-option');
   pollOptions.forEach(function (opt) {
     if (opt.dataset.dumbPoll) return;
