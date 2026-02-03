@@ -4505,6 +4505,23 @@ function _renderNotifications() {
 function renderProfile(_x4) {
   return _renderProfile.apply(this, arguments);
 } // ============ SETTINGS ============
+function loadProfileActivity(uname) {
+  return api(`/u/${encodeURIComponent(uname)}/activity.json`).then(function (act) {
+    var posts = act && act.user_actions || [];
+    if (posts.length) return posts;
+    return api(`/user_actions.json?username=${encodeURIComponent(uname)}&offset=0`).then(function (act2) {
+      return act2 && act2.user_actions || [];
+    }, function () {
+      return [];
+    });
+  }, function () {
+    return api(`/user_actions.json?username=${encodeURIComponent(uname)}&offset=0`).then(function (act2) {
+      return act2 && act2.user_actions || [];
+    }, function () {
+      return [];
+    });
+  });
+}
 function _renderProfile() {
   _renderProfile = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee26(username) {
     var uname, _d3, u, html, act, posts, actHtml, _t23, _t24;
@@ -4576,10 +4593,12 @@ function _renderProfile() {
           // Load activity
           _context26.p = 3;
           _context26.n = 4;
-          return api(`/u/${encodeURIComponent(uname)}/activity.json`);
+          return loadProfileActivity(uname);
         case 4:
           act = _context26.v;
-          posts = act.user_actions || [];
+          posts = (act || []).filter(function (a) {
+            return a && a.topic_id;
+          });
           if (posts.length) {
             actHtml = posts.slice(0, 20).map(function (a) {
               return `
