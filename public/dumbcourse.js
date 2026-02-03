@@ -3590,8 +3590,8 @@ function renderPost(p, topicData) {
           ${trustHtml}
         </div>
       </div>
-      <span class="post-num">#${p.post_number}</span>
       <div class="post-meta-right">
+        <span class="post-num">#${p.post_number}</span>
         <span class="post-date">${timeAgo(p.created_at)}</span>
         ${replyInfo}
       </div>
