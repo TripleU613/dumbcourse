@@ -424,6 +424,13 @@ function cacheApiGet(path) {
   if (Date.now() - c.t > API_CACHE_TTL) return null;
   return c.v || null;
 }
+function clearApiCache() {
+  API_CACHE = {};
+  PERSISTENT_API_CACHE = {};
+  try {
+    storageRemove(API_CACHE_KEY);
+  } catch (e) {}
+}
 function rememberImage(url) {
   if (!url || IMAGE_CACHE[url]) return;
   IMAGE_CACHE[url] = true;
@@ -846,9 +853,20 @@ if ($viewBtn) {
     toggleView();
   });
 }
-bindTap(document.getElementById('refreshBtn'), function () {
+var refreshBtnEl = document.getElementById('refreshBtn');
+bindTap(refreshBtnEl, function () {
+  clearApiCache();
   return route();
 });
+if (refreshBtnEl) {
+  refreshBtnEl.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      clearApiCache();
+      route();
+    }
+  });
+}
 function goBack() {
   if (S.history.length > 1) {
     S.history.pop();
@@ -3579,6 +3597,9 @@ function renderPost(p, topicData) {
     else if (trust === 1) trustIcon = IC.check;
   }
   var trustHtml = roleLabel ? `<span class="post-trust">${roleIcon}${roleLabel}</span>` : trustIcon ? `<span class="post-trust">${trustIcon}Level ${trust}</span>` : '';
+  var curReact = p.current_user_reaction;
+  var curReactId = curReact && curReact.id ? curReact.id : typeof curReact === 'string' ? curReact : null;
+  var usedMain = !!p.current_user_used_main_reaction;
   return `<div class="post" id="post-${p.id}" data-post-number="${p.post_number}" tabindex="0">
     <div class="post-header">
       <a class="post-avatar-link" href="${userHref(p.username)}" tabindex="-1" aria-label="${esc(p.username)} profile">
@@ -3601,8 +3622,10 @@ function renderPost(p, topicData) {
     var rxs = p.reactions || [];
     return rxs.length ? '<div class="post-reactions">' + rxs.map(function (r) {
       var em = REACTION_EMOJI[r.id] || r.id;
-      var active = p.current_user_reaction === r.id ? ' reacted' : '';
-      return '<button class="reaction-pill' + active + '" data-react="' + esc(r.id) + '" data-post-id="' + p.id + '" tabindex="-1">' + em + ' ' + r.count + '</button>';
+      var isActive = curReactId ? curReactId === r.id : usedMain && r.id === '+1';
+      var active = isActive ? ' reacted' : '';
+      var likeActive = isActive && r.id === '+1' ? ' reacted-like' : '';
+      return '<button class="reaction-pill' + active + likeActive + '" data-react="' + esc(r.id) + '" data-post-id="' + p.id + '" tabindex="-1">' + em + ' ' + r.count + '</button>';
     }).join('') + '</div>' : '';
   }()}
     <div class="post-actions">
@@ -4737,7 +4760,7 @@ function _renderSearch() {
     return ptr;
   }
   document.addEventListener('touchstart', function (e) {
-    if (window.scrollY === 0 && isLoggedIn()) {
+    if (window.scrollY === 0 && isLoggedIn() && !parseTopicPath(currentPath())) {
       startY = e.touches[0].clientY;
       pulling = true;
       ensurePtr();
@@ -4780,6 +4803,7 @@ function _renderSearch() {
             ptr.classList.add('refreshing');
             _context11.p = 2;
             _context11.n = 3;
+            clearApiCache();
             return route();
           case 3:
             _context11.n = 5;
@@ -4788,7 +4812,13 @@ function _renderSearch() {
             _context11.p = 4;
             _t12 = _context11.v;
           case 5:
-            ptr.classList.remove('visible', 'refreshing');
+            if (ptr.classList.contains('refreshing')) {
+              setTimeout(function () {
+                ptr.classList.remove('visible', 'refreshing');
+              }, 450);
+            } else {
+              ptr.classList.remove('visible', 'refreshing');
+            }
             pulling = false;
           case 6:
             return _context11.a(2);
