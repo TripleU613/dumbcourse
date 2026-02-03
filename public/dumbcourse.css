@@ -196,6 +196,9 @@ button svg,.icon svg{vertical-align:middle}
 .profile-stat .num{font-weight:700;font-size:1rem;display:block}
 .profile-stat .label{font-size:.75rem;color:var(--fg2)}
 .profile-actions{padding:8px 0;display:flex;gap:8px;flex-wrap:wrap}
+.profile-edit .actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.profile-edit .actions button{flex:1;min-width:120px}
+.profile-edit .hint{font-size:.75rem;color:var(--fg2);margin-top:4px}
 @media(max-width:360px){
   .profile-card{flex-direction:column;align-items:flex-start}
   .profile-name{width:100%}

@@ -4279,29 +4279,55 @@ function _renderProfile() {
 function renderSettings() {
   setTitle('Settings');
   showBack(true);
-  $app.innerHTML = `<div class="compose">
+  $app.innerHTML = `<div class="compose profile-edit">
     <h3 style="margin-bottom:12px">Edit Profile</h3>
     <div class="field"><label for="setName">Display Name</label>
       <input type="text" id="setName" tabindex="0"></div>
+    <div class="field"><label for="setTitle">Title</label>
+      <input type="text" id="setTitle" tabindex="0"></div>
+    <div class="field"><label for="setLocation">Location</label>
+      <input type="text" id="setLocation" tabindex="0"></div>
+    <div class="field"><label for="setWebsite">Website</label>
+      <input type="text" id="setWebsite" tabindex="0"></div>
     <div class="field"><label for="setBio">Bio</label>
       <textarea id="setBio" tabindex="0"></textarea></div>
     <div class="field"><label for="setStatus">Status</label>
-      <input type="text" id="setStatus" placeholder="Status emoji + text" tabindex="0"></div>
-    <button id="saveProfBtn" tabindex="0" style="width:100%;margin-bottom:8px">Save</button>
+      <input type="text" id="setStatus" placeholder=":emoji: Status text" tabindex="0">
+      <div class="hint">Emoji + text (optional)</div></div>
+    <div class="actions">
+      <button id="saveProfBtn" tabindex="0" style="flex:1">Save</button>
+      <button id="cancelProfBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)">Cancel</button>
+    </div>
     <button tabindex="0" style="width:100%;background:var(--danger)" id="settingsLogout">Log Out</button>
   </div>`;
   api(`/u/${encodeURIComponent(S.username)}.json`).then(function (d) {
+    var u = d && d.user || {};
     var el = document.getElementById('setName');
-    if (el) el.value = d.user && d.user.name || '';
+    if (el) el.value = u.name || '';
+    var title = document.getElementById('setTitle');
+    if (title) title.value = u.title || '';
+    var loc = document.getElementById('setLocation');
+    if (loc) loc.value = u.location || '';
+    var web = document.getElementById('setWebsite');
+    if (web) web.value = u.website || '';
     var bio = document.getElementById('setBio');
-    if (bio) bio.value = d.user && d.user.bio_raw || '';
+    if (bio) bio.value = u.bio_raw || '';
+    var st = document.getElementById('setStatus');
+    if (st && u.user_status) {
+      var emoji = u.user_status.emoji ? ':' + u.user_status.emoji + ':' : '';
+      var desc = u.user_status.description || '';
+      st.value = (emoji ? emoji + ' ' : '') + desc;
+    }
   }).catch(function () {});
   requestAnimationFrame(function () {
     var el = document.getElementById('setName');
     if (el) el.focus();
   });
+  document.getElementById('cancelProfBtn').addEventListener('click', function () {
+    navigate('/u/me');
+  });
   document.getElementById('saveProfBtn').addEventListener('click', /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee10() {
-    var st, _t11;
+    var profileBody, st, emoji, desc, parts, _t11;
     return _regenerator().w(function (_context10) {
       while (1) switch (_context10.p = _context10.n) {
         case 0:
@@ -4309,40 +4335,65 @@ function renderSettings() {
           this.textContent = 'Saving...';
           _context10.p = 1;
           _context10.n = 2;
+          return ensureCsrf();
+        case 2:
+          profileBody = {
+            name: document.getElementById('setName').value.trim(),
+            title: document.getElementById('setTitle').value.trim(),
+            location: document.getElementById('setLocation').value.trim(),
+            website: document.getElementById('setWebsite').value.trim(),
+            bio_raw: document.getElementById('setBio').value
+          };
+          _context10.n = 3;
           return api(`/u/${encodeURIComponent(S.username)}.json`, {
             method: 'PUT',
-            body: {
-              name: document.getElementById('setName').value,
-              bio_raw: document.getElementById('setBio').value
+            body: profileBody
+          }).catch(function (e) {
+            var msg = e && e.message || '';
+            if (msg.indexOf('404') >= 0 || msg.indexOf('405') >= 0) {
+              return api(`/u/${encodeURIComponent(S.username)}/preferences.json`, {
+                method: 'PUT',
+                body: profileBody
+              });
             }
+            throw e;
           });
-        case 2:
+        case 3:
           st = document.getElementById('setStatus').value.trim();
           if (!st) {
-            _context10.n = 3;
+            _context10.n = 6;
             break;
           }
-          _context10.n = 3;
+          emoji = '';
+          desc = st;
+          if (st.indexOf(':') === 0 && st.indexOf(':', 1) > 1) {
+            parts = st.split(':');
+            emoji = parts[1] || '';
+            desc = st.slice(emoji.length + 2).trim();
+          }
+          _context10.n = 5;
           return api('/user-status.json', {
             method: 'PUT',
             body: {
-              description: st
+              emoji: emoji || undefined,
+              description: desc
             }
-          });
-        case 3:
+          }).catch(function () {});
+        case 5:
+        case 6:
           navigate('/u/me');
-          _context10.n = 5;
+          _context10.n = 8;
           break;
-        case 4:
-          _context10.p = 4;
+        case 7:
+          _context10.p = 7;
           _t11 = _context10.v;
           showAlert(formatErrorMessage(_t11));
           this.disabled = false;
           this.textContent = 'Save';
-        case 5:
+        case 8:
           return _context10.a(2);
       }
-    }, _callee10, this, [[1, 4]]);
+    }, _callee10, this, [[1, 7]]);
   })));
   document.getElementById('settingsLogout').addEventListener('click', function () {
     return logout();
