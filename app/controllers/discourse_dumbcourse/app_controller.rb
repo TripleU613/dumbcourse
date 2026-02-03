@@ -7,6 +7,7 @@ module DiscourseDumbcourse
     include ::CurrentUser
 
     layout false
+    skip_before_action :verify_authenticity_token
     before_action :ensure_enabled
     before_action :relax_security_headers
     before_action :redirect_anonymous_to_login
