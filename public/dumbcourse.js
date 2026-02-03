@@ -1119,17 +1119,20 @@ if ($viewBtn) {
     toggleView();
   });
 }
+function softRefresh(path) {
+  clearApiCache();
+  if (path) setUrl(path, true);
+  return route();
+}
 var refreshBtnEl = document.getElementById('refreshBtn');
 bindTap(refreshBtnEl, function () {
-  clearApiCache();
-  return route();
+  return softRefresh();
 });
 if (refreshBtnEl) {
   refreshBtnEl.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      clearApiCache();
-      route();
+      softRefresh();
     }
   });
 }
@@ -3237,28 +3240,14 @@ function _renderTopic() {
                   postData = fetched && fetched.post ? fetched.post : fetched;
                 case 5:
                   if (postData && postData.id) {
-                    postNumberMap[postData.id] = postData.post_number;
-                    container = document.getElementById('postsContainer');
-                    if (container) {
-                      container.insertAdjacentHTML('beforeend', renderPost(postData, d));
-                      enhanceCooked(container);
-                      updatePostTabindexes();
-                      attachPostHandlers(container, id, replyBox, postNumberMap, function (n) {
-                        replyToPostNumber = n;
-                      });
-                      posts = container.querySelectorAll('.post');
-                      if (posts.length) {
-                        last = posts[posts.length - 1];
-                        try { last.scrollIntoView({ behavior: 'smooth' }); } catch (e) { last.scrollIntoView(); }
-                        last.focus();
-                      }
-                    }
-                    syncLatestPosts(postData.id);
-                    markTopicRead(id);
+                    var slug = (CURRENT_TOPIC && CURRENT_TOPIC.slug) || d.slug || '';
+                    var tid = (CURRENT_TOPIC && CURRENT_TOPIC.id) || id;
+                    var targetPath = topicPath(tid, slug, postData.post_number);
                     this.disabled = false;
                     this.innerHTML = IC.send;
                     this.setAttribute('aria-label', 'Post reply');
                     this.setAttribute('title', 'Post reply');
+                    return _context20.a(2, softRefresh(targetPath));
                   }
                   _context20.n = 6;
                   return renderTopic(id, postData && postData.post_number ? postData.post_number : null);
@@ -3710,7 +3699,7 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
               }, _callee4, this, [[2, 5]]);
             })));
             bodyEl.querySelector('.cancel-edit').addEventListener('click', function () {
-              return refreshPostById(postId);
+              return softRefresh();
             });
             _context5.n = 5;
             break;
@@ -3748,7 +3737,7 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
             });
           case 2:
             _context6.n = 3;
-            return refreshPost(postId);
+            return softRefresh();
           case 3:
             _context6.n = 5;
             break;
@@ -3839,7 +3828,7 @@ function showReactionPicker(postId) {
           case 3:
             close();
             _context7.n = 4;
-            return refreshPostById(postId);
+            return softRefresh();
           case 4:
             _context7.n = 6;
             break;
@@ -5264,8 +5253,7 @@ function _renderSearch() {
             ptr.classList.add('refreshing');
             _context11.p = 2;
             _context11.n = 3;
-            clearApiCache();
-            return route();
+            return softRefresh();
           case 3:
             _context11.n = 5;
             break;
