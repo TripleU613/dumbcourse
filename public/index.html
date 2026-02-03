@@ -83,8 +83,8 @@ input[type=text],input[type=search],input[type=email],input[type=password],input
 .post.active{background:var(--bg3)}
 .post-actions{display:none}
 .post.active .post-actions{display:flex}
-.post-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}
-.post-reply-link{background:none;border:1px solid transparent;color:var(--fg2);font-size:.75rem;margin-left:auto;display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:999px}
+.post-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;position:relative}
+.post-reply-link{background:none;border:1px solid transparent;color:var(--fg2);font-size:.75rem;display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:999px}
 .post-reply-link:focus{outline:3px solid var(--focus);outline-offset:1px;border-color:var(--focus)}
 .post-avatar-link{display:inline-flex;align-items:center;border-radius:50%}
 .post-avatar-link:focus{outline:3px solid var(--focus);outline-offset:2px}
@@ -96,7 +96,7 @@ input[type=text],input[type=search],input[type=email],input[type=password],input
 .post-trust{font-size:.55rem;color:var(--fg2);border:1px solid var(--border);padding:1px 5px;border-radius:999px;letter-spacing:.04em;text-transform:uppercase;opacity:.85;display:inline-flex;align-items:center;gap:4px}
 .post-trust svg{width:12px;height:12px;stroke:currentColor}
 .post-meta-right{margin-left:auto;display:flex;align-items:center;gap:8px}
-.post-num{font-size:.7rem;color:var(--fg2)}
+.post-num{font-size:.7rem;color:var(--fg2);position:absolute;left:50%;top:2px;transform:translateX(-50%)}
 .post-body{font-size:.9rem;line-height:1.5;word-break:break-word}
 .post-body img{max-width:100%;height:auto;border-radius:var(--radius)}
 .post-body img.emoji{display:inline;width:1.2em;height:1.2em;vertical-align:middle;border-radius:0}
@@ -3904,7 +3904,7 @@ function renderPost(p, topicData) {
     var replyAvatar = p.reply_to_user && p.reply_to_user.avatar_template ? `<img src="${avatarUrl(p.reply_to_user.avatar_template, 20)}" alt="" style="width:16px;height:16px;border-radius:50%;vertical-align:middle">` : '';
     var replySlug = topicData && topicData.slug ? topicData.slug : '';
     var replyTopicId = topicData && topicData.id ? topicData.id : '';
-    replyInfo = `<button class="post-reply-link" data-jump-post="${p.reply_to_post_number}" data-topic-id="${replyTopicId}" data-topic-slug="${esc(replySlug)}" tabindex="-1" aria-label="Jump to reply #${p.reply_to_post_number}" title="Jump to reply #${p.reply_to_post_number}">${IC.reply} ${replyAvatar}#${p.reply_to_post_number}</button>`;
+    replyInfo = `<button class="post-reply-link" data-jump-post="${p.reply_to_post_number}" data-topic-id="${replyTopicId}" data-topic-slug="${esc(replySlug)}" tabindex="-1" aria-label="Jump to reply #${p.reply_to_post_number}" title="Jump to reply #${p.reply_to_post_number}">${IC.reply} ${replyAvatar}</button>`;
   }
   var roleLabel = '';
   var roleIcon = '';
@@ -3935,11 +3935,11 @@ function renderPost(p, topicData) {
           ${trustHtml}
         </div>
       </div>
+      <span class="post-num">#${p.post_number}</span>
       <div class="post-meta-right">
         <span class="post-date">${timeAgo(p.created_at)}</span>
-        <span class="post-num">#${p.post_number}</span>
+        ${replyInfo}
       </div>
-      ${replyInfo}
     </div>
     <div class="post-body">${body}${pollsHtml}</div>
     ${function () {
