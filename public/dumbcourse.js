@@ -1210,6 +1210,11 @@ function routeLogic() {
     var hash = currentPath();
     if (currentQuery()) hash += '?' + currentQuery();
     if (S.history[S.history.length - 1] !== hash) S.history.push(hash);
+    // Clear CURRENT_TOPIC unless navigating to a topic (will be set by renderTopic)
+    var pathForCheck = hash.split('?')[0] || '/';
+    if (!parseTopicPath(pathForCheck) && !pathForCheck.match(/^\/messages\/\d+/)) {
+      CURRENT_TOPIC = null;
+    }
     if (!isLoggedIn()) {
       if (hash === '/signup' || hash === '/register') {
         showCreate('');
@@ -2901,7 +2906,12 @@ function _renderTopic() {
           CURRENT_TOPIC = {
             id: d && d.id ? d.id : parseInt(id, 10),
             slug: d && d.slug ? d.slug : '',
-            title: d && d.title ? d.title : ''
+            title: d && d.title ? d.title : '',
+            closed: d && d.closed,
+            pinned: d && d.pinned,
+            pinned_at: d && d.pinned_at,
+            archived: d && d.archived,
+            visible: d && d.visible
           };
           markTopicRead(d && d.id ? d.id : id);
           setTitle(d.title || 'Topic');
@@ -2941,20 +2951,7 @@ function _renderTopic() {
           maxIdx = loadedIndexes.length ? Math.max.apply(null, loadedIndexes) : -1;
           earlierIds = allPostIds.slice(0, minIdx);
           laterIds = allPostIds.slice(maxIdx + 1);
-          html = `<h2 style="padding:12px;font-size:1.1rem">${escEmoji(d.title)}</h2>`; // Topic mod actions for admins/moderators
-          if (canModerate()) {
-            var isClosed = d.closed;
-            var isPinned = d.pinned || d.pinned_at;
-            var isArchived = d.archived;
-            var isVisible = d.visible !== false;
-            html += `<div class="topic-mod-actions" style="padding:0 12px 12px;display:flex;flex-wrap:wrap;gap:8px">
-    <button data-mod-close="${d.id}" data-closed="${isClosed ? '1' : '0'}" tabindex="0" style="background:var(--bg3);color:var(--fg);font-size:0.85rem">${IC.lock} ${isClosed ? 'Reopen' : 'Close'}</button>
-    <button data-mod-pin="${d.id}" data-pinned="${isPinned ? '1' : '0'}" tabindex="0" style="background:var(--bg3);color:var(--fg);font-size:0.85rem">${IC.pin} ${isPinned ? 'Unpin' : 'Pin'}</button>
-    <button data-mod-archive="${d.id}" data-archived="${isArchived ? '1' : '0'}" tabindex="0" style="background:var(--bg3);color:var(--fg);font-size:0.85rem">${IC.clock} ${isArchived ? 'Unarchive' : 'Archive'}</button>
-    <button data-mod-unlist="${d.id}" data-visible="${isVisible ? '1' : '0'}" tabindex="0" style="background:var(--bg3);color:var(--fg);font-size:0.85rem">${IC.eye} ${isVisible ? 'Unlist' : 'List'}</button>
-  </div>`;
-          }
-          // Show "load earlier" at the top if there are older posts
+          html = `<h2 style="padding:12px;font-size:1.1rem">${escEmoji(d.title)}</h2>`; // Show "load earlier" at the top if there are older posts
           if (earlierIds.length > 0) {
             html += `<button id="loadEarlierPosts" tabindex="0" style="width:100%;margin:8px 0;background:var(--bg3);color:var(--fg)">Load ${earlierIds.length} earlier posts</button>`;
           }
@@ -2992,95 +2989,6 @@ function _renderTopic() {
           refreshComposeActions();
           enhanceCooked($app);
           updatePostTabindexes();
-          // Topic mod action handlers
-          document.querySelectorAll('[data-mod-close]').forEach(function (btn) {
-            if (btn._bound) return;
-            btn._bound = true;
-            btn.addEventListener('click', function () {
-              var topicId = btn.dataset.modClose;
-              var isClosed = btn.dataset.closed === '1';
-              var action = isClosed ? 'Reopen' : 'Close';
-              confirm(action + ' this topic?').then(function (ok) {
-                if (!ok) return;
-                btn.disabled = true;
-                api('/t/' + topicId + '/status.json', {
-                  method: 'PUT',
-                  body: { status: 'closed', enabled: isClosed ? 'false' : 'true' }
-                }).then(function () {
-                  return softRefresh();
-                }).catch(function (e) {
-                  showAlert(e.message || 'Failed to ' + action.toLowerCase() + ' topic');
-                  btn.disabled = false;
-                });
-              });
-            });
-          });
-          document.querySelectorAll('[data-mod-pin]').forEach(function (btn) {
-            if (btn._bound) return;
-            btn._bound = true;
-            btn.addEventListener('click', function () {
-              var topicId = btn.dataset.modPin;
-              var isPinned = btn.dataset.pinned === '1';
-              var action = isPinned ? 'Unpin' : 'Pin';
-              confirm(action + ' this topic?').then(function (ok) {
-                if (!ok) return;
-                btn.disabled = true;
-                api('/t/' + topicId + '/status.json', {
-                  method: 'PUT',
-                  body: { status: 'pinned', enabled: isPinned ? 'false' : 'true', until: isPinned ? '' : '2099-12-31' }
-                }).then(function () {
-                  return softRefresh();
-                }).catch(function (e) {
-                  showAlert(e.message || 'Failed to ' + action.toLowerCase() + ' topic');
-                  btn.disabled = false;
-                });
-              });
-            });
-          });
-          document.querySelectorAll('[data-mod-archive]').forEach(function (btn) {
-            if (btn._bound) return;
-            btn._bound = true;
-            btn.addEventListener('click', function () {
-              var topicId = btn.dataset.modArchive;
-              var isArchived = btn.dataset.archived === '1';
-              var action = isArchived ? 'Unarchive' : 'Archive';
-              confirm(action + ' this topic?').then(function (ok) {
-                if (!ok) return;
-                btn.disabled = true;
-                api('/t/' + topicId + '/status.json', {
-                  method: 'PUT',
-                  body: { status: 'archived', enabled: isArchived ? 'false' : 'true' }
-                }).then(function () {
-                  return softRefresh();
-                }).catch(function (e) {
-                  showAlert(e.message || 'Failed to ' + action.toLowerCase() + ' topic');
-                  btn.disabled = false;
-                });
-              });
-            });
-          });
-          document.querySelectorAll('[data-mod-unlist]').forEach(function (btn) {
-            if (btn._bound) return;
-            btn._bound = true;
-            btn.addEventListener('click', function () {
-              var topicId = btn.dataset.modUnlist;
-              var isVisible = btn.dataset.visible === '1';
-              var action = isVisible ? 'Unlist' : 'List';
-              confirm(action + ' this topic?').then(function (ok) {
-                if (!ok) return;
-                btn.disabled = true;
-                api('/t/' + topicId + '/status.json', {
-                  method: 'PUT',
-                  body: { status: 'visible', enabled: isVisible ? 'false' : 'true' }
-                }).then(function () {
-                  return softRefresh();
-                }).catch(function (e) {
-                  showAlert(e.message || 'Failed to ' + action.toLowerCase() + ' topic');
-                  btn.disabled = false;
-                });
-              });
-            });
-          });
           replyToPostNumber = null; // Auto-save draft
           replyBox = document.getElementById('replyBox');
           var discardReplyBtn = document.getElementById('discardReply');
@@ -4992,9 +4900,33 @@ var viewOpen = false;
 var viewJustToggled = false;
 function updateMenuItems() {
   var logged = isLoggedIn();
-  $menu.querySelectorAll('[data-auth]').forEach(function (el) {
-    return el.style.display = logged ? '' : 'none';
+  var inTopic = !!(CURRENT_TOPIC && CURRENT_TOPIC.id);
+  var showMod = inTopic && canModerate();
+  // Show/hide nav items (hide when in topic mod mode)
+  $menu.querySelectorAll('[data-nav]').forEach(function (el) {
+    var isAuth = el.hasAttribute('data-auth');
+    if (showMod) {
+      el.style.display = 'none';
+    } else {
+      el.style.display = isAuth ? (logged ? '' : 'none') : '';
+    }
   });
+  // Show/hide mod items
+  $menu.querySelectorAll('[data-mod]').forEach(function (el) {
+    el.style.display = showMod ? '' : 'none';
+  });
+  // Update mod button labels based on topic state
+  if (showMod && CURRENT_TOPIC) {
+    var topic = CURRENT_TOPIC;
+    var closeBtn = document.getElementById('menuModClose');
+    var pinBtn = document.getElementById('menuModPin');
+    var archiveBtn = document.getElementById('menuModArchive');
+    var unlistBtn = document.getElementById('menuModUnlist');
+    if (closeBtn) closeBtn.querySelector('span').textContent = topic.closed ? 'Reopen' : 'Close';
+    if (pinBtn) pinBtn.querySelector('span').textContent = (topic.pinned || topic.pinned_at) ? 'Unpin' : 'Pin';
+    if (archiveBtn) archiveBtn.querySelector('span').textContent = topic.archived ? 'Unarchive' : 'Archive';
+    if (unlistBtn) unlistBtn.querySelector('span').textContent = topic.visible === false ? 'List' : 'Unlist';
+  }
   var authBtn = document.getElementById('menuAuthBtn');
   if (logged) {
     authBtn.textContent = '';
@@ -5079,6 +5011,79 @@ document.getElementById('menuAuthBtn').addEventListener('click', function (e) {
   if (isLoggedIn()) logout();else {
     navigate('/');
   }
+});
+// Mod menu action handlers
+document.getElementById('menuModClose').addEventListener('click', function () {
+  if (!CURRENT_TOPIC || !CURRENT_TOPIC.id) return;
+  var topicId = CURRENT_TOPIC.id;
+  var isClosed = !!CURRENT_TOPIC.closed;
+  var action = isClosed ? 'Reopen' : 'Close';
+  toggleMenu(false);
+  confirm(action + ' this topic?').then(function (ok) {
+    if (!ok) return;
+    api('/t/' + topicId + '/status.json', {
+      method: 'PUT',
+      body: { status: 'closed', enabled: isClosed ? 'false' : 'true' }
+    }).then(function () {
+      return softRefresh();
+    }).catch(function (e) {
+      showAlert(e.message || 'Failed to ' + action.toLowerCase() + ' topic');
+    });
+  });
+});
+document.getElementById('menuModPin').addEventListener('click', function () {
+  if (!CURRENT_TOPIC || !CURRENT_TOPIC.id) return;
+  var topicId = CURRENT_TOPIC.id;
+  var isPinned = !!(CURRENT_TOPIC.pinned || CURRENT_TOPIC.pinned_at);
+  var action = isPinned ? 'Unpin' : 'Pin';
+  toggleMenu(false);
+  confirm(action + ' this topic?').then(function (ok) {
+    if (!ok) return;
+    api('/t/' + topicId + '/status.json', {
+      method: 'PUT',
+      body: { status: 'pinned', enabled: isPinned ? 'false' : 'true', until: isPinned ? '' : '2099-12-31' }
+    }).then(function () {
+      return softRefresh();
+    }).catch(function (e) {
+      showAlert(e.message || 'Failed to ' + action.toLowerCase() + ' topic');
+    });
+  });
+});
+document.getElementById('menuModArchive').addEventListener('click', function () {
+  if (!CURRENT_TOPIC || !CURRENT_TOPIC.id) return;
+  var topicId = CURRENT_TOPIC.id;
+  var isArchived = !!CURRENT_TOPIC.archived;
+  var action = isArchived ? 'Unarchive' : 'Archive';
+  toggleMenu(false);
+  confirm(action + ' this topic?').then(function (ok) {
+    if (!ok) return;
+    api('/t/' + topicId + '/status.json', {
+      method: 'PUT',
+      body: { status: 'archived', enabled: isArchived ? 'false' : 'true' }
+    }).then(function () {
+      return softRefresh();
+    }).catch(function (e) {
+      showAlert(e.message || 'Failed to ' + action.toLowerCase() + ' topic');
+    });
+  });
+});
+document.getElementById('menuModUnlist').addEventListener('click', function () {
+  if (!CURRENT_TOPIC || !CURRENT_TOPIC.id) return;
+  var topicId = CURRENT_TOPIC.id;
+  var isVisible = CURRENT_TOPIC.visible !== false;
+  var action = isVisible ? 'Unlist' : 'List';
+  toggleMenu(false);
+  confirm(action + ' this topic?').then(function (ok) {
+    if (!ok) return;
+    api('/t/' + topicId + '/status.json', {
+      method: 'PUT',
+      body: { status: 'visible', enabled: isVisible ? 'false' : 'true' }
+    }).then(function () {
+      return softRefresh();
+    }).catch(function (e) {
+      showAlert(e.message || 'Failed to ' + action.toLowerCase() + ' topic');
+    });
+  });
 });
 document.addEventListener('click', function (e) {
   if (!menuJustToggled && $menu.classList.contains('open') && !$menu.contains(e.target) && e.target !== $menuBtn) {
