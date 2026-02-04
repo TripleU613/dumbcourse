@@ -11,6 +11,14 @@ module ::DiscourseDumbcourse
   PLUGIN_NAME = "discourse-dumbcourse"
 end
 
+unless ::ActionController::Base.respond_to?(:requires_plugin)
+  class << ::ActionController::Base
+    def requires_plugin(*)
+      # no-op for older Discourse versions
+    end
+  end
+end
+
 require_relative "lib/discourse_dumbcourse/engine"
 require_relative "lib/discourse_dumbcourse/push_sender"
 
