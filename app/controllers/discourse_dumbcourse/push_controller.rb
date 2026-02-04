@@ -2,9 +2,7 @@
 
 module DiscourseDumbcourse
   class PushController < ::ApplicationController
-    if respond_to?(:requires_plugin)
-      requires_plugin DiscourseDumbcourse::PLUGIN_NAME
-    end
+    requires_plugin DiscourseDumbcourse::PLUGIN_NAME
     requires_login except: [:server_info]
     skip_before_action :verify_authenticity_token
 
@@ -13,7 +11,7 @@ module DiscourseDumbcourse
     def server_info
       render json: {
         server: SiteSetting.dumbcourse_ntfy_server,
-        enabled: SiteSetting.dumbcourse_push_enabled
+        enabled: SiteSetting.dumbcourse_push_enabled,
       }
     end
 
@@ -32,7 +30,7 @@ module DiscourseDumbcourse
       devices[device_id] = {
         topic: topic,
         registered_at: Time.now.iso8601,
-        user_agent: request.user_agent
+        user_agent: request.user_agent,
       }
       PluginStore.set("dumbcourse", "push_devices_#{current_user.id}", devices)
 
@@ -66,12 +64,12 @@ module DiscourseDumbcourse
         render json: {
           registered: device.present?,
           topic: device&.dig("topic"),
-          device_count: devices.size
+          device_count: devices.size,
         }
       else
         render json: {
           device_count: devices.size,
-          devices: devices.keys
+          devices: devices.keys,
         }
       end
     end

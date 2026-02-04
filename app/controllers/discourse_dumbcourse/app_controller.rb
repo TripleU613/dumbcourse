@@ -4,9 +4,7 @@ require "rack/mime"
 
 module DiscourseDumbcourse
   class AppController < ::ActionController::Base
-    if respond_to?(:requires_plugin)
-      requires_plugin DiscourseDumbcourse::PLUGIN_NAME
-    end
+    requires_plugin DiscourseDumbcourse::PLUGIN_NAME
     include ::CurrentUser
 
     layout false
@@ -69,7 +67,10 @@ module DiscourseDumbcourse
           Time.now.to_i
         end
       )
-      html = html.gsub(/(dumbcourse\.(?:js|css)\?v=)\d+/) { |m| Regexp.last_match(1) + asset_version.to_s }
+      html =
+        html.gsub(/(dumbcourse\.(?:js|css)\?v=)\d+/) do
+          Regexp.last_match(1) + asset_version.to_s
+        end
       settings = {
         defaultTheme: SiteSetting.dumbcourse_default_theme,
         defaultView: SiteSetting.dumbcourse_default_view,
@@ -88,7 +89,6 @@ module DiscourseDumbcourse
       html = html.gsub(%r{"/dumb(?=/|")}, "\"#{base_path}")
       render plain: html, content_type: "text/html; charset=utf-8"
     end
-
 
     def hcaptcha
       raise Discourse::NotFound unless SiteSetting.discourse_hcaptcha_enabled
