@@ -10,9 +10,9 @@ module DiscourseDumbcourse
     # Returns ntfy server URL for the app to use
     def server_info
       render json: {
-        server: SiteSetting.dumbcourse_ntfy_server,
-        enabled: SiteSetting.dumbcourse_push_enabled,
-      }
+               server: SiteSetting.dumbcourse_ntfy_server,
+               enabled: SiteSetting.dumbcourse_push_enabled,
+             }
     end
 
     # POST /<base>/push/register
@@ -42,9 +42,7 @@ module DiscourseDumbcourse
     def unregister
       device_id = params[:device_id].to_s.strip
 
-      if device_id.blank?
-        return render json: { error: "device_id required" }, status: :bad_request
-      end
+      return render json: { error: "device_id required" }, status: :bad_request if device_id.blank?
 
       devices = PluginStore.get("dumbcourse", "push_devices_#{current_user.id}") || {}
       devices.delete(device_id)
@@ -62,15 +60,12 @@ module DiscourseDumbcourse
       if device_id.present?
         device = devices[device_id]
         render json: {
-          registered: device.present?,
-          topic: device&.dig("topic"),
-          device_count: devices.size,
-        }
+                 registered: device.present?,
+                 topic: device&.dig("topic"),
+                 device_count: devices.size,
+               }
       else
-        render json: {
-          device_count: devices.size,
-          devices: devices.keys,
-        }
+        render json: { device_count: devices.size, devices: devices.keys }
       end
     end
   end
