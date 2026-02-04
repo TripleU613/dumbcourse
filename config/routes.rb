@@ -19,6 +19,16 @@ DiscourseDumbcourse::Engine.routes.draw do
       end
 end
 
+class DiscourseDumbcourseBasePathConstraint
+  def matches?(req)
+    req.params[:dumbcourse_base_path].to_s == DiscourseDumbcourse.base_path
+  end
+end
+
 Discourse::Application.routes.draw do
-  mount ::DiscourseDumbcourse::Engine, at: DiscourseDumbcourse.base_path_with_slash
+  constraints DiscourseDumbcourseBasePathConstraint.new do
+    scope "/:dumbcourse_base_path" do
+      mount ::DiscourseDumbcourse::Engine, at: "/"
+    end
+  end
 end
