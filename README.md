@@ -12,6 +12,15 @@ Demo: https://forums.jtechforums.org/dumb
 
 ---
 
+
+This project was made possible with the work of @ars18:
+
+https://github.com/alltechdev/jtech-web
+
+The original project uses a Cloudflare worker proxy to serve the forums, and the dumbcourse plugin fully integrates it into your discourse instance.
+
+---
+
 ## What you get
 
 - A minimal single-page UI served from the same Discourse instance at **`/dumb`**
