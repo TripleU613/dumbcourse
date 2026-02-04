@@ -13,9 +13,11 @@ DiscourseDumbcourse::Engine.routes.draw do
 
   # Main app routes (catch-all) - exclude push paths
   get "/" => "app#show"
-  get "/*path" => "app#show", constraints: lambda { |req| !req.path.start_with?("/dumb/push") }
+  get "/*path" => "app#show", constraints: lambda { |req|
+    !req.path.start_with?("#{DiscourseDumbcourse.base_path_with_slash}/push")
+  }
 end
 
 Discourse::Application.routes.draw do
-  mount ::DiscourseDumbcourse::Engine, at: "/dumb"
+  mount ::DiscourseDumbcourse::Engine, at: DiscourseDumbcourse.base_path_with_slash
 end
