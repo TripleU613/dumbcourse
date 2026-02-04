@@ -21,14 +21,16 @@ module ::DiscourseDumbcourse
   def self.base_path_with_slash
     "/#{base_path}"
   end
-end
 
-unless ::ActionController::Base.respond_to?(:requires_plugin)
-  class << ::ActionController::Base
+  module RequiresPluginFallback
     def requires_plugin(*)
       # no-op for older Discourse versions
     end
   end
+end
+
+unless ::ActionController::Base.respond_to?(:requires_plugin)
+  ::ActionController::Base.extend(::DiscourseDumbcourse::RequiresPluginFallback)
 end
 
 require_relative "lib/discourse_dumbcourse/engine"
