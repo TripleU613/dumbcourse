@@ -2981,8 +2981,9 @@ function _renderTopic() {
       <div id="replyPreview" class="md-preview" style="display:none" tabindex="0"></div>
     </div>
     <div class="actions chip-actions">
-      <label id="uploadBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Upload" title="Upload" role="button"><span class="btn-icon">${IC.upload}</span><input type="file" id="uploadFile" style="position:absolute;opacity:0;width:1px;height:1px;overflow:hidden"></label>
+      <button id="uploadBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Upload" title="Upload">${IC.upload}</button>
       <button id="emojiBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Emoji">${IC.smile}</button>
+      <input type="file" id="uploadFile" style="position:absolute;opacity:0;width:1px;height:1px;overflow:hidden;pointer-events:none">
       <button id="replyPreviewBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Preview" title="Preview"></button>
       <span class="actions-spacer" aria-hidden="true"></span>
       <button id="discardReply" class="discard" tabindex="0" aria-label="Discard reply draft" title="Discard">${IC.trash}</button>
@@ -3124,13 +3125,9 @@ function _renderTopic() {
           });
           uploadBtn = document.getElementById('uploadBtn');
           var uploadInput = document.getElementById('uploadFile');
-          // Label with input inside handles touch/click automatically
-          // Only need keydown for d-pad navigation
-          uploadBtn.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              uploadInput.click();
-            }
+          // Click handler works for both touch and D-pad (same as emojiBtn)
+          uploadBtn.addEventListener('click', function () {
+            uploadInput.click();
           });
           uploadInput.addEventListener('change', /*#__PURE__*/function () {
             var _ref13 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee19(e) {
@@ -4142,8 +4139,9 @@ function renderNewTopic() {
       </div>
     </div>
     <div class="actions chip-actions">
-      <label id="uploadNt" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Upload" title="Upload" role="button"><span class="btn-icon">${IC.upload}</span><input type="file" id="uploadNtFile" style="position:absolute;opacity:0;width:1px;height:1px;overflow:hidden"></label>
+      <button id="uploadNt" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Upload" title="Upload">${IC.upload}</button>
       <button id="previewNt" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Preview" title="Preview"></button>
+      <input type="file" id="uploadNtFile" style="position:absolute;opacity:0;width:1px;height:1px;overflow:hidden;pointer-events:none">
       <span class="actions-spacer" aria-hidden="true"></span>
       <button id="discardNt" class="discard" tabindex="0" aria-label="Discard topic draft" title="Discard">${IC.trash}</button>
       <button id="postTopic" tabindex="0" aria-label="Create topic" title="Create topic">${IC.send}</button>
@@ -4200,13 +4198,9 @@ function renderNewTopic() {
   refreshComposeActions();
   var uploadNtBtn = document.getElementById('uploadNt');
   var uploadNtInput = document.getElementById('uploadNtFile');
-  // Label with input inside handles touch/click automatically
-  // Only need keydown for d-pad navigation
-  uploadNtBtn.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      uploadNtInput.click();
-    }
+  // Click handler works for both touch and D-pad (same as emojiBtn)
+  uploadNtBtn.addEventListener('click', function () {
+    uploadNtInput.click();
   });
   uploadNtInput.addEventListener('change', /*#__PURE__*/function () {
     var _ref9 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee9(e) {
@@ -5118,6 +5112,21 @@ document.getElementById('menuModUnlist').addEventListener('click', function () {
       return softRefresh();
     }).catch(function (e) {
       showAlert(e.message || 'Failed to ' + action.toLowerCase() + ' topic');
+    });
+  });
+});
+document.getElementById('menuModDelete').addEventListener('click', function () {
+  if (!CURRENT_TOPIC || !CURRENT_TOPIC.id) return;
+  var topicId = CURRENT_TOPIC.id;
+  toggleMenu(false);
+  confirm('Delete this topic? This cannot be undone.').then(function (ok) {
+    if (!ok) return;
+    api('/t/' + topicId + '.json', {
+      method: 'DELETE'
+    }).then(function () {
+      navigate('/');
+    }).catch(function (e) {
+      showAlert(e.message || 'Failed to delete topic');
     });
   });
 });
