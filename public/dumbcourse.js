@@ -364,10 +364,15 @@ var S = {
   categories: {},
   drafts: JSON.parse(storageGet('jt_drafts', '{}') || '{}'),
   history: [],
-  pushRegistered: false
+  pushRegistered: false,
+  admin: storageGet('jt_admin', '') === '1',
+  moderator: storageGet('jt_moderator', '') === '1'
 };
 function isLoggedIn() {
   return !!S.loggedIn;
+}
+function canModerate() {
+  return S.admin || S.moderator;
 }
 // Push notification registration for native app (ES5 compatible for Chrome 44+)
 var PUSH_REGISTERED = false;
@@ -496,9 +501,13 @@ function refreshCurrentUser() {
       S.authChecked = true;
       S.username = r.data.current_user.username || S.username;
       S.userId = r.data.current_user.id || S.userId;
+      S.admin = !!r.data.current_user.admin;
+      S.moderator = !!r.data.current_user.moderator;
       if (S.username) storageSet('jt_username', S.username);
       if (S.userId) storageSet('jt_user_id', S.userId);
       storageSet('jt_logged_in', '1');
+      storageSet('jt_admin', S.admin ? '1' : '0');
+      storageSet('jt_moderator', S.moderator ? '1' : '0');
       return true;
     }
     if (r.state === 'ok') {
@@ -2462,12 +2471,16 @@ function _logout() {
           S.userId = '';
           S.loggedIn = false;
           S.authChecked = true;
+          S.admin = false;
+          S.moderator = false;
           storageRemove('jt_session_token');
           storageRemove('jt_csrf');
           storageRemove('jt_cookies');
           storageRemove('jt_username');
           storageRemove('jt_user_id');
           storageSet('jt_logged_in', '0');
+          storageSet('jt_admin', '0');
+          storageSet('jt_moderator', '0');
           navigate('/');
         case 3:
           return _context15.a(2);
@@ -2928,7 +2941,20 @@ function _renderTopic() {
           maxIdx = loadedIndexes.length ? Math.max.apply(null, loadedIndexes) : -1;
           earlierIds = allPostIds.slice(0, minIdx);
           laterIds = allPostIds.slice(maxIdx + 1);
-          html = `<h2 style="padding:12px;font-size:1.1rem">${escEmoji(d.title)}</h2>`; // Show "load earlier" at the top if there are older posts
+          html = `<h2 style="padding:12px;font-size:1.1rem">${escEmoji(d.title)}</h2>`; // Topic mod actions for admins/moderators
+          if (canModerate()) {
+            var isClosed = d.closed;
+            var isPinned = d.pinned || d.pinned_at;
+            var isArchived = d.archived;
+            var isVisible = d.visible !== false;
+            html += `<div class="topic-mod-actions" style="padding:0 12px 12px;display:flex;flex-wrap:wrap;gap:8px">
+    <button data-mod-close="${d.id}" data-closed="${isClosed ? '1' : '0'}" tabindex="0" style="background:var(--bg3);color:var(--fg);font-size:0.85rem">${IC.lock} ${isClosed ? 'Reopen' : 'Close'}</button>
+    <button data-mod-pin="${d.id}" data-pinned="${isPinned ? '1' : '0'}" tabindex="0" style="background:var(--bg3);color:var(--fg);font-size:0.85rem">${IC.pin} ${isPinned ? 'Unpin' : 'Pin'}</button>
+    <button data-mod-archive="${d.id}" data-archived="${isArchived ? '1' : '0'}" tabindex="0" style="background:var(--bg3);color:var(--fg);font-size:0.85rem">${IC.clock} ${isArchived ? 'Unarchive' : 'Archive'}</button>
+    <button data-mod-unlist="${d.id}" data-visible="${isVisible ? '1' : '0'}" tabindex="0" style="background:var(--bg3);color:var(--fg);font-size:0.85rem">${IC.eye} ${isVisible ? 'Unlist' : 'List'}</button>
+  </div>`;
+          }
+          // Show "load earlier" at the top if there are older posts
           if (earlierIds.length > 0) {
             html += `<button id="loadEarlierPosts" tabindex="0" style="width:100%;margin:8px 0;background:var(--bg3);color:var(--fg)">Load ${earlierIds.length} earlier posts</button>`;
           }
@@ -2966,6 +2992,95 @@ function _renderTopic() {
           refreshComposeActions();
           enhanceCooked($app);
           updatePostTabindexes();
+          // Topic mod action handlers
+          document.querySelectorAll('[data-mod-close]').forEach(function (btn) {
+            if (btn._bound) return;
+            btn._bound = true;
+            btn.addEventListener('click', function () {
+              var topicId = btn.dataset.modClose;
+              var isClosed = btn.dataset.closed === '1';
+              var action = isClosed ? 'Reopen' : 'Close';
+              confirm(action + ' this topic?').then(function (ok) {
+                if (!ok) return;
+                btn.disabled = true;
+                api('/t/' + topicId + '/status.json', {
+                  method: 'PUT',
+                  body: { status: 'closed', enabled: isClosed ? 'false' : 'true' }
+                }).then(function () {
+                  return softRefresh();
+                }).catch(function (e) {
+                  showAlert(e.message || 'Failed to ' + action.toLowerCase() + ' topic');
+                  btn.disabled = false;
+                });
+              });
+            });
+          });
+          document.querySelectorAll('[data-mod-pin]').forEach(function (btn) {
+            if (btn._bound) return;
+            btn._bound = true;
+            btn.addEventListener('click', function () {
+              var topicId = btn.dataset.modPin;
+              var isPinned = btn.dataset.pinned === '1';
+              var action = isPinned ? 'Unpin' : 'Pin';
+              confirm(action + ' this topic?').then(function (ok) {
+                if (!ok) return;
+                btn.disabled = true;
+                api('/t/' + topicId + '/status.json', {
+                  method: 'PUT',
+                  body: { status: 'pinned', enabled: isPinned ? 'false' : 'true', until: isPinned ? '' : '2099-12-31' }
+                }).then(function () {
+                  return softRefresh();
+                }).catch(function (e) {
+                  showAlert(e.message || 'Failed to ' + action.toLowerCase() + ' topic');
+                  btn.disabled = false;
+                });
+              });
+            });
+          });
+          document.querySelectorAll('[data-mod-archive]').forEach(function (btn) {
+            if (btn._bound) return;
+            btn._bound = true;
+            btn.addEventListener('click', function () {
+              var topicId = btn.dataset.modArchive;
+              var isArchived = btn.dataset.archived === '1';
+              var action = isArchived ? 'Unarchive' : 'Archive';
+              confirm(action + ' this topic?').then(function (ok) {
+                if (!ok) return;
+                btn.disabled = true;
+                api('/t/' + topicId + '/status.json', {
+                  method: 'PUT',
+                  body: { status: 'archived', enabled: isArchived ? 'false' : 'true' }
+                }).then(function () {
+                  return softRefresh();
+                }).catch(function (e) {
+                  showAlert(e.message || 'Failed to ' + action.toLowerCase() + ' topic');
+                  btn.disabled = false;
+                });
+              });
+            });
+          });
+          document.querySelectorAll('[data-mod-unlist]').forEach(function (btn) {
+            if (btn._bound) return;
+            btn._bound = true;
+            btn.addEventListener('click', function () {
+              var topicId = btn.dataset.modUnlist;
+              var isVisible = btn.dataset.visible === '1';
+              var action = isVisible ? 'Unlist' : 'List';
+              confirm(action + ' this topic?').then(function (ok) {
+                if (!ok) return;
+                btn.disabled = true;
+                api('/t/' + topicId + '/status.json', {
+                  method: 'PUT',
+                  body: { status: 'visible', enabled: isVisible ? 'false' : 'true' }
+                }).then(function () {
+                  return softRefresh();
+                }).catch(function (e) {
+                  showAlert(e.message || 'Failed to ' + action.toLowerCase() + ' topic');
+                  btn.disabled = false;
+                });
+              });
+            });
+          });
           replyToPostNumber = null; // Auto-save draft
           replyBox = document.getElementById('replyBox');
           var discardReplyBtn = document.getElementById('discardReply');
@@ -4058,8 +4173,9 @@ function renderPost(p, topicData) {
       <button data-react-open="${p.id}" tabindex="-1" aria-label="React" title="React">${IC.heart}<span class="action-label">React</span></button>
       <button data-reply-to="${p.id}" data-reply-user="${esc(p.username)}" tabindex="-1" aria-label="Reply" title="Reply">${IC.reply}<span class="action-label">Reply</span></button>
       <button data-quote-post="${p.id}" data-quote-user="${esc(p.username)}" tabindex="-1" aria-label="Quote" title="Quote">${IC.quote}<span class="action-label">Quote</span></button>
-      ${isOwn ? `<button data-edit-post="${p.id}" tabindex="-1" aria-label="Edit" title="Edit">${IC.edit}<span class="action-label">Edit</span></button>
-      <button data-delete-post="${p.id}" tabindex="-1" aria-label="Delete" title="Delete" style="color:var(--danger)">${IC.trash}<span class="action-label">Delete</span></button>` : `<button data-flag="${p.id}" tabindex="-1" aria-label="Flag" title="Flag">${IC.flag}<span class="action-label">Flag</span></button>`}
+      ${(isOwn || canModerate()) ? `<button data-edit-post="${p.id}" tabindex="-1" aria-label="Edit" title="Edit">${IC.edit}<span class="action-label">Edit</span></button>
+      <button data-delete-post="${p.id}" tabindex="-1" aria-label="Delete" title="Delete" style="color:var(--danger)">${IC.trash}<span class="action-label">Delete</span></button>` : ''}
+      ${!isOwn ? `<button data-flag="${p.id}" tabindex="-1" aria-label="Flag" title="Flag">${IC.flag}<span class="action-label">Flag</span></button>` : ''}
     </div>
   </div>`;
 }
