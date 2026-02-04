@@ -2983,12 +2983,12 @@ function _renderTopic() {
     <div class="actions chip-actions">
       <button id="uploadBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Upload" title="Upload">${IC.upload}</button>
       <button id="emojiBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Emoji">${IC.smile}</button>
-      <input type="file" id="uploadFile" style="position:absolute;opacity:0;width:1px;height:1px;overflow:hidden;pointer-events:none">
       <button id="replyPreviewBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Preview" title="Preview"></button>
       <span class="actions-spacer" aria-hidden="true"></span>
       <button id="discardReply" class="discard" tabindex="0" aria-label="Discard reply draft" title="Discard">${IC.trash}</button>
       <button id="sendReply" tabindex="0" aria-label="Post reply" title="Post reply">${IC.send}</button>
     </div>
+    <input type="file" id="uploadFile" tabindex="-1" style="position:absolute;opacity:0;width:1px;height:1px;pointer-events:none">
   </div>`;
           $app.innerHTML = html;
           refreshComposeActions();
@@ -4141,11 +4141,11 @@ function renderNewTopic() {
     <div class="actions chip-actions">
       <button id="uploadNt" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Upload" title="Upload">${IC.upload}</button>
       <button id="previewNt" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Preview" title="Preview"></button>
-      <input type="file" id="uploadNtFile" style="position:absolute;opacity:0;width:1px;height:1px;overflow:hidden;pointer-events:none">
       <span class="actions-spacer" aria-hidden="true"></span>
       <button id="discardNt" class="discard" tabindex="0" aria-label="Discard topic draft" title="Discard">${IC.trash}</button>
       <button id="postTopic" tabindex="0" aria-label="Create topic" title="Create topic">${IC.send}</button>
     </div>
+    <input type="file" id="uploadNtFile" tabindex="-1" style="position:absolute;opacity:0;width:1px;height:1px;pointer-events:none">
   </div>`;
   refreshComposeActions();
   var ntTitleEl = document.getElementById('ntTitle');
