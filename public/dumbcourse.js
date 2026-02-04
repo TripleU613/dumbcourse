@@ -2900,6 +2900,10 @@ function _renderTopic() {
           $app.innerHTML = '';
           postNumber = postNumber && String(postNumber).match(/^\d+$/) ? postNumber : '';
           apiPath = postNumber ? `/t/${id}/${postNumber}.json` : `/t/${id}/last.json`;
+          // Add show_deleted for staff to see deleted posts
+          if (canModerate()) {
+            apiPath += (apiPath.indexOf('?') === -1 ? '?' : '&') + 'show_deleted=true';
+          }
           _context22.n = 1;
           return api(apiPath);
         case 1:
@@ -3316,7 +3320,7 @@ function _renderTopic() {
                     _context21.p = 1;
                     batch = remainingEarlierIds.splice(-20);
                     _context21.n = 2;
-                    return api(`/t/${id}/posts.json?post_ids[]=${batch.join('&post_ids[]=')}`);
+                    return api(`/t/${id}/posts.json?post_ids[]=${batch.join('&post_ids[]=')}${canModerate() ? '&show_deleted=true' : ''}`);
                   case 2:
                     resp = _context21.v;
                     newPosts = (resp.post_stream && resp.post_stream.posts || []).sort(function (a, b) {
@@ -3366,7 +3370,7 @@ function _renderTopic() {
                     _context21b.p = 1;
                     batch = remainingLaterIds.splice(0, 20);
                     _context21b.n = 2;
-                    return api(`/t/${id}/posts.json?post_ids[]=${batch.join('&post_ids[]=')}`);
+                    return api(`/t/${id}/posts.json?post_ids[]=${batch.join('&post_ids[]=')}${canModerate() ? '&show_deleted=true' : ''}`);
                   case 2:
                     resp = _context21b.v;
                     newPosts = (resp.post_stream && resp.post_stream.posts || []).sort(function (a, b) {
