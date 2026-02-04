@@ -2,7 +2,9 @@
 
 module DiscourseDumbcourse
   class PushController < ::ApplicationController
-    requires_plugin DiscourseDumbcourse::PLUGIN_NAME
+    if respond_to?(:requires_plugin)
+      requires_plugin DiscourseDumbcourse::PLUGIN_NAME
+    end
     requires_login except: [:server_info]
     skip_before_action :verify_authenticity_token
 

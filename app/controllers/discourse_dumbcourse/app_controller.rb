@@ -4,7 +4,9 @@ require "rack/mime"
 
 module DiscourseDumbcourse
   class AppController < ::ActionController::Base
-    requires_plugin DiscourseDumbcourse::PLUGIN_NAME
+    if respond_to?(:requires_plugin)
+      requires_plugin DiscourseDumbcourse::PLUGIN_NAME
+    end
     include ::CurrentUser
 
     layout false
