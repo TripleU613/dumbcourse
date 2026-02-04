@@ -2981,8 +2981,7 @@ function _renderTopic() {
       <div id="replyPreview" class="md-preview" style="display:none" tabindex="0"></div>
     </div>
     <div class="actions chip-actions">
-      <button id="uploadBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Upload" title="Upload"><span class="btn-icon">${IC.upload}</span></button>
-      <input type="file" id="uploadFile" style="display:none">
+      <label id="uploadBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Upload" title="Upload" role="button"><span class="btn-icon">${IC.upload}</span><input type="file" id="uploadFile" style="position:absolute;opacity:0;width:1px;height:1px;overflow:hidden"></label>
       <button id="emojiBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Emoji">${IC.smile}</button>
       <button id="replyPreviewBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Preview" title="Preview"></button>
       <span class="actions-spacer" aria-hidden="true"></span>
@@ -3125,18 +3124,12 @@ function _renderTopic() {
           });
           uploadBtn = document.getElementById('uploadBtn');
           var uploadInput = document.getElementById('uploadFile');
-          var openUpload = function openUpload() {
-            if (uploadInput) uploadInput.click();
-          };
-          // Use click directly for file input - touchend with preventDefault breaks input.click() on mobile
-          uploadBtn.addEventListener('click', function (e) {
-            e.preventDefault();
-            openUpload();
-          });
+          // Label with input inside handles touch/click automatically
+          // Only need keydown for d-pad navigation
           uploadBtn.addEventListener('keydown', function (e) {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
-              openUpload();
+              uploadInput.click();
             }
           });
           uploadInput.addEventListener('change', /*#__PURE__*/function () {
@@ -4149,8 +4142,7 @@ function renderNewTopic() {
       </div>
     </div>
     <div class="actions chip-actions">
-      <button id="uploadNt" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Upload" title="Upload"><span class="btn-icon">${IC.upload}</span></button>
-      <input type="file" id="uploadNtFile" style="display:none">
+      <label id="uploadNt" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Upload" title="Upload" role="button"><span class="btn-icon">${IC.upload}</span><input type="file" id="uploadNtFile" style="position:absolute;opacity:0;width:1px;height:1px;overflow:hidden"></label>
       <button id="previewNt" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Preview" title="Preview"></button>
       <span class="actions-spacer" aria-hidden="true"></span>
       <button id="discardNt" class="discard" tabindex="0" aria-label="Discard topic draft" title="Discard">${IC.trash}</button>
@@ -4208,18 +4200,12 @@ function renderNewTopic() {
   refreshComposeActions();
   var uploadNtBtn = document.getElementById('uploadNt');
   var uploadNtInput = document.getElementById('uploadNtFile');
-  var openNtUpload = function openNtUpload() {
-    if (uploadNtInput) uploadNtInput.click();
-  };
-  // Use click directly for file input - touchend with preventDefault breaks input.click() on mobile
-  uploadNtBtn.addEventListener('click', function (e) {
-    e.preventDefault();
-    openNtUpload();
-  });
+  // Label with input inside handles touch/click automatically
+  // Only need keydown for d-pad navigation
   uploadNtBtn.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      openNtUpload();
+      uploadNtInput.click();
     }
   });
   uploadNtInput.addEventListener('change', /*#__PURE__*/function () {
@@ -4292,9 +4278,15 @@ function renderNewTopic() {
           });
         case 3:
           d = _context0.v;
+          // Handle both direct response and nested {post: ...} response
+          var postData = d.post || d;
           clearDraft('new_topic_title');
           clearDraft('new_topic_body');
-          navigate(topicPath(d.topic_id, d.topic_slug));
+          if (postData.topic_id) {
+            navigate(topicPath(postData.topic_id, postData.topic_slug || ''));
+          } else {
+            navigate('/');
+          }
           _context0.n = 5;
           break;
         case 4:
