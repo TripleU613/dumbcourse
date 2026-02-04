@@ -40,7 +40,7 @@ function storageRemove(key) {
 var ORIGIN = location.origin || location.protocol + '//' + location.host;
 var PROXY = location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? location.protocol + '//' + location.hostname + ':8080' : ORIGIN;
 var SITE = ORIGIN;
-var BASE_PATH = '/dumb';
+var BASE_PATH = window.DUMBCOURSE_SETTINGS && window.DUMBCOURSE_SETTINGS.basePath ? window.DUMBCOURSE_SETTINGS.basePath : '/dumb';
 var SITE_ICON = '';
 var SITE_FAVICON = '';
 var SITE_TITLE = 'Forum';
@@ -400,7 +400,7 @@ function registerPushNotifications() {
   try {
     existingTopic = window.NtfyBridge.getTopic() || '';
   } catch (e) {}
-  return fetch(PROXY + '/dumb/push/info', {
+  return fetch(PROXY + BASE_PATH + '/push/info', {
     headers: { 'Accept': 'application/json' },
     credentials: 'same-origin'
   }).then(function (resp) {
@@ -414,7 +414,7 @@ function registerPushNotifications() {
     try {
       deviceId = window.NtfyBridge.getDeviceId() || '';
     } catch (e) {}
-    return fetch(PROXY + '/dumb/push/register', {
+    return fetch(PROXY + BASE_PATH + '/push/register', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -449,7 +449,7 @@ function unregisterPushNotifications() {
   try {
     deviceId = window.NtfyBridge.getDeviceId() || '';
   } catch (e) {}
-  return fetch(PROXY + '/dumb/push/unregister', {
+  return fetch(PROXY + BASE_PATH + '/push/unregister', {
     method: 'DELETE',
     headers: {
       'Accept': 'application/json',
@@ -2091,7 +2091,7 @@ function renderLogin() {
       <div id="loginError" class="error" style="display:none"></div>
       <button id="loginBtn" style="width:100%" tabindex="0">Sign In</button>
       <div id="loginDivider" class="login-divider"><span>or</span></div>
-      <a id="signupLink" class="link-btn" href="/dumb/signup" tabindex="0">Create Account</a>
+      <a id="signupLink" class="link-btn" href="${BASE_PATH}/signup" tabindex="0">Create Account</a>
     </div>`;
   var doLogin = /*#__PURE__*/function () {
     var _ref = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
@@ -2223,7 +2223,7 @@ function renderSignup() {
       <h2 id="signupTitle">${SITE_TITLE}</h2>
       <p id="signupNote">Create your account on ${SITE_TITLE}.</p>
       <div class="error">Account creation is disabled on this site.</div>
-      <a class="link-btn" href="/dumb/" tabindex="0">Back to Sign In</a>
+      <a class="link-btn" href="${BASE_PATH}/" tabindex="0">Back to Sign In</a>
     </div>`;
     updateSiteUI();
     return;
@@ -2281,7 +2281,7 @@ function renderSignup() {
       <div id="signupSuccess" class="success" style="display:none"></div>
       <button id="signupBtn" style="width:100%" tabindex="0">Create Account</button>
       <div class="login-divider"><span>or</span></div>
-      <a class="link-btn" href="/dumb/" tabindex="0">Back to Sign In</a>
+      <a class="link-btn" href="${BASE_PATH}/" tabindex="0">Back to Sign In</a>
     </div>`;
   renderHCaptchaBox();
   function getUserFieldValue(field) {

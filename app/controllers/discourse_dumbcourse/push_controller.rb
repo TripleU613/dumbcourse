@@ -8,7 +8,7 @@ module DiscourseDumbcourse
     requires_login except: [:server_info]
     skip_before_action :verify_authenticity_token
 
-    # GET /dumb/push/info
+    # GET /<base>/push/info
     # Returns ntfy server URL for the app to use
     def server_info
       render json: {
@@ -17,7 +17,7 @@ module DiscourseDumbcourse
       }
     end
 
-    # POST /dumb/push/register
+    # POST /<base>/push/register
     # Register a device for push notifications
     def register
       topic = params[:topic].to_s.strip
@@ -39,7 +39,7 @@ module DiscourseDumbcourse
       render json: { success: true, topic: topic }
     end
 
-    # DELETE /dumb/push/unregister
+    # DELETE /<base>/push/unregister
     # Unregister a device
     def unregister
       device_id = params[:device_id].to_s.strip
@@ -55,7 +55,7 @@ module DiscourseDumbcourse
       render json: { success: true }
     end
 
-    # GET /dumb/push/status
+    # GET /<base>/push/status
     # Check registration status for current user
     def status
       device_id = params[:device_id].to_s.strip

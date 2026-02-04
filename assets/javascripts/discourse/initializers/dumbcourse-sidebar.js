@@ -11,6 +11,11 @@ export default apiInitializer((api) => {
     return;
   }
 
+  const basePath = (siteSettings?.dumbcourse_base_path || "dumb").replace(
+    /^\/+|\/+$/g,
+    ""
+  );
+
   api.addSidebarSection(
     (BaseCustomSidebarSection, BaseCustomSidebarSectionLink) => {
       class DumbcourseLink extends BaseCustomSidebarSectionLink {
@@ -18,7 +23,7 @@ export default apiInitializer((api) => {
         classNames = "raw-link";
         text = i18n("dumbcourse.sidebar_link_text");
         title = i18n("dumbcourse.sidebar_link_title");
-        href = getURL("/dumb");
+        href = getURL(`/${basePath || "dumb"}`);
         prefixType = "icon";
         prefixValue = "mobile-screen-button";
       }

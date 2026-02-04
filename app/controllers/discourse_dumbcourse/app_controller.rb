@@ -75,6 +75,7 @@ module DiscourseDumbcourse
         defaultView: SiteSetting.dumbcourse_default_view,
         hcaptchaEnabled: SiteSetting.discourse_hcaptcha_enabled,
         hcaptchaSiteKey: SiteSetting.hcaptcha_site_key.to_s,
+        basePath: DiscourseDumbcourse.base_path_with_slash,
       }
       settings_script = "<script>window.DUMBCOURSE_SETTINGS=#{settings.to_json};</script>"
       if html.include?("</head>")
@@ -82,6 +83,9 @@ module DiscourseDumbcourse
       else
         html = settings_script + html
       end
+
+      base_path = DiscourseDumbcourse.base_path_with_slash
+      html = html.gsub(%r{"/dumb(?=/|")}, "\"#{base_path}")
       render plain: html, content_type: "text/html; charset=utf-8"
     end
 
@@ -112,7 +116,7 @@ module DiscourseDumbcourse
       path = path.split("?", 2).first.to_s
       if path.empty?
         raw_path = request.path.to_s
-        dumb_prefix = "#{Discourse.base_path}/dumb"
+        dumb_prefix = "#{Discourse.base_path}#{DiscourseDumbcourse.base_path_with_slash}"
         if raw_path == dumb_prefix
           path = ""
         elsif raw_path.start_with?("#{dumb_prefix}/")
@@ -137,7 +141,7 @@ module DiscourseDumbcourse
       return if authenticated?
       return if login_path_request?
 
-      redirect_to "#{Discourse.base_path}/dumb/login"
+      redirect_to "#{Discourse.base_path}#{DiscourseDumbcourse.base_path_with_slash}/login"
     end
 
     def ensure_enabled

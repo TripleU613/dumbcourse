@@ -1,7 +1,7 @@
 
 # Dumbcourse — a lightweight `/dumb` UI for Discourse
 
-**Dumbcourse** is a Discourse plugin that adds a fast, old-browser friendly forum UI at **`/dumb`**.
+**Dumbcourse** is a Discourse plugin that adds a fast, old-browser friendly forum UI at **`/dumb`** (configurable).
 
 It’s built for:
 - dumbphones / keypad devices (D-pad navigation)
@@ -23,7 +23,7 @@ The original project uses a Cloudflare worker proxy to serve the forums, and the
 
 ## What you get
 
-- A minimal single-page UI served from the same Discourse instance at **`/dumb`**
+- A minimal single-page UI served from the same Discourse instance at **`/dumb`** (or your configured base path)
 - **ES5 / no build step** (intentionally boring JavaScript)
 - Same-origin API calls to Discourse JSON endpoints
 - Uses your normal Discourse session cookies (no proxy, no separate auth)
@@ -35,7 +35,7 @@ The original project uses a Cloudflare worker proxy to serve the forums, and the
 - The plugin serves static assets from `public/` (e.g. `index.html`, `dumbcourse.js`, `dumbcourse.css`)
 - The SPA calls Discourse JSON endpoints on the same origin
 - Sessions rely on standard Discourse cookies
-- `/dumb` uses Discourse data for site title, categories, topics, users, etc.
+- `/dumb` uses Discourse data for site title, categories, topics, users, etc. (and can be changed)
 
 ---
 
@@ -43,7 +43,7 @@ The original project uses a Cloudflare worker proxy to serve the forums, and the
 
 - Login + signup (via Discourse APIs)
 - Topic lists: `latest`, `new`, `top`, `unseen`, `hot`, `my`, plus categories
-- Category view: `/dumb/c/:slug/:id`
+- Category view: `/<base>/c/:slug/:id`
 - Read topics, reply, quote, reactions, and basic moderation actions
 - Markdown rendering + emoji
 - Search + basic profile views
@@ -57,7 +57,8 @@ The original project uses a Cloudflare worker proxy to serve the forums, and the
 - `dumbcourse_enabled`
 - `dumbcourse_default_theme` (`dark` / `light`)
 - `dumbcourse_default_view` (`latest` / `new` / `top` / `unseen` / `hot` / `my` / `categories`)
-- `dumbcourse_sidebar_link_enabled` (adds a sidebar link to `/dumb`)
+- `dumbcourse_base_path` (defaults to `dumb`)
+- `dumbcourse_sidebar_link_enabled` (adds a sidebar link to your Dumbcourse base path)
 
 ---
 
@@ -87,8 +88,8 @@ Reference: Discourse’s plugin install guide:
 
 ## Quick test checklist
 
-* Visit `https://your-forum.example/dumb`
-* Anonymous users should land on `/dumb/login`
+* Visit `https://your-forum.example/dumb` (or your configured base path)
+* Anonymous users should land on `/dumb/login` (or your configured base path)
 * Logged-in users should see the default view
 * Confirm: category navigation, topic load, reply flow, and focus order
 

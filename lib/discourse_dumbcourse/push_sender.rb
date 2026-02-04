@@ -91,7 +91,7 @@ module DiscourseDumbcourse
           topic_user_id,
           title: "New reply in: #{post.topic.title.truncate(50)}",
           message: "#{post.user.username}: #{post.excerpt(150, strip_links: true, strip_images: true, post: post)}",
-          click_url: "#{Discourse.base_url}/dumb/t/#{post.topic.slug}/#{post.topic.id}/#{post.post_number}",
+          click_url: "#{Discourse.base_url}#{DiscourseDumbcourse.base_path_with_slash}/t/#{post.topic.slug}/#{post.topic.id}/#{post.post_number}",
           priority: "default"
         )
       end
@@ -105,7 +105,7 @@ module DiscourseDumbcourse
           tu.user_id,
           title: "New reply in: #{post.topic.title.truncate(50)}",
           message: "#{post.user.username}: #{post.excerpt(150, strip_links: true, strip_images: true, post: post)}",
-          click_url: "#{Discourse.base_url}/dumb/t/#{post.topic.slug}/#{post.topic.id}/#{post.post_number}",
+          click_url: "#{Discourse.base_url}#{DiscourseDumbcourse.base_path_with_slash}/t/#{post.topic.slug}/#{post.topic.id}/#{post.post_number}",
           priority: "default"
         )
       end
@@ -121,7 +121,7 @@ module DiscourseDumbcourse
         mentioned_user_id,
         title: "#{post.user.username} mentioned you",
         message: post.excerpt(150, strip_links: true, strip_images: true, post: post),
-        click_url: "#{Discourse.base_url}/dumb/t/#{post.topic.slug}/#{post.topic.id}/#{post.post_number}",
+        click_url: "#{Discourse.base_url}#{DiscourseDumbcourse.base_path_with_slash}/t/#{post.topic.slug}/#{post.topic.id}/#{post.post_number}",
         priority: "high"
       )
     end
@@ -134,7 +134,7 @@ module DiscourseDumbcourse
           tau.user_id,
           title: "Private message from #{post.user.username}",
           message: post.excerpt(150, strip_links: true, strip_images: true, post: post),
-          click_url: "#{Discourse.base_url}/dumb/t/#{post.topic.slug}/#{post.topic.id}/#{post.post_number}",
+        click_url: "#{Discourse.base_url}#{DiscourseDumbcourse.base_path_with_slash}/t/#{post.topic.slug}/#{post.topic.id}/#{post.post_number}",
           priority: "high"
         )
       end
@@ -147,7 +147,7 @@ module DiscourseDumbcourse
         quoted_user_id,
         title: "#{post.user.username} quoted you",
         message: "In: #{post.topic.title.truncate(50)}",
-        click_url: "#{Discourse.base_url}/dumb/t/#{post.topic.slug}/#{post.topic.id}/#{post.post_number}",
+        click_url: "#{Discourse.base_url}#{DiscourseDumbcourse.base_path_with_slash}/t/#{post.topic.slug}/#{post.topic.id}/#{post.post_number}",
         priority: "default"
       )
     end
@@ -159,7 +159,7 @@ module DiscourseDumbcourse
         post.user_id,
         title: "#{liker_user.username} liked your post",
         message: post.excerpt(100, strip_links: true, strip_images: true, post: post),
-        click_url: "#{Discourse.base_url}/dumb/t/#{post.topic.slug}/#{post.topic.id}/#{post.post_number}",
+        click_url: "#{Discourse.base_url}#{DiscourseDumbcourse.base_path_with_slash}/t/#{post.topic.slug}/#{post.topic.id}/#{post.post_number}",
         priority: "low"
       )
     end

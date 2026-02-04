@@ -9,6 +9,18 @@
 
 module ::DiscourseDumbcourse
   PLUGIN_NAME = "discourse-dumbcourse"
+
+  def self.base_path
+    path = SiteSetting.dumbcourse_base_path.to_s.strip
+    path = "dumb" if path.blank?
+    path = path.sub(%r{\A/+}, "").sub(%r{/+\z}, "")
+    path = "dumb" if path.blank?
+    path
+  end
+
+  def self.base_path_with_slash
+    "/#{base_path}"
+  end
 end
 
 unless ::ActionController::Base.respond_to?(:requires_plugin)

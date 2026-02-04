@@ -21,6 +21,9 @@ plugins:
       - hot
       - my
       - categories
+  dumbcourse_base_path:
+    default: "dumb"
+    client: true
   dumbcourse_sidebar_link_enabled:
     default: true
     client: true
