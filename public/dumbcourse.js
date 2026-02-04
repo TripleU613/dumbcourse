@@ -4934,16 +4934,16 @@ function updateMenuItems() {
   var logged = isLoggedIn();
   var inTopic = !!(CURRENT_TOPIC && CURRENT_TOPIC.id);
   var showMod = inTopic && canModerate();
-  // Show/hide nav items (hide when in topic mod mode)
+  // Show/hide nav items (hide when in topic for all users)
   $menu.querySelectorAll('[data-nav]').forEach(function (el) {
     var isAuth = el.hasAttribute('data-auth');
-    if (showMod) {
+    if (inTopic) {
       el.style.display = 'none';
     } else {
       el.style.display = isAuth ? (logged ? '' : 'none') : '';
     }
   });
-  // Show/hide mod items
+  // Show/hide mod items (only for mods in topic)
   $menu.querySelectorAll('[data-mod]').forEach(function (el) {
     el.style.display = showMod ? '' : 'none';
   });
