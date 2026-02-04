@@ -1255,6 +1255,7 @@ function routeLogic() {
       return Promise.resolve();
     }
     if (path === '/notifications') return renderNotifications();
+    if (path === '/review') return renderReview();
     if (path.match(/^\/u\/(.+)/)) return renderProfile(decodeURIComponent(path.match(/^\/u\/(.+)/)[1]));
     if (path === '/settings') {
       renderSettings();
@@ -4666,6 +4667,82 @@ function _renderNotifications() {
   }));
   return _renderNotifications.apply(this, arguments);
 }
+// ============ REVIEW QUEUE ============
+function renderReview() {
+  if (!canModerate()) {
+    $app.innerHTML = '<div class="empty">Access denied</div>';
+    return Promise.resolve();
+  }
+  setTitle('Review Queue');
+  showBack(false);
+  $app.innerHTML = '';
+  return api('/review.json').then(function (d) {
+    var items = d.reviewables || [];
+    if (!items.length) {
+      $app.innerHTML = '<div class="empty">No items to review</div>';
+      return;
+    }
+    var users = {};
+    (d.users || []).forEach(function (u) { users[u.id] = u; });
+    var html = items.map(function (r) {
+      var user = users[r.created_by_id] || {};
+      var targetUser = users[r.target_created_by_id] || {};
+      var typeLabel = r.type === 'ReviewableFlaggedPost' ? 'Flagged Post' :
+                      r.type === 'ReviewableQueuedPost' ? 'Queued Post' :
+                      r.type === 'ReviewableUser' ? 'User' : r.type;
+      var statusLabel = r.status === 0 ? 'Pending' : r.status === 1 ? 'Approved' : r.status === 2 ? 'Rejected' : r.status === 3 ? 'Ignored' : r.status === 4 ? 'Deleted' : '';
+      var excerpt = r.post_body ? esc(r.post_body.slice(0, 150)) + (r.post_body.length > 150 ? '...' : '') : '';
+      var topicTitle = r.topic_fancy_title || r.payload && r.payload.raw && r.payload.raw.slice(0, 50) || '';
+      return '<div class="review-item" style="padding:12px;border-bottom:1px solid var(--border)">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+          '<span style="font-weight:600;color:var(--accent)">' + esc(typeLabel) + '</span>' +
+          '<span style="font-size:.8rem;color:var(--fg2)">' + timeAgo(r.created_at) + '</span>' +
+        '</div>' +
+        (topicTitle ? '<div style="font-weight:500;margin-bottom:4px">' + escEmoji(topicTitle) + '</div>' : '') +
+        (targetUser.username ? '<div style="font-size:.85rem;color:var(--fg2);margin-bottom:4px">By: @' + esc(targetUser.username) + '</div>' : '') +
+        (excerpt ? '<div style="font-size:.9rem;color:var(--fg);margin-bottom:8px">' + excerpt + '</div>' : '') +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+          '<button class="review-approve" data-id="' + r.id + '" tabindex="0" style="background:var(--success,#2a2);color:#fff;font-size:.85rem">Approve</button>' +
+          '<button class="review-reject" data-id="' + r.id + '" tabindex="0" style="background:var(--danger);color:#fff;font-size:.85rem">Reject</button>' +
+          '<button class="review-ignore" data-id="' + r.id + '" tabindex="0" style="background:var(--bg3);color:var(--fg);font-size:.85rem">Ignore</button>' +
+          (r.topic_id ? '<a href="' + topicHref(r.topic_id) + '" tabindex="0" style="background:var(--bg3);color:var(--fg);font-size:.85rem;padding:6px 12px;border-radius:var(--radius);text-decoration:none">View Topic</a>' : '') +
+        '</div>' +
+      '</div>';
+    }).join('');
+    $app.innerHTML = html;
+    function handleReview(id, action) {
+      var actionId = action === 'approve' ? 0 : action === 'reject' ? 1 : 2;
+      return api('/review/' + id + '/perform/' + action + '.json', {
+        method: 'PUT'
+      }).then(function () {
+        return renderReview();
+      }).catch(function (e) {
+        showAlert(e.message || 'Action failed');
+      });
+    }
+    $app.querySelectorAll('.review-approve').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        btn.disabled = true;
+        handleReview(btn.dataset.id, 'approve');
+      });
+    });
+    $app.querySelectorAll('.review-reject').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        btn.disabled = true;
+        handleReview(btn.dataset.id, 'reject');
+      });
+    });
+    $app.querySelectorAll('.review-ignore').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        btn.disabled = true;
+        handleReview(btn.dataset.id, 'ignore');
+      });
+    });
+    focusContent();
+  }).catch(function (e) {
+    $app.innerHTML = '<div class="error">' + esc(e.message) + '</div>';
+  });
+}
 function renderProfile(_x4) {
   return _renderProfile.apply(this, arguments);
 } // ============ SETTINGS ============
@@ -4944,6 +5021,11 @@ function updateMenuItems() {
   // Show/hide mod items (only for mods in topic)
   $menu.querySelectorAll('[data-mod]').forEach(function (el) {
     el.style.display = showMod ? '' : 'none';
+  });
+  // Show/hide mod-front items (only for mods on front page, not in topic)
+  var showModFront = !inTopic && canModerate();
+  $menu.querySelectorAll('[data-mod-front]').forEach(function (el) {
+    el.style.display = showModFront ? '' : 'none';
   });
   // Update mod button labels based on topic state
   if (showMod && CURRENT_TOPIC) {
