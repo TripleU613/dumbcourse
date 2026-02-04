@@ -3128,7 +3128,11 @@ function _renderTopic() {
           var openUpload = function openUpload() {
             if (uploadInput) uploadInput.click();
           };
-          bindTap(uploadBtn, openUpload);
+          // Use click directly for file input - touchend with preventDefault breaks input.click() on mobile
+          uploadBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            openUpload();
+          });
           uploadBtn.addEventListener('keydown', function (e) {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
@@ -4207,7 +4211,11 @@ function renderNewTopic() {
   var openNtUpload = function openNtUpload() {
     if (uploadNtInput) uploadNtInput.click();
   };
-  bindTap(uploadNtBtn, openNtUpload);
+  // Use click directly for file input - touchend with preventDefault breaks input.click() on mobile
+  uploadNtBtn.addEventListener('click', function (e) {
+    e.preventDefault();
+    openNtUpload();
+  });
   uploadNtBtn.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
