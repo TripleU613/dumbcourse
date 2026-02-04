@@ -1979,7 +1979,8 @@ var IC = {
   diamond: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9z"/></svg>',
   star: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 8.5 22 9.3 17 14 18.5 21 12 17.5 5.5 21 7 14 2 9.3 9 8.5 12 2"/></svg>',
   check: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
-  thumb: '<svg viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M313.4 32.9c26 5.2 42.9 30.5 37.7 56.5l-2.3 11.4c-5.3 26.7-15.1 52.1-28.8 75.2H464c26.5 0 48 21.5 48 48c0 18.5-10.5 34.6-25.9 42.6C497 275.4 504 288.9 504 304c0 23.4-16.8 42.9-38.9 47.1c4.4 7.3 6.9 15.8 6.9 24.9c0 21.3-13.9 39.4-33.1 45.6c.7 3.3 1.1 6.8 1.1 10.4c0 26.5-21.5 48-48 48H294.5c-19 0-37.5-5.6-53.3-16.1l-38.5-25.7C176 420.4 160 390.4 160 358.3V320 272 247.1c0-29.2 13.3-56.7 36-75l7.4-5.9c26.5-21.2 44.6-51 51.2-84.2l2.3-11.4c5.2-26 30.5-42.9 56.5-37.7zM32 192H96c17.7 0 32 14.3 32 32V448c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32V224c0-17.7 14.3-32 32-32z"/></svg>'
+  thumb: '<svg viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M313.4 32.9c26 5.2 42.9 30.5 37.7 56.5l-2.3 11.4c-5.3 26.7-15.1 52.1-28.8 75.2H464c26.5 0 48 21.5 48 48c0 18.5-10.5 34.6-25.9 42.6C497 275.4 504 288.9 504 304c0 23.4-16.8 42.9-38.9 47.1c4.4 7.3 6.9 15.8 6.9 24.9c0 21.3-13.9 39.4-33.1 45.6c.7 3.3 1.1 6.8 1.1 10.4c0 26.5-21.5 48-48 48H294.5c-19 0-37.5-5.6-53.3-16.1l-38.5-25.7C176 420.4 160 390.4 160 358.3V320 272 247.1c0-29.2 13.3-56.7 36-75l7.4-5.9c26.5-21.2 44.6-51 51.2-84.2l2.3-11.4c5.2-26 30.5-42.9 56.5-37.7zM32 192H96c17.7 0 32 14.3 32 32V448c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32V224c0-17.7 14.3-32 32-32z"/></svg>',
+  undo: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>'
 };
 var REACTION_EMOJI = {
   '+1': '\uD83D\uDC4D',
@@ -3630,7 +3631,7 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
             });
           case 4:
             _context3.n = 5;
-            return renderTopic(topicId);
+            return softRefresh();
           case 5:
             _context3.n = 7;
             break;
@@ -3644,6 +3645,25 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
         }
       }, _callee3, null, [[3, 6]]);
     })));
+  });
+  container.querySelectorAll('[data-restore-post]').forEach(function (btn) {
+    if (btn._bound) return;
+    btn._bound = true;
+    btn.addEventListener('click', function () {
+      var postId = btn.dataset.restorePost;
+      confirm('Restore this post?').then(function (ok) {
+        if (!ok) return;
+        btn.disabled = true;
+        api('/posts/' + postId + '/recover.json', {
+          method: 'PUT'
+        }).then(function () {
+          return softRefresh();
+        }).catch(function (e) {
+          showAlert(e.message || 'Failed to restore post');
+          btn.disabled = false;
+        });
+      });
+    });
   });
   container.querySelectorAll('[data-edit-post]').forEach(function (btn) {
     if (btn._bound) return;
@@ -3997,8 +4017,19 @@ function showFlagDialog(postId) {
   });
 }
 function renderPost(p, topicData) {
+  var isDeleted = !!p.deleted_at;
+  var isHidden = !!p.hidden;
   var body = fixPostHtml(p.cooked || '');
   var isOwn = p.username === S.username;
+  // For deleted posts, show placeholder if not mod, or show deleted styling if mod
+  if (isDeleted || isHidden) {
+    if (!canModerate()) {
+      // Regular users don't see deleted posts at all
+      return '';
+    }
+    // Mods see deleted posts with special styling
+    body = '<div class="deleted-notice" style="color:var(--fg2);font-style:italic;padding:8px;background:var(--bg2);border-radius:4px;margin-bottom:8px">' + (isDeleted ? 'This post was deleted' + (p.deleted_by ? ' by ' + esc(p.deleted_by.username || 'a moderator') : '') : 'This post is hidden') + '</div>' + body;
+  }
   var pollsHtml = '';
   if (p.polls && p.polls.length) {
     p.polls.forEach(function (poll) {
@@ -4049,7 +4080,8 @@ function renderPost(p, topicData) {
   var curReact = p.current_user_reaction;
   var curReactId = curReact && curReact.id ? curReact.id : typeof curReact === 'string' ? curReact : null;
   var usedMain = !!p.current_user_used_main_reaction;
-  return `<div class="post" id="post-${p.id}" data-post-number="${p.post_number}" tabindex="0">
+  var deletedClass = (isDeleted || isHidden) ? ' post-deleted' : '';
+  return `<div class="post${deletedClass}" id="post-${p.id}" data-post-number="${p.post_number}" tabindex="0"${(isDeleted || isHidden) ? ' style="opacity:0.6"' : ''}>
     <div class="post-header">
       <a class="post-avatar-link" href="${userHref(p.username)}" tabindex="-1" aria-label="${esc(p.username)} profile">
         <img class="post-avatar" src="${avatarUrl(p.avatar_template, 48)}" alt="" loading="lazy">
@@ -4067,7 +4099,7 @@ function renderPost(p, topicData) {
       </div>
     </div>
     <div class="post-body">${body}${pollsHtml}</div>
-    ${function () {
+    ${(isDeleted || isHidden) ? '' : function () {
     var rxs = p.reactions || [];
     return rxs.length ? '<div class="post-reactions">' + rxs.map(function (r) {
       var em = REACTION_EMOJI[r.id] || r.id;
@@ -4078,12 +4110,12 @@ function renderPost(p, topicData) {
     }).join('') + '</div>' : '';
   }()}
     <div class="post-actions">
-      <button data-react-open="${p.id}" tabindex="-1" aria-label="React" title="React">${IC.heart}<span class="action-label">React</span></button>
+      ${(isDeleted || isHidden) ? `${canModerate() ? `<button data-restore-post="${p.id}" tabindex="-1" aria-label="Restore" title="Restore" style="color:var(--accent)">${IC.undo}<span class="action-label">Restore</span></button>` : ''}` : `<button data-react-open="${p.id}" tabindex="-1" aria-label="React" title="React">${IC.heart}<span class="action-label">React</span></button>
       <button data-reply-to="${p.id}" data-reply-user="${esc(p.username)}" tabindex="-1" aria-label="Reply" title="Reply">${IC.reply}<span class="action-label">Reply</span></button>
       <button data-quote-post="${p.id}" data-quote-user="${esc(p.username)}" tabindex="-1" aria-label="Quote" title="Quote">${IC.quote}<span class="action-label">Quote</span></button>
       ${(isOwn || canModerate()) ? `<button data-edit-post="${p.id}" tabindex="-1" aria-label="Edit" title="Edit">${IC.edit}<span class="action-label">Edit</span></button>
       <button data-delete-post="${p.id}" tabindex="-1" aria-label="Delete" title="Delete" style="color:var(--danger)">${IC.trash}<span class="action-label">Delete</span></button>` : ''}
-      ${!isOwn ? `<button data-flag="${p.id}" tabindex="-1" aria-label="Flag" title="Flag">${IC.flag}<span class="action-label">Flag</span></button>` : ''}
+      ${!isOwn ? `<button data-flag="${p.id}" tabindex="-1" aria-label="Flag" title="Flag">${IC.flag}<span class="action-label">Flag</span></button>` : ''}`}
     </div>
   </div>`;
 }
