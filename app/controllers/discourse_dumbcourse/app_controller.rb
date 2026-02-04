@@ -42,11 +42,7 @@ module DiscourseDumbcourse
               Rack::Mime.mime_type(file_path.to_s, "application/octet-stream")
             end
           response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
-          return send_data(
-            File.binread(file_path),
-            disposition: "inline",
-            type: mime,
-          )
+          return send_data(File.binread(file_path), disposition: "inline", type: mime)
         end
       end
 
@@ -57,20 +53,19 @@ module DiscourseDumbcourse
 
       response.headers["Cache-Control"] = "no-store"
       html = File.read(index_path)
-      asset_version = (
-        begin
-          [
-            public_root.join("dumbcourse.js").mtime.to_i,
-            public_root.join("dumbcourse.css").mtime.to_i,
-          ].max
-        rescue
-          Time.now.to_i
-        end
-      )
+      asset_version =
+        (
+          begin
+            [
+              public_root.join("dumbcourse.js").mtime.to_i,
+              public_root.join("dumbcourse.css").mtime.to_i,
+            ].max
+          rescue StandardError
+            Time.now.to_i
+          end
+        )
       html =
-        html.gsub(/(dumbcourse\.(?:js|css)\?v=)\d+/) do
-          Regexp.last_match(1) + asset_version.to_s
-        end
+        html.gsub(/(dumbcourse\.(?:js|css)\?v=)\d+/) { Regexp.last_match(1) + asset_version.to_s }
       settings = {
         defaultTheme: SiteSetting.dumbcourse_default_theme,
         defaultView: SiteSetting.dumbcourse_default_view,
@@ -124,9 +119,7 @@ module DiscourseDumbcourse
         end
       end
       format = params[:format].to_s
-      if format != "" && path != "" && !path.end_with?(".#{format}")
-        path = "#{path}.#{format}"
-      end
+      path = "#{path}.#{format}" if format != "" && path != "" && !path.end_with?(".#{format}")
       return true if path == "dumbcourse.css" || path == "dumbcourse.js"
       return true if path&.start_with?("dumbcourse.css") || path&.start_with?("dumbcourse.js")
       return true if path == "login" || path&.start_with?("login/")
@@ -153,8 +146,9 @@ module DiscourseDumbcourse
     end
 
     def relax_security_headers
-      response.headers["Content-Security-Policy"] =
-        "default-src * data: blob: 'unsafe-inline' 'unsafe-eval' http: https:;"
+      response.headers[
+        "Content-Security-Policy"
+      ] = "default-src * data: blob: 'unsafe-inline' 'unsafe-eval' http: https:;"
       response.headers["Cross-Origin-Opener-Policy"] = "unsafe-none"
       response.headers["Cross-Origin-Embedder-Policy"] = "unsafe-none"
       response.headers["Cross-Origin-Resource-Policy"] = "cross-origin"
