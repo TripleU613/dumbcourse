@@ -56,7 +56,7 @@ after_initialize do
       :dumbcourse_push_notify,
       post_id: post.id,
       type: "mention",
-      target_user_id: mentioned_user.id
+      target_user_id: mentioned_user.id,
     )
   end
 
@@ -69,7 +69,7 @@ after_initialize do
       :dumbcourse_push_notify,
       post_id: post.id,
       type: "liked",
-      liker_user_id: liker.id
+      liker_user_id: liker.id,
     )
   end
 
@@ -82,7 +82,7 @@ after_initialize do
       :dumbcourse_push_notify,
       post_id: post.id,
       type: "quoted",
-      target_user_id: quoted_user.id
+      target_user_id: quoted_user.id,
     )
   end
 

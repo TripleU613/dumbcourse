@@ -25,12 +25,19 @@ module DiscourseDumbcourse
           title: title,
           message: message,
           click_url: click_url,
-          priority: priority
+          priority: priority,
         )
       end
     end
 
-    def self.send_notification(server:, topic:, title:, message:, click_url: nil, priority: "default")
+    def self.send_notification(
+      server:,
+      topic:,
+      title:,
+      message:,
+      click_url: nil,
+      priority: "default"
+    )
       uri = URI.parse(server)
 
       http = Net::HTTP.new(uri.host, uri.port)
@@ -49,7 +56,7 @@ module DiscourseDumbcourse
         topic: topic,
         title: title.to_s[0..99], # ntfy title limit
         message: message.to_s[0..4095], # ntfy message limit
-        priority: map_priority(priority)
+        priority: map_priority(priority),
       }
 
       payload[:click] = click_url if click_url.present?
@@ -59,7 +66,9 @@ module DiscourseDumbcourse
       begin
         response = http.request(request)
         if response.code.to_i >= 400
-          Rails.logger.warn("[Dumbcourse Push] Failed to send to #{topic}: #{response.code} #{response.body}")
+          Rails.logger.warn(
+            "[Dumbcourse Push] Failed to send to #{topic}: #{response.code} #{response.body}",
+          )
         end
       rescue StandardError => e
         Rails.logger.error("[Dumbcourse Push] Error sending to #{topic}: #{e.message}")
@@ -90,25 +99,30 @@ module DiscourseDumbcourse
         send_to_user(
           topic_user_id,
           title: "New reply in: #{post.topic.title.truncate(50)}",
-          message: "#{post.user.username}: #{post.excerpt(150, strip_links: true, strip_images: true, post: post)}",
+          message:
+            "#{post.user.username}: #{post.excerpt(150, strip_links: true, strip_images: true, post: post)}",
           click_url: post_url(post),
-          priority: "default"
+          priority: "default",
         )
       end
 
       # Notify users who are watching the topic
-      TopicUser.where(
-        topic_id: post.topic_id,
-        notification_level: TopicUser.notification_levels[:watching]
-      ).where.not(user_id: post.user_id).find_each do |tu|
-        send_to_user(
-          tu.user_id,
-          title: "New reply in: #{post.topic.title.truncate(50)}",
-          message: "#{post.user.username}: #{post.excerpt(150, strip_links: true, strip_images: true, post: post)}",
-          click_url: post_url(post),
-          priority: "default"
+      TopicUser
+        .where(
+          topic_id: post.topic_id,
+          notification_level: TopicUser.notification_levels[:watching],
         )
-      end
+        .where.not(user_id: post.user_id)
+        .find_each do |tu|
+          send_to_user(
+            tu.user_id,
+            title: "New reply in: #{post.topic.title.truncate(50)}",
+            message:
+              "#{post.user.username}: #{post.excerpt(150, strip_links: true, strip_images: true, post: post)}",
+            click_url: post_url(post),
+            priority: "default",
+          )
+        end
     end
 
     def self.notify_mention(post, mentioned_user_id)
@@ -122,22 +136,26 @@ module DiscourseDumbcourse
         title: "#{post.user.username} mentioned you",
         message: post.excerpt(150, strip_links: true, strip_images: true, post: post),
         click_url: post_url(post),
-        priority: "high"
+        priority: "high",
       )
     end
 
     def self.notify_pm(post)
       return unless post.topic&.private_message?
 
-      post.topic.topic_allowed_users.where.not(user_id: post.user_id).find_each do |tau|
-        send_to_user(
-          tau.user_id,
-          title: "Private message from #{post.user.username}",
-          message: post.excerpt(150, strip_links: true, strip_images: true, post: post),
-          click_url: post_url(post),
-          priority: "high"
-        )
-      end
+      post
+        .topic
+        .topic_allowed_users
+        .where.not(user_id: post.user_id)
+        .find_each do |tau|
+          send_to_user(
+            tau.user_id,
+            title: "Private message from #{post.user.username}",
+            message: post.excerpt(150, strip_links: true, strip_images: true, post: post),
+            click_url: post_url(post),
+            priority: "high",
+          )
+        end
     end
 
     def self.notify_quoted(post, quoted_user_id)
@@ -148,7 +166,7 @@ module DiscourseDumbcourse
         title: "#{post.user.username} quoted you",
         message: "In: #{post.topic.title.truncate(50)}",
         click_url: post_url(post),
-        priority: "default"
+        priority: "default",
       )
     end
 
@@ -160,7 +178,7 @@ module DiscourseDumbcourse
         title: "#{liker_user.username} liked your post",
         message: post.excerpt(100, strip_links: true, strip_images: true, post: post),
         click_url: post_url(post),
-        priority: "low"
+        priority: "low",
       )
     end
 
