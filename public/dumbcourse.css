@@ -57,6 +57,9 @@ input[type=text],input[type=search],input[type=email],input[type=password],input
 .topic-posters{display:flex;align-items:center;gap:6px;flex-shrink:0;max-width:160px;overflow:hidden}
 .topic-poster{display:inline-flex}
 .topic-poster-avatar{width:22px;height:22px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);display:block}
+@media (max-width: 520px){
+  .topic-posters{display:none}
+}
 .cat-icon{display:inline-flex;width:14px;height:14px;border-radius:4px;border:1px solid currentColor;background:currentColor;opacity:.85}
 .meta-icon{display:inline-flex;align-items:center;gap:4px}
 .meta-icon svg{width:13px;height:13px;stroke:currentColor}
