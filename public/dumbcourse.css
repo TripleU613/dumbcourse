@@ -40,6 +40,7 @@ input[type=text],input[type=search],input[type=email],input[type=password],input
 .menu-drop a:last-child{border-bottom:none}
 .menu-drop a:focus,.menu-drop a:hover{background:var(--bg3)}
 .menu-drop a.active{background:var(--bg3);color:var(--accent)}
+@media(max-width:360px){.menu-drop{min-width:140px}.menu-drop a{padding:10px 12px;font-size:.85rem;min-height:40px;gap:8px}}
 #app{max-width:640px;margin:0 auto;padding:8px}
 .screen{display:none}
 .screen.active{display:block}
