@@ -65,6 +65,7 @@ var EMOJI_CACHE = {};
 var EMOJI_READY = false;
 var READ_TOPICS = {};
 var VIEWED_THIS_SESSION = {}; // Track topics viewed this session for instant unread update
+var TOPICS_POLL_INTERVAL = null; // Polling interval for topics page auto-refresh
 var API_CACHE_KEY = 'jt_api_cache';
 var API_CACHE_TTL = 5 * 60 * 1000;
 var PERSISTENT_API_CACHE = {};
@@ -1215,6 +1216,13 @@ function routeLogic() {
     var pathForCheck = hash.split('?')[0] || '/';
     if (!parseTopicPath(pathForCheck) && !pathForCheck.match(/^\/messages\/\d+/)) {
       CURRENT_TOPIC = null;
+    }
+    // Stop topics polling when navigating away from topics list
+    if (parseTopicPath(pathForCheck) || pathForCheck.match(/^\/u\/|^\/notifications|^\/messages|^\/search/)) {
+      if (TOPICS_POLL_INTERVAL) {
+        clearInterval(TOPICS_POLL_INTERVAL);
+        TOPICS_POLL_INTERVAL = null;
+      }
     }
     if (!isLoggedIn()) {
       if (hash === '/signup' || hash === '/register') {
@@ -2692,7 +2700,14 @@ function topicItemHtml(t) {
   if (statusIcons) statusIcons = '<span class="topic-status-group">' + statusIcons + '</span>';
   var views = t.views != null ? '<span>' + t.views + ' views</span>' : '';
   // If unread, link to first unread post; otherwise go to last
-  var firstUnread = unread > 0 && t.last_read_post_number ? t.last_read_post_number + 1 : null;
+  var firstUnread = null;
+  if (unread > 0) {
+    if (typeof t.last_read_post_number === 'number' && t.last_read_post_number > 0) {
+      firstUnread = t.last_read_post_number + 1;
+    } else {
+      firstUnread = 1; // Never read or at beginning - start from post 1
+    }
+  }
   return `<a class="list-item" href="${topicHref(t.id, t.slug, firstUnread)}" tabindex="0">
     <div style="display:flex;align-items:flex-start;gap:8px">
       <div style="flex:1;min-width:0">
@@ -2806,6 +2821,11 @@ function _renderTopics() {
           $app.innerHTML = html;
           showCreate('/new-topic');
           if (topicScrollCleanup) topicScrollCleanup();
+          // Stop any existing polling
+          if (TOPICS_POLL_INTERVAL) {
+            clearInterval(TOPICS_POLL_INTERVAL);
+            TOPICS_POLL_INTERVAL = null;
+          }
           if (paginationEnabled) {
             setupTopicPagination(0, hasMore);
           } else {
@@ -2818,11 +2838,46 @@ function _renderTopics() {
             _cleanup = function cleanup() {
               window.removeEventListener('scroll', onScroll);
               window.removeEventListener('popstate', _cleanup);
+              if (TOPICS_POLL_INTERVAL) {
+                clearInterval(TOPICS_POLL_INTERVAL);
+                TOPICS_POLL_INTERVAL = null;
+              }
               topicScrollCleanup = null;
             };
             topicScrollCleanup = _cleanup;
             window.addEventListener('popstate', _cleanup);
           }
+          // Start polling for topic updates every 30 seconds
+          TOPICS_POLL_INTERVAL = setInterval(function () {
+            if (document.hidden) return; // Don't poll when tab is hidden
+            api(buildViewUrl(topicView, 0), { nocache: true }).then(function (fresh) {
+              var freshTopics = fresh.topic_list && fresh.topic_list.topics || [];
+              var list = document.getElementById('topicList');
+              if (!list) return;
+              freshTopics.forEach(function (t) {
+                var link = list.querySelector('a[href*="/t/' + t.slug + '/' + t.id + '"], a[href*="/t/' + t.id + '"]');
+                if (!link) return;
+                var unread = (t.unread_posts || 0) + (t.new_posts || 0);
+                if (VIEWED_THIS_SESSION[String(t.id)]) unread = 0;
+                var badge = link.querySelector('.unread-badge');
+                if (unread > 0) {
+                  if (badge) {
+                    badge.textContent = unread;
+                  } else {
+                    var wrapper = link.querySelector('div > div:last-child');
+                    if (wrapper && wrapper.style) {
+                      var newBadge = document.createElement('span');
+                      newBadge.className = 'unread-badge';
+                      newBadge.textContent = unread;
+                      wrapper.parentNode.appendChild(newBadge);
+                    }
+                  }
+                } else if (badge) {
+                  badge.remove();
+                }
+              });
+            }).catch(function () {});
+          }, 30000);
           focusContent();
         case 4:
           return _context17.a(2);
@@ -3803,9 +3858,8 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
                       }
                     });
                   case 3:
-                    te = postEl.closest('[data-topic-id]');
                     _context4.n = 4;
-                    return renderTopic(te && te.dataset.topicId || currentTopicId());
+                    return refreshPostById(postId);
                   case 4:
                     _context4.n = 6;
                     break;
@@ -3859,7 +3913,7 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
             });
           case 2:
             _context6.n = 3;
-            return softRefresh();
+            return refreshPostById(postId);
           case 3:
             _context6.n = 5;
             break;
@@ -3950,7 +4004,7 @@ function showReactionPicker(postId) {
           case 3:
             close();
             _context7.n = 4;
-            return softRefresh();
+            return refreshPostById(postId);
           case 4:
             _context7.n = 6;
             break;
