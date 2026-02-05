@@ -43,11 +43,7 @@ after_initialize do
   on(:notification_created) do |notification|
     next unless SiteSetting.dumbcourse_push_enabled
 
-    Jobs.enqueue_in(
-      2.seconds,
-      :dumbcourse_push_notify,
-      notification_id: notification.id,
-    )
+    Jobs.enqueue_in(2.seconds, :dumbcourse_push_notify, notification_id: notification.id)
   end
 
   # Background job for sending push notifications
