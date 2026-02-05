@@ -66,7 +66,6 @@ input[type=text],input[type=search],input[type=email],input[type=password],input
   justify-content:center;padding:0 5px;flex-shrink:0;margin-top:2px}
 .cat{display:inline-block;font-size:.7rem;padding:2px 8px;border-radius:999px;background:transparent;
   border:1px solid currentColor;font-weight:600;line-height:1.1}
-@media(max-width:520px){.topic-posters{display:none}}
 .post{padding:12px;border-bottom:1px solid var(--border);cursor:pointer;scroll-margin-top:calc(var(--top-h) + 8px)}
 .post.active{background:var(--bg3)}
 .post-actions{display:none}

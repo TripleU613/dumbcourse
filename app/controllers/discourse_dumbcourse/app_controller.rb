@@ -75,9 +75,7 @@ module DiscourseDumbcourse
         paginationEnabled: SiteSetting.dumbcourse_pagination_enabled,
         topicsPerPage: SiteSetting.dumbcourse_topics_per_page,
         showCategoryNames: SiteSetting.dumbcourse_show_category_names,
-        showTopicPosters: SiteSetting.dumbcourse_show_topic_posters,
-        showTopicPostersMobile: SiteSetting.dumbcourse_show_topic_posters_mobile,
-        showTopicPostersDesktop: SiteSetting.dumbcourse_show_topic_posters_desktop,
+        topicPostersVisibility: SiteSetting.dumbcourse_topic_posters_visibility,
       }
       settings_script = "<script>window.DUMBCOURSE_SETTINGS=#{settings.to_json};</script>"
       if html.include?("</head>")
