@@ -164,6 +164,9 @@ var MB = {
     xhr.open('POST', self.baseUrl + '/message-bus/' + self.clientId + '/poll', true);
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
     xhr.setRequestHeader('Accept', 'application/json');
+    if (S.token) xhr.setRequestHeader('X-Session-Token', S.token);
+    if (S.csrf) xhr.setRequestHeader('X-CSRF-Token', S.csrf);
+    if (S.cookies) xhr.setRequestHeader('X-Cookies', S.cookies);
     xhr.timeout = 30000; // Long poll timeout
 
     xhr.onload = function() {
@@ -1014,6 +1017,8 @@ function uploadFile(file, btn) {
   return new Promise(function (resolve, reject) {
     var orig = btn.innerHTML;
     btn.disabled = true;
+    btn.style.pointerEvents = 'none';
+    btn.style.opacity = '0.5';
     btn.textContent = '0%';
     var fd = new FormData();
     fd.append('file', file);
@@ -1025,6 +1030,8 @@ function uploadFile(file, btn) {
     xhr.addEventListener('load', function () {
       btn.innerHTML = orig;
       btn.disabled = false;
+      btn.style.pointerEvents = '';
+      btn.style.opacity = '';
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
           resolve(JSON.parse(xhr.responseText));
@@ -1038,6 +1045,8 @@ function uploadFile(file, btn) {
     xhr.addEventListener('error', function () {
       btn.innerHTML = orig;
       btn.disabled = false;
+      btn.style.pointerEvents = '';
+      btn.style.opacity = '';
       reject(new Error('Upload failed'));
     });
     xhr.open('POST', PROXY + '/uploads.json');
@@ -1149,6 +1158,31 @@ function currentTopicPost() {
 }
 var CURRENT_TOPIC = null;
 var POST_REFRESHER = null;
+var TOPIC_MB_CLEANUP = null;
+var PRESENCE_SUPPORTED = null; // null = unknown, true/false after first check
+function presenceXhr(method, path, body, cb) {
+  if (PRESENCE_SUPPORTED === false) return;
+  var xhr = new XMLHttpRequest();
+  xhr.open(method, PROXY + path, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.setRequestHeader('Accept', 'application/json');
+  if (S.token) xhr.setRequestHeader('X-Session-Token', S.token);
+  if (S.csrf) xhr.setRequestHeader('X-CSRF-Token', S.csrf);
+  if (S.cookies) xhr.setRequestHeader('X-Cookies', S.cookies);
+  xhr.timeout = 10000;
+  xhr.onload = function() {
+    if (xhr.status === 404) {
+      PRESENCE_SUPPORTED = false;
+      return;
+    }
+    if (PRESENCE_SUPPORTED === null) PRESENCE_SUPPORTED = true;
+    if (cb && xhr.status >= 200 && xhr.status < 300) {
+      try { cb(JSON.parse(xhr.responseText)); } catch(e) {}
+    }
+  };
+  xhr.onerror = xhr.ontimeout = function() {};
+  xhr.send(body ? JSON.stringify(body) : null);
+}
 function refreshPostById(postId) {
   if (POST_REFRESHER) return POST_REFRESHER(postId);
   clearApiCache();
@@ -1338,6 +1372,7 @@ function routeLogic() {
     // Stop MessageBus when navigating away from topics list
     if (parseTopicPath(pathForCheck) || pathForCheck.match(/^\/u\/|^\/notifications|^\/messages|^\/search/)) {
       MB.stop();
+      if (TOPIC_MB_CLEANUP) { TOPIC_MB_CLEANUP(); TOPIC_MB_CLEANUP = null; }
       if (TOPICS_POLL_INTERVAL) {
         clearInterval(TOPICS_POLL_INTERVAL);
         TOPICS_POLL_INTERVAL = null;
@@ -3093,6 +3128,12 @@ function _renderTopics() {
                   } else if (badge) {
                     badge.remove();
                   }
+                  // Move bumped topic to top of list
+                  if (link && list.firstChild && link !== list.firstChild) {
+                    link.parentNode.removeChild(link);
+                    list.insertBefore(link, list.firstChild);
+                    link.style.animation = 'fadeIn 0.3s ease';
+                  }
                 }).catch(function () {});
               }
             }
@@ -3106,6 +3147,50 @@ function _renderTopics() {
             MB.subscribe('/unread/' + S.user.id, handleTopicMessage);
           }
           MB.start();
+
+          // Fallback polling every 60 seconds
+          if (TOPICS_POLL_INTERVAL) clearInterval(TOPICS_POLL_INTERVAL);
+          var _pollUrl = buildViewUrl(topicView, 0);
+          TOPICS_POLL_INTERVAL = setInterval(function() {
+            if (document.hidden) return;
+            var list = document.getElementById('topicList');
+            if (!list) return;
+            api(_pollUrl, { nocache: true, nodup: true }).then(function(resp) {
+              var freshTopics = resp && resp.topic_list && resp.topic_list.topics || [];
+              freshTopics.forEach(function(t) {
+                if (!t || !t.id) return;
+                var link = list.querySelector('a[href*="/t/' + t.id + '"]') || list.querySelector('a[href*="/t/' + t.slug + '/' + t.id + '"]');
+                if (link) {
+                  var unread = (t.unread_posts || 0) + (t.new_posts || 0);
+                  if (VIEWED_THIS_SESSION[String(t.id)]) unread = 0;
+                  var badge = link.querySelector('.unread-badge');
+                  if (unread > 0) {
+                    if (badge) { badge.textContent = unread; }
+                    else {
+                      var flex = link.querySelector('div[style*="display:flex"]');
+                      if (flex) {
+                        var b = document.createElement('span');
+                        b.className = 'unread-badge';
+                        b.textContent = unread;
+                        flex.appendChild(b);
+                      }
+                    }
+                  } else if (badge) { badge.remove(); }
+                } else if (!knownTopicIds[t.id]) {
+                  knownTopicIds[t.id] = true;
+                  var tmp = document.createElement('div');
+                  tmp.innerHTML = topicItemHtml(t);
+                  var el = tmp.firstElementChild;
+                  if (el && list.firstChild) {
+                    el.style.animation = 'fadeIn 0.3s ease';
+                    el.style.background = 'var(--bg3)';
+                    list.insertBefore(el, list.firstChild);
+                    setTimeout(function() { el.style.background = ''; }, 5000);
+                  }
+                }
+              });
+            }).catch(function() {});
+          }, 60000);
 
           // Store cleanup function to unsubscribe when leaving
           var mbCleanup = function() {
@@ -3357,6 +3442,7 @@ function _renderTopic() {
     <span id="replyingToText">Replying to topic</span>
     <button class="cancel-reply" id="cancelReply" tabindex="0">${IC.x}</button>
   </div>`;
+          html += `<div id="typingIndicator" style="display:none;padding:4px 12px;font-size:0.8rem;color:var(--fg2);font-style:italic"></div>`;
           html += `<div class="compose" id="replyArea">
     <div class="compose-body">
       <div id="replyAttachments" class="attachment-list" style="display:none"></div>
@@ -3364,7 +3450,7 @@ function _renderTopic() {
       <div id="replyPreview" class="md-preview" style="display:none" tabindex="0"></div>
     </div>
     <div class="actions chip-actions">
-      <button id="uploadBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Upload" title="Upload">${IC.upload}</button>
+      <label for="uploadFile" id="uploadBtn" role="button" tabindex="0" style="background:var(--bg3);color:var(--fg);cursor:pointer" aria-label="Upload" title="Upload">${IC.upload}</label>
       <button id="emojiBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Emoji">${IC.smile}</button>
       <button id="replyPreviewBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Preview" title="Preview"></button>
       <span class="actions-spacer" aria-hidden="true"></span>
@@ -3508,9 +3594,12 @@ function _renderTopic() {
           });
           uploadBtn = document.getElementById('uploadBtn');
           var uploadInput = document.getElementById('uploadFile');
-          // Click handler works for both touch and D-pad (same as emojiBtn)
-          uploadBtn.addEventListener('click', function () {
-            uploadInput.click();
+          // Label for= handles touch natively; keydown handles d-pad Enter/Space
+          uploadBtn.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              uploadInput.click();
+            }
           });
           uploadInput.addEventListener('change', /*#__PURE__*/function () {
             var _ref13 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee19(e) {
@@ -3644,15 +3733,28 @@ function _renderTopic() {
                   fetched = _context20.v;
                   postData = fetched && fetched.post ? fetched.post : fetched;
                 case 5:
-                  if (postData && postData.id) {
-                    var slug = (CURRENT_TOPIC && CURRENT_TOPIC.slug) || d.slug || '';
-                    var tid = (CURRENT_TOPIC && CURRENT_TOPIC.id) || id;
-                    var targetPath = topicPath(tid, slug, postData.post_number);
-                    this.disabled = false;
-                    this.innerHTML = IC.send;
-                    this.setAttribute('aria-label', 'Post reply');
-                    this.setAttribute('title', 'Post reply');
-                    return _context20.a(2, softRefresh(targetPath));
+                  if (postData && postData.id && postData.cooked) {
+                    var _container = document.getElementById('postsContainer');
+                    if (_container && !document.getElementById('post-' + postData.id)) {
+                      postNumberMap[postData.id] = postData.post_number;
+                      var _postHtml = renderPost(postData, CURRENT_TOPIC || d);
+                      if (_postHtml) {
+                        _container.insertAdjacentHTML('beforeend', _postHtml);
+                        var _newEl = document.getElementById('post-' + postData.id);
+                        if (_newEl) {
+                          enhanceCooked(_newEl);
+                          attachPostHandlers(_newEl, id, replyBox, postNumberMap, function(n) { replyToPostNumber = n; });
+                          updatePostTabindexes();
+                          _newEl.scrollIntoView({ behavior: 'smooth' });
+                          _newEl.focus();
+                        }
+                        this.disabled = false;
+                        this.innerHTML = IC.send;
+                        this.setAttribute('aria-label', 'Post reply');
+                        this.setAttribute('title', 'Post reply');
+                        return _context20.a(2);
+                      }
+                    }
                   }
                   _context20.n = 6;
                   return renderTopic(id, postData && postData.post_number ? postData.post_number : null);
@@ -3786,6 +3888,159 @@ function _renderTopic() {
           attachPostHandlers($app, id, replyBox, postNumberMap, function (n) {
             replyToPostNumber = n;
           });
+          // Real-time updates via MessageBus for this topic
+          if (TOPIC_MB_CLEANUP) {
+            TOPIC_MB_CLEANUP();
+            TOPIC_MB_CLEANUP = null;
+          }
+          MB.stop();
+          var _existingChannels = Object.keys(MB.callbacks);
+          _existingChannels.forEach(function(ch) { MB.unsubscribe(ch); });
+
+          var topicChannel = '/topic/' + id;
+          var _topicPollInterval = null;
+
+          MB.subscribe(topicChannel, function(data) {
+            if (!data) return;
+            var type = data.type;
+            if ((type === 'revised' || type === 'rebaked') && data.id) {
+              if (document.getElementById('post-' + data.id)) {
+                refreshPostById(data.id);
+              }
+              return;
+            }
+            if (type === 'created' && data.id) {
+              var _newPostId = data.id;
+              if (document.getElementById('post-' + _newPostId)) return;
+              var _ctr = document.getElementById('postsContainer');
+              if (!_ctr) return;
+              api('/posts/' + _newPostId + '.json', { nocache: true }).then(function(resp) {
+                var p = resp && resp.post ? resp.post : resp;
+                if (!p || !p.id) return;
+                if (document.getElementById('post-' + p.id)) return;
+                var c = document.getElementById('postsContainer');
+                if (!c) return;
+                postNumberMap[p.id] = p.post_number;
+                var _html = renderPost(p, CURRENT_TOPIC || { id: id, slug: '' });
+                if (!_html) return;
+                c.insertAdjacentHTML('beforeend', _html);
+                var el = document.getElementById('post-' + p.id);
+                if (el) {
+                  enhanceCooked(el);
+                  attachPostHandlers(el, id, replyBox, postNumberMap, function(n) { replyToPostNumber = n; });
+                }
+                updatePostTabindexes();
+                var distFromBottom = document.body.scrollHeight - window.scrollY - window.innerHeight;
+                if (distFromBottom < 200 && el) {
+                  el.scrollIntoView({ behavior: 'smooth' });
+                }
+              }).catch(function() {});
+              return;
+            }
+          });
+          MB.start();
+
+          _topicPollInterval = setInterval(function() {
+            if (document.hidden) return;
+            if (!document.getElementById('postsContainer')) {
+              clearInterval(_topicPollInterval);
+              return;
+            }
+            api('/t/' + id + '.json', { nocache: true, nodup: true }).then(function(resp) {
+              if (!resp || !resp.post_stream) return;
+              var stream = resp.post_stream.stream || [];
+              var _ctr2 = document.getElementById('postsContainer');
+              if (!_ctr2) return;
+              var missing = stream.filter(function(pid) {
+                return !document.getElementById('post-' + pid);
+              });
+              var toFetch = missing.slice(-5);
+              toFetch.forEach(function(pid) {
+                api('/posts/' + pid + '.json', { nocache: true }).then(function(resp2) {
+                  var p = resp2 && resp2.post ? resp2.post : resp2;
+                  if (!p || !p.id) return;
+                  if (document.getElementById('post-' + p.id)) return;
+                  var c2 = document.getElementById('postsContainer');
+                  if (!c2) return;
+                  postNumberMap[p.id] = p.post_number;
+                  var h = renderPost(p, CURRENT_TOPIC || { id: id, slug: '' });
+                  if (!h) return;
+                  c2.insertAdjacentHTML('beforeend', h);
+                  var el2 = document.getElementById('post-' + p.id);
+                  if (el2) {
+                    enhanceCooked(el2);
+                    attachPostHandlers(el2, id, replyBox, postNumberMap, function(n) { replyToPostNumber = n; });
+                  }
+                  updatePostTabindexes();
+                }).catch(function() {});
+              });
+            }).catch(function() {});
+          }, 30000);
+
+          // Presence typing indicator
+          var presenceChannel = '/discourse-presence/reply/' + id;
+          var _lastPresencePublish = 0;
+          var _presenceLeaveTimer = null;
+          var _presencePollInterval = null;
+
+          function publishPresence() {
+            var now = Date.now();
+            if (now - _lastPresencePublish < 5000) return;
+            _lastPresencePublish = now;
+            presenceXhr('POST', '/presence/update', {
+              client_id: MB.clientId,
+              present_channels: [presenceChannel]
+            });
+            if (_presenceLeaveTimer) clearTimeout(_presenceLeaveTimer);
+            _presenceLeaveTimer = setTimeout(leavePresence, 10000);
+          }
+
+          function leavePresence() {
+            if (_presenceLeaveTimer) { clearTimeout(_presenceLeaveTimer); _presenceLeaveTimer = null; }
+            _lastPresencePublish = 0;
+            presenceXhr('POST', '/presence/update', {
+              client_id: MB.clientId,
+              leave_channels: [presenceChannel]
+            });
+          }
+
+          replyBox.addEventListener('input', function() {
+            if (replyBox.value.trim()) publishPresence();
+          });
+
+          _presencePollInterval = setInterval(function() {
+            if (document.hidden) return;
+            if (!document.getElementById('postsContainer')) {
+              clearInterval(_presencePollInterval);
+              return;
+            }
+            presenceXhr('GET', '/presence/get?channels[]=' + encodeURIComponent(presenceChannel), null, function(data) {
+              var indicator = document.getElementById('typingIndicator');
+              if (!indicator) return;
+              var channelData = data && data[presenceChannel];
+              var users = channelData && channelData.users || [];
+              var others = users.filter(function(u) { return u.username !== S.username; });
+              if (others.length === 0) {
+                indicator.style.display = 'none';
+                indicator.textContent = '';
+                return;
+              }
+              var names = others.map(function(u) { return u.username; });
+              var text = names.length === 1
+                ? names[0] + ' is typing...'
+                : names.join(', ') + ' are typing...';
+              indicator.textContent = text;
+              indicator.style.display = 'block';
+            });
+          }, 10000);
+
+          TOPIC_MB_CLEANUP = function() {
+            MB.stop();
+            MB.unsubscribe(topicChannel);
+            if (_topicPollInterval) { clearInterval(_topicPollInterval); _topicPollInterval = null; }
+            leavePresence();
+            if (_presencePollInterval) { clearInterval(_presencePollInterval); _presencePollInterval = null; }
+          };
           // Scroll to specific post or last post
           if (postNumber) {
             var pn = parseInt(postNumber, 10);
@@ -3837,7 +4092,7 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
       if (!newEl) return;
       oldEl.parentNode.replaceChild(newEl, oldEl);
       enhanceCooked(newEl);
-      if (wasActive) newEl.classList.add('active');
+      if (wasActive) activatePost(newEl);
       updatePostTabindexes();
       attachPostHandlers(newEl, topicId, replyBox, postNumberMap, setReplyTo);
     }).catch(function () {});
@@ -4528,7 +4783,7 @@ function renderNewTopic() {
       </div>
     </div>
     <div class="actions chip-actions">
-      <button id="uploadNt" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Upload" title="Upload">${IC.upload}</button>
+      <label for="uploadNtFile" id="uploadNt" role="button" tabindex="0" style="background:var(--bg3);color:var(--fg);cursor:pointer" aria-label="Upload" title="Upload">${IC.upload}</label>
       <button id="previewNt" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Preview" title="Preview"></button>
       <span class="actions-spacer" aria-hidden="true"></span>
       <button id="discardNt" class="discard" tabindex="0" aria-label="Discard topic draft" title="Discard">${IC.trash}</button>
@@ -4587,9 +4842,12 @@ function renderNewTopic() {
   refreshComposeActions();
   var uploadNtBtn = document.getElementById('uploadNt');
   var uploadNtInput = document.getElementById('uploadNtFile');
-  // Click handler works for both touch and D-pad (same as emojiBtn)
-  uploadNtBtn.addEventListener('click', function () {
-    uploadNtInput.click();
+  // Label for= handles touch natively; keydown handles d-pad Enter/Space
+  uploadNtBtn.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      uploadNtInput.click();
+    }
   });
   uploadNtInput.addEventListener('change', /*#__PURE__*/function () {
     var _ref9 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee9(e) {
@@ -6122,7 +6380,7 @@ document.addEventListener('focusin', function () {
     });
   }
 });
-function activatePost(post) {
+function activatePost(post, skipFocus) {
   document.querySelectorAll('.post.active').forEach(function (p) {
     return deactivatePost(p);
   });
@@ -6140,8 +6398,10 @@ function activatePost(post) {
     return a.setAttribute('tabindex', '0');
   });
   setPostBodyTabindex(post, true);
-  var first = post.querySelector('.post-reactions button') || post.querySelector('.post-actions button') || post.querySelector('.post-body a, .post-body button, .post-body input, .post-body textarea, .post-body select, .post-body summary, .post-body .spoiler, .post-body .spoiler-blurred, .post-body .poll-option, .post-body img, .post-body iframe, .post-body video, .post-body audio');
-  if (first) first.focus();
+  if (!skipFocus) {
+    var first = post.querySelector('.post-reactions button') || post.querySelector('.post-actions button') || post.querySelector('.post-body a, .post-body button, .post-body input, .post-body textarea, .post-body select, .post-body summary, .post-body .spoiler, .post-body .spoiler-blurred, .post-body .poll-option, .post-body img, .post-body iframe, .post-body video, .post-body audio');
+    if (first) first.focus();
+  }
 }
 function deactivatePost(post) {
   post.classList.remove('active');
@@ -6165,7 +6425,9 @@ document.addEventListener('click', function (e) {
   var isActive = post.classList.contains('active');
   var inActions = e.target.closest('.post-actions') || e.target.closest('.post-reactions') || e.target.closest('.post-reply-link');
   if (!isActive) {
-    if (!inActions) {
+    if (inActions) {
+      activatePost(post, true);
+    } else {
       if (e.target.closest('.post-author, .post-avatar-link, .post-body a, .post-body button, .post-body input, .post-body textarea, .post-body select, .post-body summary, .post-body details, .post-body .poll, .post-body .poll-option, .post-body .spoiler, .post-body .spoiler-blurred, .post-body img, .post-body iframe, .post-body video, .post-body audio')) {
         e.preventDefault();
         e.stopPropagation();

@@ -151,7 +151,8 @@ button svg,.icon svg{vertical-align:middle}
 .compose .field{margin-bottom:12px}
 .compose label{display:block;font-size:.85rem;color:var(--fg2);margin-bottom:4px}
 .compose .actions{display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:nowrap}
-.compose .actions button{display:inline-flex;align-items:center;justify-content:center;gap:0;min-width:36px;min-height:36px;padding:6px 8px;flex:0 1 auto}
+.compose .actions button,.compose .actions label[role="button"]{display:inline-flex;align-items:center;justify-content:center;gap:0;min-width:36px;min-height:36px;padding:6px 8px;flex:0 1 auto}
+.compose .actions label[role="button"]{cursor:pointer;border:none;border-radius:var(--radius);font-size:inherit;margin:0}
 .compose .actions .discard{background:var(--danger);color:#fff}
 .compose .actions .actions-spacer{flex:1;min-width:8px}
 .compose .chip-actions{overflow:hidden}
@@ -161,16 +162,16 @@ button svg,.icon svg{vertical-align:middle}
 .compose .attachment-item .attach-icon{display:inline-flex}
 .compose .actions .btn-label{display:none}
 .compose .chip-actions.compact{gap:6px}
-.compose .chip-actions.compact button{min-width:32px;min-height:32px;padding:4px 6px}
+.compose .chip-actions.compact button,.compose .chip-actions.compact label[role="button"]{min-width:32px;min-height:32px;padding:4px 6px}
 .compose .chip-actions.compact2{gap:4px}
-.compose .chip-actions.compact2 button{min-width:28px;min-height:28px;padding:3px 4px}
+.compose .chip-actions.compact2 button,.compose .chip-actions.compact2 label[role="button"]{min-width:28px;min-height:28px;padding:3px 4px}
 @media (max-width: 480px){
   .compose .actions{gap:6px}
-  .compose .actions button{min-width:32px;min-height:32px;padding:4px 6px}
+  .compose .actions button,.compose .actions label[role="button"]{min-width:32px;min-height:32px;padding:4px 6px}
 }
 @media (max-width: 360px){
   .compose .actions{gap:4px}
-  .compose .actions button{min-width:28px;min-height:28px;padding:3px 4px}
+  .compose .actions button,.compose .actions label[role="button"]{min-width:28px;min-height:28px;padding:3px 4px}
 }
 .reply-indicator{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg3);
   border-radius:var(--radius) var(--radius) 0 0;font-size:.8rem;color:var(--fg2);margin-bottom:-1px}
