@@ -102,7 +102,8 @@ module DiscourseDumbcourse
 
       # Notify topic creator
       topic_user_id = post.topic.user_id
-      if topic_user_id && topic_user_id != post.user_id && user_wants_notification?(topic_user_id, :replies)
+      if topic_user_id && topic_user_id != post.user_id &&
+           user_wants_notification?(topic_user_id, :replies)
         send_to_user(
           topic_user_id,
           title: "New reply in: #{post.topic.title.truncate(50)}",
