@@ -369,6 +369,13 @@ var S = {
   admin: storageGet('jt_admin', '') === '1',
   moderator: storageGet('jt_moderator', '') === '1'
 };
+var TOPIC_USERS = {};
+function mergeTopicUsers(list) {
+  (list || []).forEach(function (u) {
+    if (!u || !u.id) return;
+    TOPIC_USERS[u.id] = u;
+  });
+}
 function isLoggedIn() {
   return !!S.loggedIn;
 }
@@ -1997,6 +2004,9 @@ function catBadge(id) {
   var c = S.categories[id];
   if (!c) return '';
   var bg = c.color ? '#' + c.color : '#666';
+  if (!showCategoryNames) {
+    return `<span class="cat-icon" style="color:${bg}" title="${esc(c.name)}" aria-label="${esc(c.name)}"></span>`;
+  }
   return `<span class="cat" style="color:${bg};border-color:${bg}">${esc(c.name)}</span>`;
 }
 function mergeCategories(list) {
@@ -2004,6 +2014,36 @@ function mergeCategories(list) {
     if (!c || !c.id) return;
     S.categories[c.id] = c;
   });
+}
+function isMobileLayout() {
+  return window.matchMedia && window.matchMedia('(max-width: 680px)').matches;
+}
+function shouldShowTopicPosters() {
+  if (!showTopicPosters) return false;
+  return isMobileLayout() ? showTopicPostersMobile : showTopicPostersDesktop;
+}
+function topicPostersHtml(t) {
+  if (!shouldShowTopicPosters()) return '';
+  var posters = (t.posters || []).map(function (p) {
+    return p && p.user_id;
+  }).filter(Boolean);
+  if (!posters.length) return '';
+  var seen = {};
+  var users = posters.map(function (id) {
+    return TOPIC_USERS[id];
+  }).filter(function (u) {
+    return u && u.id && u.username && u.avatar_template;
+  });
+  var uniq = [];
+  users.forEach(function (u) {
+    if (seen[u.id]) return;
+    seen[u.id] = true;
+    uniq.push(u);
+  });
+  if (!uniq.length) return '';
+  return `<div class="topic-posters">${uniq.slice(0, 5).map(function (u) {
+    return `<span class="topic-poster" title="${esc(u.username)}"><img class="topic-poster-avatar" src="${avatarUrl(u.avatar_template, 40)}" alt="" loading="lazy"></span>`;
+  }).join('')}</div>`;
 }
 function loadCategories() {
   return _loadCategories.apply(this, arguments);
@@ -2659,6 +2699,7 @@ function _loadMoreCategoryTopics() {
           return api(buildCategoryUrl(categoryView, categoryPage));
         case 3:
           d = _context16c.v;
+          mergeTopicUsers(d.topic_list && d.topic_list.users || []);
           topics = d.topic_list && d.topic_list.topics || [];
           if (!topics.length) {
             categoryMore = false;
@@ -2691,11 +2732,13 @@ function topicItemHtml(t) {
   if (t.closed || t.archived) statusIcons += '<span class="topic-status-icon" title="Locked">' + IC.lock + '</span>';
   if (statusIcons) statusIcons = '<span class="topic-status-group">' + statusIcons + '</span>';
   var views = t.views != null ? '<span>' + t.views + ' views</span>' : '';
+  var posters = topicPostersHtml(t);
+  var sideHtml = posters || unread > 0 ? `<div class="topic-side">${posters}${unread > 0 ? `<span class="unread-badge">${unread}</span>` : ''}</div>` : '';
   // If unread, link to first unread post; otherwise go to last
   var firstUnread = unread > 0 && t.last_read_post_number ? t.last_read_post_number + 1 : null;
   return `<a class="list-item" href="${topicHref(t.id, t.slug, firstUnread)}" tabindex="0">
-    <div style="display:flex;align-items:flex-start;gap:8px">
-      <div style="flex:1;min-width:0">
+    <div class="topic-row">
+      <div class="topic-main">
         <div class="item-title"><span class="item-title-text">${escEmoji(t.title)}</span>${statusIcons}</div>
         <div class="item-meta">
           ${catBadge(t.category_id)}
@@ -2705,7 +2748,7 @@ function topicItemHtml(t) {
         </div>
         ${t.excerpt ? `<div class="item-excerpt">${t.excerpt}</div>` : ''}
       </div>
-      ${unread > 0 ? `<span class="unread-badge">${unread}</span>` : ''}
+      ${sideHtml}
     </div>
   </a>`;
 }
@@ -2732,6 +2775,7 @@ function _loadMoreTopics() {
           return api(buildViewUrl(topicView, topicPage));
         case 3:
           d = _context16.v;
+          mergeTopicUsers(d.topic_list && d.topic_list.users || []);
           topics = d.topic_list && d.topic_list.topics || [];
           if (!topics.length) {
             topicMore = false;
@@ -2781,6 +2825,7 @@ function _renderTopics() {
         case 2:
           d = _context17.v;
           mergeCategories(d.topic_list && d.topic_list.categories || []);
+          mergeTopicUsers(d.topic_list && d.topic_list.users || []);
           topics = d.topic_list && d.topic_list.topics || [];
           if (topics.length) {
             _context17.n = 3;
@@ -2924,6 +2969,7 @@ function _renderCategoryTopics() {
         case 3:
           d = _context17c.v;
           mergeCategories(d.category_list && d.category_list.categories || []);
+          mergeTopicUsers(d.topic_list && d.topic_list.users || []);
           if (d.category && d.category.name) setTitle(d.category.name);
           topics = d.topic_list && d.topic_list.topics || [];
           if (topics.length) {
@@ -5422,6 +5468,10 @@ var moonSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" strok
 var DUMBCOURSE_SETTINGS = window.DUMBCOURSE_SETTINGS || {};
 var defaultTheme = DUMBCOURSE_SETTINGS.defaultTheme || '';
 var defaultView = (DUMBCOURSE_SETTINGS.defaultView || 'latest').toLowerCase();
+var showCategoryNames = DUMBCOURSE_SETTINGS.showCategoryNames !== false;
+var showTopicPosters = DUMBCOURSE_SETTINGS.showTopicPosters !== false;
+var showTopicPostersMobile = DUMBCOURSE_SETTINGS.showTopicPostersMobile !== false;
+var showTopicPostersDesktop = DUMBCOURSE_SETTINGS.showTopicPostersDesktop !== false;
 HCAPTCHA_ENABLED = !!DUMBCOURSE_SETTINGS.hcaptchaEnabled;
 HCAPTCHA_SITE_KEY = DUMBCOURSE_SETTINGS.hcaptchaSiteKey || '';
 if (!storageGet('jt_theme', '')) {

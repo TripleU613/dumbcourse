@@ -50,6 +50,13 @@ input[type=text],input[type=search],input[type=email],input[type=password],input
 .list-item .item-title{font-weight:400;margin-bottom:4px;line-height:1.3;display:flex;align-items:center;gap:6px}
 .list-item .item-title-text{flex:1;min-width:0}
 .list-item .item-meta{font-size:.8rem;color:var(--fg2);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.topic-row{display:flex;align-items:flex-start;gap:8px}
+.topic-main{flex:1;min-width:0}
+.topic-side{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.topic-posters{display:flex;align-items:center;gap:6px;flex-shrink:0;max-width:160px;overflow:hidden}
+.topic-poster{display:inline-flex}
+.topic-poster-avatar{width:22px;height:22px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);display:block}
+.cat-icon{display:inline-flex;width:14px;height:14px;border-radius:4px;border:1px solid currentColor;background:currentColor;opacity:.85}
 .meta-icon{display:inline-flex;align-items:center;gap:4px}
 .meta-icon svg{width:13px;height:13px;stroke:currentColor}
 .list-item .item-excerpt{font-size:.85rem;color:var(--fg2);margin-top:4px;
@@ -59,6 +66,7 @@ input[type=text],input[type=search],input[type=email],input[type=password],input
   justify-content:center;padding:0 5px;flex-shrink:0;margin-top:2px}
 .cat{display:inline-block;font-size:.7rem;padding:2px 8px;border-radius:999px;background:transparent;
   border:1px solid currentColor;font-weight:600;line-height:1.1}
+@media(max-width:520px){.topic-posters{display:none}}
 .post{padding:12px;border-bottom:1px solid var(--border);cursor:pointer;scroll-margin-top:calc(var(--top-h) + 8px)}
 .post.active{background:var(--bg3)}
 .post-actions{display:none}

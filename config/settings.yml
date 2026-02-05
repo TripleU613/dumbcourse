@@ -27,6 +27,18 @@ plugins:
   dumbcourse_sidebar_link_enabled:
     default: true
     client: true
+  dumbcourse_show_category_names:
+    default: true
+    client: true
+  dumbcourse_show_topic_posters:
+    default: true
+    client: true
+  dumbcourse_show_topic_posters_mobile:
+    default: true
+    client: true
+  dumbcourse_show_topic_posters_desktop:
+    default: true
+    client: true
   dumbcourse_push_enabled:
     default: true
     client: false
