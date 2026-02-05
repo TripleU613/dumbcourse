@@ -9,6 +9,8 @@ DiscourseDumbcourse::Engine.routes.draw do
     post "/register" => "push#register"
     delete "/unregister" => "push#unregister"
     get "/status" => "push#status"
+    get "/preferences" => "push#preferences"
+    put "/preferences" => "push#update_preferences"
   end
 
   # Main app routes (catch-all) - exclude push paths

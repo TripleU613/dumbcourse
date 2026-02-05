@@ -88,6 +88,13 @@ module DiscourseDumbcourse
       end
     end
 
+    # Check if user wants this notification type
+    def self.user_wants_notification?(user_id, type)
+      prefs = PluginStore.get("dumbcourse", "push_prefs_#{user_id}")
+      return type != :likes if prefs.nil? # Default: send all except likes
+      prefs[type.to_s] != false && prefs[type.to_sym] != false
+    end
+
     # Notification type handlers
     def self.notify_reply(post)
       return unless post.topic
@@ -95,7 +102,7 @@ module DiscourseDumbcourse
 
       # Notify topic creator
       topic_user_id = post.topic.user_id
-      if topic_user_id && topic_user_id != post.user_id
+      if topic_user_id && topic_user_id != post.user_id && user_wants_notification?(topic_user_id, :replies)
         send_to_user(
           topic_user_id,
           title: "New reply in: #{post.topic.title.truncate(50)}",
@@ -114,6 +121,7 @@ module DiscourseDumbcourse
         )
         .where.not(user_id: post.user_id)
         .find_each do |tu|
+          next unless user_wants_notification?(tu.user_id, :replies)
           send_to_user(
             tu.user_id,
             title: "New reply in: #{post.topic.title.truncate(50)}",
@@ -127,6 +135,7 @@ module DiscourseDumbcourse
 
     def self.notify_mention(post, mentioned_user_id)
       return if mentioned_user_id == post.user_id
+      return unless user_wants_notification?(mentioned_user_id, :mentions)
 
       user = User.find_by(id: mentioned_user_id)
       return unless user
@@ -148,6 +157,7 @@ module DiscourseDumbcourse
         .topic_allowed_users
         .where.not(user_id: post.user_id)
         .find_each do |tau|
+          next unless user_wants_notification?(tau.user_id, :messages)
           send_to_user(
             tau.user_id,
             title: "Private message from #{post.user.username}",
@@ -160,6 +170,7 @@ module DiscourseDumbcourse
 
     def self.notify_quoted(post, quoted_user_id)
       return if quoted_user_id == post.user_id
+      return unless user_wants_notification?(quoted_user_id, :quotes)
 
       send_to_user(
         quoted_user_id,
@@ -172,6 +183,7 @@ module DiscourseDumbcourse
 
     def self.notify_liked(post, liker_user)
       return if post.user_id == liker_user.id
+      return unless user_wants_notification?(post.user_id, :likes)
 
       send_to_user(
         post.user_id,

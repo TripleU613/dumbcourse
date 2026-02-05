@@ -68,5 +68,32 @@ module DiscourseDumbcourse
         render json: { device_count: devices.size, devices: devices.keys }
       end
     end
+
+    # GET /<base>/push/preferences
+    # Get user's notification preferences
+    def preferences
+      prefs = PluginStore.get("dumbcourse", "push_prefs_#{current_user.id}") || default_prefs
+      render json: prefs
+    end
+
+    # PUT /<base>/push/preferences
+    # Save user's notification preferences
+    def update_preferences
+      prefs = {
+        replies: params[:replies] != false && params[:replies] != "false",
+        mentions: params[:mentions] != false && params[:mentions] != "false",
+        messages: params[:messages] != false && params[:messages] != "false",
+        quotes: params[:quotes] != false && params[:quotes] != "false",
+        likes: params[:likes] == true || params[:likes] == "true",
+      }
+      PluginStore.set("dumbcourse", "push_prefs_#{current_user.id}", prefs)
+      render json: { success: true, preferences: prefs }
+    end
+
+    private
+
+    def default_prefs
+      { replies: true, mentions: true, messages: true, quotes: true, likes: false }
+    end
   end
 end

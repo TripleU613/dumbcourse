@@ -1981,7 +1981,8 @@ var IC = {
   star: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 8.5 22 9.3 17 14 18.5 21 12 17.5 5.5 21 7 14 2 9.3 9 8.5 12 2"/></svg>',
   check: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
   thumb: '<svg viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M313.4 32.9c26 5.2 42.9 30.5 37.7 56.5l-2.3 11.4c-5.3 26.7-15.1 52.1-28.8 75.2H464c26.5 0 48 21.5 48 48c0 18.5-10.5 34.6-25.9 42.6C497 275.4 504 288.9 504 304c0 23.4-16.8 42.9-38.9 47.1c4.4 7.3 6.9 15.8 6.9 24.9c0 21.3-13.9 39.4-33.1 45.6c.7 3.3 1.1 6.8 1.1 10.4c0 26.5-21.5 48-48 48H294.5c-19 0-37.5-5.6-53.3-16.1l-38.5-25.7C176 420.4 160 390.4 160 358.3V320 272 247.1c0-29.2 13.3-56.7 36-75l7.4-5.9c26.5-21.2 44.6-51 51.2-84.2l2.3-11.4c5.2-26 30.5-42.9 56.5-37.7zM32 192H96c17.7 0 32 14.3 32 32V448c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32V224c0-17.7 14.3-32 32-32z"/></svg>',
-  undo: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>'
+  undo: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>',
+  gear: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'
 };
 var REACTION_EMOJI = {
   '+1': '\uD83D\uDC4D',
@@ -4652,6 +4653,96 @@ function _renderMessages() {
   }));
   return _renderMessages.apply(this, arguments);
 }
+function showPushSettings() {
+  var prev = document.activeElement;
+  fetch(PROXY + BASE_PATH + '/push/preferences', {
+    headers: { 'Accept': 'application/json' },
+    credentials: 'same-origin'
+  }).then(function (resp) {
+    if (!resp || !resp.ok) throw new Error('Failed to load preferences');
+    return resp.json();
+  }).then(function (prefs) {
+    var el = document.createElement('div');
+    el.className = 'confirm-overlay';
+    el.innerHTML = '<div class="confirm-box" style="max-width:340px;text-align:left">' +
+      '<h3 style="margin:0 0 12px;font-size:1rem">Push Notification Settings</h3>' +
+      '<p style="font-size:.85rem;color:var(--fg2);margin-bottom:12px">Choose which notifications to receive on your device.</p>' +
+      '<div class="push-pref-list">' +
+        '<label class="push-pref-item"><input type="checkbox" id="prefReplies" tabindex="0"' + (prefs.replies !== false ? ' checked' : '') + '> Replies</label>' +
+        '<label class="push-pref-item"><input type="checkbox" id="prefMentions" tabindex="0"' + (prefs.mentions !== false ? ' checked' : '') + '> Mentions</label>' +
+        '<label class="push-pref-item"><input type="checkbox" id="prefMessages" tabindex="0"' + (prefs.messages !== false ? ' checked' : '') + '> Private Messages</label>' +
+        '<label class="push-pref-item"><input type="checkbox" id="prefQuotes" tabindex="0"' + (prefs.quotes !== false ? ' checked' : '') + '> Quotes</label>' +
+        '<label class="push-pref-item"><input type="checkbox" id="prefLikes" tabindex="0"' + (prefs.likes === true ? ' checked' : '') + '> Likes</label>' +
+      '</div>' +
+      '<div class="actions" style="margin-top:16px">' +
+        '<button class="cancel" style="background:var(--bg3);color:var(--fg)" tabindex="0">Cancel</button>' +
+        '<button class="save" tabindex="0">Save</button>' +
+      '</div>' +
+    '</div>';
+    document.body.appendChild(el);
+
+    var saveBtn = el.querySelector('.save');
+    var cancelBtn = el.querySelector('.cancel');
+    var firstCheckbox = el.querySelector('input[type="checkbox"]');
+    if (firstCheckbox) firstCheckbox.focus();
+
+    function close() {
+      el.remove();
+      if (prev && prev.focus) prev.focus();
+    }
+
+    cancelBtn.onclick = close;
+    el.onclick = function (e) {
+      if (e.target === el) close();
+    };
+
+    saveBtn.onclick = function () {
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+
+      var newPrefs = {
+        replies: document.getElementById('prefReplies').checked,
+        mentions: document.getElementById('prefMentions').checked,
+        messages: document.getElementById('prefMessages').checked,
+        quotes: document.getElementById('prefQuotes').checked,
+        likes: document.getElementById('prefLikes').checked
+      };
+
+      fetch(PROXY + BASE_PATH + '/push/preferences', {
+        method: 'PUT',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': S.csrf || ''
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify(newPrefs)
+      }).then(function (resp) {
+        if (!resp || !resp.ok) throw new Error('Failed to save');
+        close();
+      }).catch(function (e) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save';
+        showAlert(e.message || 'Failed to save preferences');
+      });
+    };
+
+    el.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        close();
+      }
+      // Enter key toggles checkboxes for dpad navigation
+      if (e.key === 'Enter' && e.target.type === 'checkbox') {
+        e.preventDefault();
+        e.target.checked = !e.target.checked;
+      }
+    });
+
+  }).catch(function (e) {
+    showAlert('Could not load notification settings');
+  });
+}
 function renderNotifications() {
   return _renderNotifications.apply(this, arguments);
 } // ============ PROFILE ============
@@ -4677,7 +4768,7 @@ function _renderNotifications() {
           $app.innerHTML = '<div class="empty">No notifications</div>';
           return _context25.a(2);
         case 3:
-          html = `<button id="markAllRead" tabindex="0" style="margin:8px;background:var(--bg3);color:var(--fg)">Mark all read</button>`;
+          html = `<div style="display:flex;gap:8px;margin:8px;align-items:center">` + `<button id="markAllRead" tabindex="0" style="background:var(--bg3);color:var(--fg)">Mark all read</button>` + `<div style="flex:1"></div>` + `<button id="pushSettingsBtn" tabindex="0" style="background:var(--bg3);color:var(--fg);padding:8px 10px" title="Push notification settings">` + IC.gear + `</button>` + `</div>`;
           html += notifs.map(function (n) {
             var types = {
               1: IC.msg,
@@ -4728,6 +4819,12 @@ function _renderNotifications() {
               }
             }, _callee24, this, [[1, 4]]);
           })));
+          var pushSettingsBtn = document.getElementById('pushSettingsBtn');
+          if (pushSettingsBtn) {
+            pushSettingsBtn.addEventListener('click', function () {
+              showPushSettings();
+            });
+          }
           focusContent();
           _context25.n = 5;
           break;
