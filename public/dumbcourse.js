@@ -97,6 +97,117 @@ try {
     EMOJI_READY = true;
   }
 } catch (e) {}
+
+// MessageBus client for real-time updates (official Discourse method)
+var MB = {
+  clientId: 'dumbcourse_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now(),
+  channels: {},
+  callbacks: {},
+  lastIds: {},
+  polling: false,
+  stopped: true,
+  pollXhr: null,
+  baseUrl: PROXY,
+
+  subscribe: function(channel, callback, lastId) {
+    if (!this.callbacks[channel]) this.callbacks[channel] = [];
+    this.callbacks[channel].push(callback);
+    this.lastIds[channel] = typeof lastId === 'number' ? lastId : -1;
+    if (!this.stopped) this.poll();
+  },
+
+  unsubscribe: function(channel, callback) {
+    if (!this.callbacks[channel]) return;
+    if (callback) {
+      this.callbacks[channel] = this.callbacks[channel].filter(function(cb) { return cb !== callback; });
+    } else {
+      delete this.callbacks[channel];
+      delete this.lastIds[channel];
+    }
+  },
+
+  start: function() {
+    if (!this.stopped) return;
+    this.stopped = false;
+    this.poll();
+  },
+
+  stop: function() {
+    this.stopped = true;
+    if (this.pollXhr) {
+      try { this.pollXhr.abort(); } catch(e) {}
+      this.pollXhr = null;
+    }
+  },
+
+  poll: function() {
+    var self = this;
+    if (self.stopped || self.polling) return;
+    if (document.hidden) {
+      setTimeout(function() { self.poll(); }, 10000);
+      return;
+    }
+
+    var channels = Object.keys(self.lastIds);
+    if (channels.length === 0) return;
+
+    self.polling = true;
+
+    // Build POST body: channel => lastId
+    var body = {};
+    channels.forEach(function(ch) {
+      body[ch] = self.lastIds[ch];
+    });
+
+    var xhr = new XMLHttpRequest();
+    self.pollXhr = xhr;
+    xhr.open('POST', self.baseUrl + '/message-bus/' + self.clientId + '/poll', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('Accept', 'application/json');
+    xhr.timeout = 30000; // Long poll timeout
+
+    xhr.onload = function() {
+      self.polling = false;
+      self.pollXhr = null;
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          var messages = JSON.parse(xhr.responseText);
+          if (Array.isArray(messages)) {
+            messages.forEach(function(msg) {
+              var ch = msg.channel;
+              if (msg.message_id) self.lastIds[ch] = msg.message_id;
+              var cbs = self.callbacks[ch];
+              if (cbs) {
+                cbs.forEach(function(cb) {
+                  try { cb(msg.data, msg.global_id, msg.message_id); } catch(e) {}
+                });
+              }
+            });
+          }
+        } catch(e) {}
+      }
+      if (!self.stopped) {
+        setTimeout(function() { self.poll(); }, 100);
+      }
+    };
+
+    xhr.onerror = xhr.ontimeout = function() {
+      self.polling = false;
+      self.pollXhr = null;
+      if (!self.stopped) {
+        setTimeout(function() { self.poll(); }, 5000);
+      }
+    };
+
+    // Encode body as form data
+    var params = [];
+    channels.forEach(function(ch) {
+      params.push(encodeURIComponent(ch) + '=' + encodeURIComponent(self.lastIds[ch]));
+    });
+    xhr.send(params.join('&'));
+  }
+};
+
 function fromCodePoint(cp) {
   if (String.fromCodePoint) return String.fromCodePoint(cp);
   if (cp <= 0xFFFF) return String.fromCharCode(cp);
@@ -1224,8 +1335,9 @@ function routeLogic() {
     if (!parseTopicPath(pathForCheck) && !pathForCheck.match(/^\/messages\/\d+/)) {
       CURRENT_TOPIC = null;
     }
-    // Stop topics polling when navigating away from topics list
+    // Stop MessageBus when navigating away from topics list
     if (parseTopicPath(pathForCheck) || pathForCheck.match(/^\/u\/|^\/notifications|^\/messages|^\/search/)) {
+      MB.stop();
       if (TOPICS_POLL_INTERVAL) {
         clearInterval(TOPICS_POLL_INTERVAL);
         TOPICS_POLL_INTERVAL = null;
@@ -2893,37 +3005,111 @@ function _renderTopics() {
             topicScrollCleanup = _cleanup;
             window.addEventListener('popstate', _cleanup);
           }
-          // Start polling for topic updates every 30 seconds
-          TOPICS_POLL_INTERVAL = setInterval(function () {
-            if (document.hidden) return; // Don't poll when tab is hidden
-            api(buildViewUrl(topicView, 0), { nocache: true }).then(function (fresh) {
-              var freshTopics = fresh.topic_list && fresh.topic_list.topics || [];
-              var list = document.getElementById('topicList');
-              if (!list) return;
-              freshTopics.forEach(function (t) {
-                var link = list.querySelector('a[href*="/t/' + t.slug + '/' + t.id + '"], a[href*="/t/' + t.id + '"]');
-                if (!link) return;
-                var unread = (t.unread_posts || 0) + (t.new_posts || 0);
-                if (VIEWED_THIS_SESSION[String(t.id)]) unread = 0;
-                var badge = link.querySelector('.unread-badge');
-                if (unread > 0) {
-                  if (badge) {
-                    badge.textContent = unread;
-                  } else {
-                    var wrapper = link.querySelector('div > div:last-child');
-                    if (wrapper && wrapper.style) {
-                      var newBadge = document.createElement('span');
-                      newBadge.className = 'unread-badge';
-                      newBadge.textContent = unread;
-                      wrapper.parentNode.appendChild(newBadge);
-                    }
-                  }
-                } else if (badge) {
-                  badge.remove();
+          // Track known topic IDs to detect new ones
+          var knownTopicIds = {};
+          topics.forEach(function (t) { knownTopicIds[t.id] = true; });
+
+          // Real-time updates via MessageBus (official Discourse method)
+          function handleTopicMessage(data) {
+            if (!data) return;
+            var list = document.getElementById('topicList');
+            if (!list) return;
+
+            var topicId = data.topic_id;
+            var messageType = data.message_type;
+
+            // Handle new topic
+            if (messageType === 'new_topic' && topicId && !knownTopicIds[topicId]) {
+              knownTopicIds[topicId] = true;
+              // Fetch the new topic data and prepend it
+              api('/t/' + topicId + '.json').then(function (t) {
+                if (!t || !t.id) return;
+                var newItem = document.createElement('div');
+                newItem.innerHTML = topicItemHtml({
+                  id: t.id,
+                  slug: t.slug,
+                  title: t.title,
+                  category_id: t.category_id,
+                  posts_count: t.posts_count || 1,
+                  views: t.views || 0,
+                  last_posted_at: t.last_posted_at || t.created_at,
+                  pinned: t.pinned,
+                  closed: t.closed,
+                  archived: t.archived,
+                  unread_posts: 0,
+                  new_posts: 0
+                });
+                var newLink = newItem.firstElementChild;
+                if (newLink && list.firstChild) {
+                  newLink.style.animation = 'fadeIn 0.3s ease';
+                  newLink.style.background = 'var(--bg3)';
+                  list.insertBefore(newLink, list.firstChild);
+                  setTimeout(function () { newLink.style.background = ''; }, 5000);
                 }
-              });
-            }).catch(function () {});
-          }, 30000);
+              }).catch(function () {});
+            }
+
+            // Handle unread/latest updates - update badge on existing topic
+            if ((messageType === 'unread' || messageType === 'latest') && topicId) {
+              var link = list.querySelector('a[href*="/t/' + topicId + '"]');
+              if (link) {
+                // Fetch fresh topic data to get accurate counts
+                api('/t/' + topicId + '.json', { nocache: true }).then(function (t) {
+                  if (!t) return;
+                  var unread = (t.unread_posts || 0) + (t.new_posts || 0);
+                  if (VIEWED_THIS_SESSION[String(topicId)]) unread = 0;
+                  var badge = link.querySelector('.unread-badge');
+                  if (unread > 0) {
+                    if (badge) {
+                      badge.textContent = unread;
+                    } else {
+                      var flexWrapper = link.querySelector('div[style*="display:flex"]');
+                      if (flexWrapper) {
+                        var newBadge = document.createElement('span');
+                        newBadge.className = 'unread-badge';
+                        newBadge.textContent = unread;
+                        flexWrapper.appendChild(newBadge);
+                      }
+                    }
+                    // Update href to first unread
+                    if (t.last_read_post_number > 0) {
+                      var firstUnread = t.last_read_post_number + 1;
+                      link.setAttribute('href', topicHref(topicId, t.slug, firstUnread));
+                    }
+                  } else if (badge) {
+                    badge.remove();
+                  }
+                }).catch(function () {});
+              }
+            }
+          }
+
+          // Subscribe to MessageBus channels for real-time updates
+          MB.subscribe('/new', handleTopicMessage);
+          MB.subscribe('/latest', handleTopicMessage);
+          MB.subscribe('/unread', handleTopicMessage);
+          if (S.user && S.user.id) {
+            MB.subscribe('/unread/' + S.user.id, handleTopicMessage);
+          }
+          MB.start();
+
+          // Store cleanup function to unsubscribe when leaving
+          var mbCleanup = function() {
+            MB.stop();
+            MB.unsubscribe('/new');
+            MB.unsubscribe('/latest');
+            MB.unsubscribe('/unread');
+            if (S.user && S.user.id) {
+              MB.unsubscribe('/unread/' + S.user.id);
+            }
+          };
+
+          // Add to existing cleanup
+          var existingCleanup = topicScrollCleanup;
+          topicScrollCleanup = function() {
+            mbCleanup();
+            if (existingCleanup) existingCleanup();
+          };
           focusContent();
         case 4:
           return _context17.a(2);
@@ -3586,24 +3772,31 @@ function _renderTopic() {
           attachPostHandlers($app, id, replyBox, postNumberMap, function (n) {
             replyToPostNumber = n;
           });
+          // Scroll to specific post or last post
           if (postNumber) {
             var pn = parseInt(postNumber, 10);
             if (pn) {
-              setTimeout(function () {
-                var target = $app.querySelector('.post[data-post-number=\"' + pn + '\"]');
-                if (target && target.scrollIntoView) {
-                  target.scrollIntoView({ block: 'start' });
+              var target = $app.querySelector('.post[data-post-number="' + pn + '"]');
+              if (target) {
+                target.scrollIntoView({ block: 'start' });
+                target.focus();
+              } else {
+                // Target not found, scroll to first post
+                var firstPost = document.querySelector('.post');
+                if (firstPost) {
+                  firstPost.scrollIntoView({ block: 'start' });
+                  firstPost.focus();
                 }
-              }, 0);
+              }
             }
-          }
-          posts = document.querySelectorAll('.post');
-          if (posts.length) {
-            last = posts[posts.length - 1];
-            last.scrollIntoView({
-              behavior: 'instant'
-            });
-            last.focus();
+          } else {
+            // No post number, scroll to last
+            posts = document.querySelectorAll('.post');
+            if (posts.length) {
+              last = posts[posts.length - 1];
+              last.scrollIntoView({ behavior: 'instant' });
+              last.focus();
+            }
           }
         case 2:
           return _context22.a(2);
