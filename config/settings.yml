@@ -37,3 +37,11 @@ plugins:
     default: ""
     secret: true
     client: false
+  dumbcourse_pagination_enabled:
+    default: false
+    client: true
+  dumbcourse_topics_per_page:
+    default: 30
+    min: 10
+    max: 100
+    client: true

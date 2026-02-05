@@ -2532,8 +2532,14 @@ function viewFromPath(path) {
 function buildViewUrl(viewKey, page) {
   var cfg = viewConfig(viewKey);
   var base = typeof cfg.path === 'function' ? cfg.path() : cfg.path;
+  var sep = base.indexOf('?') >= 0 ? '&' : '?';
+  var settings = window.DUMBCOURSE_SETTINGS || {};
+  if (settings.paginationEnabled && settings.topicsPerPage) {
+    base += sep + 'per_page=' + settings.topicsPerPage;
+    sep = '&';
+  }
   if (page && page > 0) {
-    base += (base.indexOf('?') >= 0 ? '&' : '?') + 'page=' + page;
+    base += sep + 'page=' + page;
   }
   return base;
 }
@@ -2558,6 +2564,62 @@ var topicPage = 0,
   topicLoading = false,
   topicMore = true,
   topicScrollCleanup = null;
+function setupTopicPagination(currentPage, hasMore) {
+  var perPage = window.DUMBCOURSE_SETTINGS && window.DUMBCOURSE_SETTINGS.topicsPerPage || 30;
+  var pagination = document.getElementById('topicPagination');
+  if (!pagination) return;
+  var html = '';
+  if (currentPage > 0) {
+    html += '<button id="prevPageBtn" tabindex="0" style="background:var(--bg3);color:var(--fg);padding:10px 20px;font-size:1rem">← Prev</button>';
+  }
+  html += '<span style="color:var(--fg2);padding:10px">Page ' + (currentPage + 1) + '</span>';
+  if (hasMore) {
+    html += '<button id="nextPageBtn" tabindex="0" style="background:var(--bg3);color:var(--fg);padding:10px 20px;font-size:1rem">Next →</button>';
+  }
+  pagination.innerHTML = html;
+  var prevBtn = document.getElementById('prevPageBtn');
+  var nextBtn = document.getElementById('nextPageBtn');
+  if (prevBtn) {
+    prevBtn.addEventListener('click', function () {
+      prevBtn.disabled = true;
+      prevBtn.textContent = 'Loading...';
+      api(buildViewUrl(topicView, currentPage - 1)).then(function (d) {
+        var topics = d.topic_list && d.topic_list.topics || [];
+        var list = document.getElementById('topicList');
+        if (list) {
+          list.innerHTML = topics.map(topicItemHtml).join('');
+        }
+        window.scrollTo(0, 0);
+        setupTopicPagination(currentPage - 1, topics.length >= perPage);
+        focusContent();
+      }).catch(function (e) {
+        showAlert(e.message || 'Failed to load');
+        prevBtn.disabled = false;
+        prevBtn.textContent = '← Prev';
+      });
+    });
+  }
+  if (nextBtn) {
+    nextBtn.addEventListener('click', function () {
+      nextBtn.disabled = true;
+      nextBtn.textContent = 'Loading...';
+      api(buildViewUrl(topicView, currentPage + 1)).then(function (d) {
+        var topics = d.topic_list && d.topic_list.topics || [];
+        var list = document.getElementById('topicList');
+        if (list) {
+          list.innerHTML = topics.map(topicItemHtml).join('');
+        }
+        window.scrollTo(0, 0);
+        setupTopicPagination(currentPage + 1, topics.length >= perPage);
+        focusContent();
+      }).catch(function (e) {
+        showAlert(e.message || 'Failed to load');
+        nextBtn.disabled = false;
+        nextBtn.textContent = 'Next →';
+      });
+    });
+  }
+}
 var categoryPage = 0,
   categoryLoading = false,
   categoryMore = true,
@@ -2724,26 +2786,39 @@ function _renderTopics() {
           return _context17.a(2);
         case 3:
           topicPage = 1;
-          html = `<div id="topicList">`;
+          html = '<div id="topicList">';
           html += topics.map(topicItemHtml).join('');
           html += '</div>';
-          html += '<div id="topicLoader" class="loading" style="display:none">Loading more...</div>';
+          var paginationEnabled = window.DUMBCOURSE_SETTINGS && window.DUMBCOURSE_SETTINGS.paginationEnabled;
+          var perPage = window.DUMBCOURSE_SETTINGS && window.DUMBCOURSE_SETTINGS.topicsPerPage || 30;
+          var hasMore = topics.length >= perPage;
+          if (paginationEnabled) {
+            html += '<div id="topicPagination" style="display:flex;gap:12px;justify-content:center;padding:16px">';
+            html += '<button id="nextPageBtn" tabindex="0" style="background:var(--bg3);color:var(--fg);padding:10px 20px;font-size:1rem">Next →</button>';
+            html += '</div>';
+          } else {
+            html += '<div id="topicLoader" class="loading" style="display:none">Loading more...</div>';
+          }
           $app.innerHTML = html;
           showCreate('/new-topic');
           if (topicScrollCleanup) topicScrollCleanup();
-          onScroll = function onScroll() {
-            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
-              loadMoreTopics();
-            }
-          };
-          window.addEventListener('scroll', onScroll);
-          _cleanup = function cleanup() {
-            window.removeEventListener('scroll', onScroll);
-            window.removeEventListener('popstate', _cleanup);
-            topicScrollCleanup = null;
-          };
-          topicScrollCleanup = _cleanup;
-          window.addEventListener('popstate', _cleanup);
+          if (paginationEnabled) {
+            setupTopicPagination(0, hasMore);
+          } else {
+            onScroll = function onScroll() {
+              if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
+                loadMoreTopics();
+              }
+            };
+            window.addEventListener('scroll', onScroll);
+            _cleanup = function cleanup() {
+              window.removeEventListener('scroll', onScroll);
+              window.removeEventListener('popstate', _cleanup);
+              topicScrollCleanup = null;
+            };
+            topicScrollCleanup = _cleanup;
+            window.addEventListener('popstate', _cleanup);
+          }
           focusContent();
         case 4:
           return _context17.a(2);

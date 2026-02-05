@@ -72,6 +72,8 @@ module DiscourseDumbcourse
         hcaptchaEnabled: SiteSetting.discourse_hcaptcha_enabled,
         hcaptchaSiteKey: SiteSetting.hcaptcha_site_key.to_s,
         basePath: DiscourseDumbcourse.base_path_with_slash,
+        paginationEnabled: SiteSetting.dumbcourse_pagination_enabled,
+        topicsPerPage: SiteSetting.dumbcourse_topics_per_page,
       }
       settings_script = "<script>window.DUMBCOURSE_SETTINGS=#{settings.to_json};</script>"
       if html.include?("</head>")
