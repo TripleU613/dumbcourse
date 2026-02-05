@@ -2125,9 +2125,9 @@ function catBadge(id) {
   if (!c) return '';
   var bg = c.color ? '#' + c.color : '#666';
   if (!showCategoryNames) {
-    var iconUrl = c.uploaded_logo || c.uploaded_logo_dark || c.logo_url || c.logo || c.icon_url || c.icon;
+    var iconUrl = pickIconUrl(c.uploaded_logo) || pickIconUrl(c.uploaded_logo_dark) || pickIconUrl(c.logo_url) || pickIconUrl(c.logo) || pickIconUrl(c.icon_url) || pickIconUrl(c.icon);
     if (!iconUrl && c.custom_fields) {
-      iconUrl = c.custom_fields.category_icon || c.custom_fields.icon || c.custom_fields.category_logo;
+      iconUrl = pickIconUrl(c.custom_fields.category_icon) || pickIconUrl(c.custom_fields.icon) || pickIconUrl(c.custom_fields.category_logo);
     }
     if (iconUrl) {
       var finalUrl = rewriteSrc(iconUrl);
@@ -2136,6 +2136,12 @@ function catBadge(id) {
     return `<span class="cat-icon" style="color:${bg}" title="${esc(c.name)}" aria-label="${esc(c.name)}"></span>`;
   }
   return `<span class="cat" style="color:${bg};border-color:${bg}">${esc(c.name)}</span>`;
+}
+function pickIconUrl(value) {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') return value.url || value.src || value.path || '';
+  return '';
 }
 function mergeCategories(list) {
   (list || []).forEach(function (c) {
