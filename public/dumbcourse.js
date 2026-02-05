@@ -2027,8 +2027,9 @@ function isMobileLayout() {
   return window.matchMedia && window.matchMedia('(max-width: 680px)').matches;
 }
 function shouldShowTopicPosters() {
-  if (!showTopicPosters) return false;
-  return isMobileLayout() ? showTopicPostersMobile : showTopicPostersDesktop;
+  if (!topicPostersVisibility || topicPostersVisibility === 'none') return false;
+  if (topicPostersVisibility === 'all') return true;
+  return isMobileLayout() ? topicPostersVisibility === 'mobile' : topicPostersVisibility === 'desktop';
 }
 function topicPostersHtml(t) {
   if (!shouldShowTopicPosters()) return '';
@@ -2707,7 +2708,7 @@ function _loadMoreCategoryTopics() {
           return api(buildCategoryUrl(categoryView, categoryPage));
         case 3:
           d = _context16c.v;
-          mergeTopicUsers(d.topic_list && d.topic_list.users || []);
+          mergeTopicUsers(d.users || d.topic_list && d.topic_list.users || []);
           topics = d.topic_list && d.topic_list.topics || [];
           if (!topics.length) {
             categoryMore = false;
@@ -2790,7 +2791,7 @@ function _loadMoreTopics() {
           return api(buildViewUrl(topicView, topicPage));
         case 3:
           d = _context16.v;
-          mergeTopicUsers(d.topic_list && d.topic_list.users || []);
+          mergeTopicUsers(d.users || d.topic_list && d.topic_list.users || []);
           topics = d.topic_list && d.topic_list.topics || [];
           if (!topics.length) {
             topicMore = false;
@@ -2840,7 +2841,7 @@ function _renderTopics() {
         case 2:
           d = _context17.v;
           mergeCategories(d.topic_list && d.topic_list.categories || []);
-          mergeTopicUsers(d.topic_list && d.topic_list.users || []);
+          mergeTopicUsers(d.users || d.topic_list && d.topic_list.users || []);
           topics = d.topic_list && d.topic_list.topics || [];
           if (topics.length) {
             _context17.n = 3;
@@ -3024,7 +3025,7 @@ function _renderCategoryTopics() {
         case 3:
           d = _context17c.v;
           mergeCategories(d.category_list && d.category_list.categories || []);
-          mergeTopicUsers(d.topic_list && d.topic_list.users || []);
+          mergeTopicUsers(d.users || d.topic_list && d.topic_list.users || []);
           if (d.category && d.category.name) setTitle(d.category.name);
           topics = d.topic_list && d.topic_list.topics || [];
           if (topics.length) {
@@ -5523,9 +5524,23 @@ var DUMBCOURSE_SETTINGS = window.DUMBCOURSE_SETTINGS || {};
 var defaultTheme = DUMBCOURSE_SETTINGS.defaultTheme || '';
 var defaultView = (DUMBCOURSE_SETTINGS.defaultView || 'latest').toLowerCase();
 var showCategoryNames = DUMBCOURSE_SETTINGS.showCategoryNames !== false;
-var showTopicPosters = DUMBCOURSE_SETTINGS.showTopicPosters !== false;
-var showTopicPostersMobile = DUMBCOURSE_SETTINGS.showTopicPostersMobile !== false;
-var showTopicPostersDesktop = DUMBCOURSE_SETTINGS.showTopicPostersDesktop !== false;
+var topicPostersVisibility = (DUMBCOURSE_SETTINGS.topicPostersVisibility || '').toLowerCase();
+if (!topicPostersVisibility) {
+  var legacyShowTopicPosters = DUMBCOURSE_SETTINGS.showTopicPosters !== false;
+  var legacyShowTopicPostersMobile = DUMBCOURSE_SETTINGS.showTopicPostersMobile !== false;
+  var legacyShowTopicPostersDesktop = DUMBCOURSE_SETTINGS.showTopicPostersDesktop !== false;
+  if (!legacyShowTopicPosters) {
+    topicPostersVisibility = 'none';
+  } else if (legacyShowTopicPostersMobile && legacyShowTopicPostersDesktop) {
+    topicPostersVisibility = 'all';
+  } else if (legacyShowTopicPostersMobile) {
+    topicPostersVisibility = 'mobile';
+  } else if (legacyShowTopicPostersDesktop) {
+    topicPostersVisibility = 'desktop';
+  } else {
+    topicPostersVisibility = 'none';
+  }
+}
 HCAPTCHA_ENABLED = !!DUMBCOURSE_SETTINGS.hcaptchaEnabled;
 HCAPTCHA_SITE_KEY = DUMBCOURSE_SETTINGS.hcaptchaSiteKey || '';
 if (!storageGet('jt_theme', '')) {
