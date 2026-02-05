@@ -64,6 +64,7 @@ var EMOJI_MAP = {};
 var EMOJI_CACHE = {};
 var EMOJI_READY = false;
 var READ_TOPICS = {};
+var VIEWED_THIS_SESSION = {}; // Track topics viewed this session for instant unread update
 var API_CACHE_KEY = 'jt_api_cache';
 var API_CACHE_TTL = 5 * 60 * 1000;
 var PERSISTENT_API_CACHE = {};
@@ -2684,6 +2685,7 @@ function _loadMoreCategoryTopics() {
 }
 function topicItemHtml(t) {
   var unread = (t.unread_posts || 0) + (t.new_posts || 0);
+  if (VIEWED_THIS_SESSION[String(t.id)]) unread = 0; // Clear if viewed this session
   var statusIcons = '';
   if (t.pinned) statusIcons += '<span class="topic-status-icon" title="Pinned">' + IC.pin + '</span>';
   if (t.closed || t.archived) statusIcons += '<span class="topic-status-icon" title="Locked">' + IC.lock + '</span>';
@@ -2997,6 +2999,7 @@ function _renderTopic() {
             visible: d && d.visible
           };
           markTopicRead(d && d.id ? d.id : id);
+          VIEWED_THIS_SESSION[String(d && d.id ? d.id : id)] = true;
           setTitle(d.title || 'Topic');
           lastPost = d.post_stream && d.post_stream.posts || [];
           highestNum = 0;
