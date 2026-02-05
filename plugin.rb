@@ -39,50 +39,14 @@ require_relative "lib/discourse_dumbcourse/push_sender"
 after_initialize do
   enabled_site_setting :dumbcourse_enabled
 
-  # Hook: New post created (handles replies)
-  on(:post_created) do |post, opts, user|
-    next unless SiteSetting.dumbcourse_push_enabled
-    next if post.post_type != Post.types[:regular]
-
-    Jobs.enqueue_in(5.seconds, :dumbcourse_push_notify, post_id: post.id, type: "post_created")
-  end
-
-  # Hook: User mentioned
-  on(:user_mentioned) do |post, mentioned_user|
+  # Hook: Notification created
+  on(:notification_created) do |notification|
     next unless SiteSetting.dumbcourse_push_enabled
 
     Jobs.enqueue_in(
       2.seconds,
       :dumbcourse_push_notify,
-      post_id: post.id,
-      type: "mention",
-      target_user_id: mentioned_user.id,
-    )
-  end
-
-  # Hook: Post liked
-  on(:post_liked) do |post, post_action, liker|
-    next unless SiteSetting.dumbcourse_push_enabled
-
-    Jobs.enqueue_in(
-      3.seconds,
-      :dumbcourse_push_notify,
-      post_id: post.id,
-      type: "liked",
-      liker_user_id: liker.id,
-    )
-  end
-
-  # Hook: User quoted
-  on(:user_quoted) do |post, quoted_user|
-    next unless SiteSetting.dumbcourse_push_enabled
-
-    Jobs.enqueue_in(
-      2.seconds,
-      :dumbcourse_push_notify,
-      post_id: post.id,
-      type: "quoted",
-      target_user_id: quoted_user.id,
+      notification_id: notification.id,
     )
   end
 
@@ -92,24 +56,10 @@ after_initialize do
       def execute(args)
         return unless SiteSetting.dumbcourse_push_enabled
 
-        post = Post.find_by(id: args[:post_id])
-        return unless post
+        notification = Notification.find_by(id: args[:notification_id])
+        return unless notification
 
-        case args[:type]
-        when "post_created"
-          if post.topic&.private_message?
-            DiscourseDumbcourse::PushSender.notify_pm(post)
-          else
-            DiscourseDumbcourse::PushSender.notify_reply(post)
-          end
-        when "mention"
-          DiscourseDumbcourse::PushSender.notify_mention(post, args[:target_user_id])
-        when "liked"
-          liker = User.find_by(id: args[:liker_user_id])
-          DiscourseDumbcourse::PushSender.notify_liked(post, liker) if liker
-        when "quoted"
-          DiscourseDumbcourse::PushSender.notify_quoted(post, args[:target_user_id])
-        end
+        DiscourseDumbcourse::PushSender.notify_notification(notification)
       end
     end
   end
