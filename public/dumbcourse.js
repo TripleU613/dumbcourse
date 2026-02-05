@@ -2684,13 +2684,14 @@ function _loadMoreCategoryTopics() {
 }
 function topicItemHtml(t) {
   var unread = (t.unread_posts || 0) + (t.new_posts || 0);
-  if (isTopicRead(t.id)) unread = 0;
   var statusIcons = '';
   if (t.pinned) statusIcons += '<span class="topic-status-icon" title="Pinned">' + IC.pin + '</span>';
   if (t.closed || t.archived) statusIcons += '<span class="topic-status-icon" title="Locked">' + IC.lock + '</span>';
   if (statusIcons) statusIcons = '<span class="topic-status-group">' + statusIcons + '</span>';
   var views = t.views != null ? '<span>' + t.views + ' views</span>' : '';
-  return `<a class="list-item" href="${topicHref(t.id, t.slug)}" tabindex="0">
+  // If unread, link to first unread post; otherwise go to last
+  var firstUnread = unread > 0 && t.last_read_post_number ? t.last_read_post_number + 1 : null;
+  return `<a class="list-item" href="${topicHref(t.id, t.slug, firstUnread)}" tabindex="0">
     <div style="display:flex;align-items:flex-start;gap:8px">
       <div style="flex:1;min-width:0">
         <div class="item-title"><span class="item-title-text">${escEmoji(t.title)}</span>${statusIcons}</div>
