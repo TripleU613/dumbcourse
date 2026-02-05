@@ -80,7 +80,8 @@ module DiscourseDumbcourse
     # Save user's notification preferences
     def update_preferences
       prefs = {
-        replies: params[:replies] != false && params[:replies] != "false",
+        direct_replies: params[:direct_replies] != false && params[:direct_replies] != "false",
+        watching: params[:watching] != false && params[:watching] != "false",
         mentions: params[:mentions] != false && params[:mentions] != "false",
         messages: params[:messages] != false && params[:messages] != "false",
         quotes: params[:quotes] != false && params[:quotes] != "false",
@@ -93,7 +94,14 @@ module DiscourseDumbcourse
     private
 
     def default_prefs
-      { replies: true, mentions: true, messages: true, quotes: true, likes: false }
+      {
+        direct_replies: true,
+        watching: true,
+        mentions: true,
+        messages: true,
+        quotes: true,
+        likes: false,
+      }
     end
   end
 end

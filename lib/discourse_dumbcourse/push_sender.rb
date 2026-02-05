@@ -100,10 +100,30 @@ module DiscourseDumbcourse
       return unless post.topic
       return if post.post_number == 1 # Skip OP
 
+      notified_user_ids = Set.new
+      notified_user_ids << post.user_id # Don't notify self
+
+      # Direct reply: notify the author of the post being replied to
+      if post.reply_to_post_number
+        replied_post = Post.find_by(topic_id: post.topic_id, post_number: post.reply_to_post_number)
+        if replied_post && !notified_user_ids.include?(replied_post.user_id) &&
+             user_wants_notification?(replied_post.user_id, :direct_replies)
+          notified_user_ids << replied_post.user_id
+          send_to_user(
+            replied_post.user_id,
+            title: "#{post.user.username} replied to you",
+            message: post.excerpt(150, strip_links: true, strip_images: true, post: post),
+            click_url: post_url(post),
+            priority: "high",
+          )
+        end
+      end
+
       # Notify topic creator
       topic_user_id = post.topic.user_id
-      if topic_user_id && topic_user_id != post.user_id &&
-           user_wants_notification?(topic_user_id, :replies)
+      if topic_user_id && !notified_user_ids.include?(topic_user_id) &&
+           user_wants_notification?(topic_user_id, :watching)
+        notified_user_ids << topic_user_id
         send_to_user(
           topic_user_id,
           title: "New reply in: #{post.topic.title.truncate(50)}",
@@ -122,7 +142,9 @@ module DiscourseDumbcourse
         )
         .where.not(user_id: post.user_id)
         .find_each do |tu|
-          next unless user_wants_notification?(tu.user_id, :replies)
+          next if notified_user_ids.include?(tu.user_id)
+          next unless user_wants_notification?(tu.user_id, :watching)
+          notified_user_ids << tu.user_id
           send_to_user(
             tu.user_id,
             title: "New reply in: #{post.topic.title.truncate(50)}",

@@ -4664,17 +4664,17 @@ function showPushSettings() {
   }).then(function (prefs) {
     var el = document.createElement('div');
     el.className = 'confirm-overlay';
-    el.innerHTML = '<div class="confirm-box" style="max-width:340px;text-align:left">' +
-      '<h3 style="margin:0 0 12px;font-size:1rem">Push Notification Settings</h3>' +
-      '<p style="font-size:.85rem;color:var(--fg2);margin-bottom:12px">Choose which notifications to receive on your device.</p>' +
+    el.innerHTML = '<div class="confirm-box push-prefs-box">' +
+      '<h3>Push Notifications</h3>' +
       '<div class="push-pref-list">' +
-        '<label class="push-pref-item"><input type="checkbox" id="prefReplies" tabindex="0"' + (prefs.replies !== false ? ' checked' : '') + '> Replies</label>' +
-        '<label class="push-pref-item"><input type="checkbox" id="prefMentions" tabindex="0"' + (prefs.mentions !== false ? ' checked' : '') + '> Mentions</label>' +
-        '<label class="push-pref-item"><input type="checkbox" id="prefMessages" tabindex="0"' + (prefs.messages !== false ? ' checked' : '') + '> Private Messages</label>' +
+        '<label class="push-pref-item"><input type="checkbox" id="prefDirectReplies" tabindex="0"' + (prefs.direct_replies !== false ? ' checked' : '') + '> Replies to you</label>' +
+        '<label class="push-pref-item"><input type="checkbox" id="prefWatching" tabindex="0"' + (prefs.watching !== false ? ' checked' : '') + '> Watched topics</label>' +
+        '<label class="push-pref-item"><input type="checkbox" id="prefMentions" tabindex="0"' + (prefs.mentions !== false ? ' checked' : '') + '> @mentions</label>' +
+        '<label class="push-pref-item"><input type="checkbox" id="prefMessages" tabindex="0"' + (prefs.messages !== false ? ' checked' : '') + '> Messages</label>' +
         '<label class="push-pref-item"><input type="checkbox" id="prefQuotes" tabindex="0"' + (prefs.quotes !== false ? ' checked' : '') + '> Quotes</label>' +
         '<label class="push-pref-item"><input type="checkbox" id="prefLikes" tabindex="0"' + (prefs.likes === true ? ' checked' : '') + '> Likes</label>' +
       '</div>' +
-      '<div class="actions" style="margin-top:16px">' +
+      '<div class="actions">' +
         '<button class="cancel" style="background:var(--bg3);color:var(--fg)" tabindex="0">Cancel</button>' +
         '<button class="save" tabindex="0">Save</button>' +
       '</div>' +
@@ -4701,7 +4701,8 @@ function showPushSettings() {
       saveBtn.textContent = 'Saving...';
 
       var newPrefs = {
-        replies: document.getElementById('prefReplies').checked,
+        direct_replies: document.getElementById('prefDirectReplies').checked,
+        watching: document.getElementById('prefWatching').checked,
         mentions: document.getElementById('prefMentions').checked,
         messages: document.getElementById('prefMessages').checked,
         quotes: document.getElementById('prefQuotes').checked,
