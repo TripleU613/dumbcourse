@@ -2125,6 +2125,14 @@ function catBadge(id) {
   if (!c) return '';
   var bg = c.color ? '#' + c.color : '#666';
   if (!showCategoryNames) {
+    var iconUrl = c.uploaded_logo || c.uploaded_logo_dark || c.logo_url || c.logo || c.icon_url || c.icon;
+    if (!iconUrl && c.custom_fields) {
+      iconUrl = c.custom_fields.category_icon || c.custom_fields.icon || c.custom_fields.category_logo;
+    }
+    if (iconUrl) {
+      var finalUrl = rewriteSrc(iconUrl);
+      return `<span class="cat-icon cat-icon--image" style="color:${bg}" title="${esc(c.name)}" aria-label="${esc(c.name)}"><img src="${finalUrl}" alt="" loading="lazy"></span>`;
+    }
     return `<span class="cat-icon" style="color:${bg}" title="${esc(c.name)}" aria-label="${esc(c.name)}"></span>`;
   }
   return `<span class="cat" style="color:${bg};border-color:${bg}">${esc(c.name)}</span>`;
