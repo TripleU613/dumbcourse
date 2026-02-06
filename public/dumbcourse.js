@@ -991,7 +991,7 @@ function buildUploadMarkdown(file, upload) {
   }
   return `[${name}|attachment](${url})`;
 }
-function addAttachmentPreview(listId, file, upload) {
+function addAttachmentPreview(listId, file, upload, textareaId) {
   var list = document.getElementById(listId);
   if (!list) return;
   list.style.display = 'flex';
@@ -1004,8 +1004,29 @@ function addAttachmentPreview(listId, file, upload) {
   var name = document.createElement('span');
   name.className = 'attach-name';
   name.textContent = file && file.name || upload && upload.original_filename || 'attachment';
+  var markdown = buildUploadMarkdown(file, upload);
+  var removeBtn = document.createElement('button');
+  removeBtn.className = 'attach-remove';
+  removeBtn.type = 'button';
+  removeBtn.tabIndex = 0;
+  removeBtn.innerHTML = IC.x;
+  removeBtn.setAttribute('aria-label', 'Remove attachment');
+  removeBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    // Remove markdown from textarea
+    if (textareaId && markdown) {
+      var ta = document.getElementById(textareaId);
+      if (ta) {
+        ta.value = ta.value.replace('\n' + markdown, '').replace(markdown, '');
+        ta.dispatchEvent(new Event('input'));
+      }
+    }
+    item.remove();
+    if (list.children.length === 0) list.style.display = 'none';
+  });
   item.appendChild(icon);
   item.appendChild(name);
+  item.appendChild(removeBtn);
   list.appendChild(item);
 }
 function clearAttachmentPreview(listId) {
@@ -2895,25 +2916,25 @@ function _loadMoreCategoryTopics() {
   return _loadMoreCategoryTopics.apply(this, arguments);
 }
 function topicItemHtml(t) {
-  var unread = (t.unread_posts || 0) + (t.new_posts || 0);
-  if (VIEWED_THIS_SESSION[String(t.id)]) unread = 0; // Clear if viewed this session
+  var unread = t.unseen || (t.unread_posts || 0) + (t.new_posts || 0) > 0;
+  if (VIEWED_THIS_SESSION[String(t.id)]) unread = false;
   var statusIcons = '';
   if (t.pinned) statusIcons += '<span class="topic-status-icon" title="Pinned">' + IC.pin + '</span>';
   if (t.closed || t.archived) statusIcons += '<span class="topic-status-icon" title="Locked">' + IC.lock + '</span>';
   if (statusIcons) statusIcons = '<span class="topic-status-group">' + statusIcons + '</span>';
   var views = t.views != null ? '<span>' + t.views + ' views</span>' : '';
   var posters = topicPostersHtml(t);
-  var sideHtml = posters || unread > 0 ? `<div class="topic-side">${posters}${unread > 0 ? `<span class="unread-badge">${unread}</span>` : ''}</div>` : '';
+  var sideHtml = posters ? `<div class="topic-side">${posters}</div>` : '';
   // If unread, link to first unread post; otherwise go to last
   var firstUnread = null;
-  if (unread > 0) {
+  if (unread) {
     if (typeof t.last_read_post_number === 'number' && t.last_read_post_number > 0) {
       firstUnread = t.last_read_post_number + 1;
     } else {
-      firstUnread = 1; // Never read or at beginning - start from post 1
+      firstUnread = 1;
     }
   }
-  return `<a class="list-item" href="${topicHref(t.id, t.slug, firstUnread)}" tabindex="0">
+  return `<a class="list-item${unread ? ' unread' : ''}" href="${topicHref(t.id, t.slug, firstUnread)}" tabindex="0">
     <div class="topic-row">
       <div class="topic-main">
         <div class="item-title"><span class="item-title-text">${escEmoji(t.title)}</span>${statusIcons}</div>
@@ -3085,8 +3106,7 @@ function _renderTopics() {
                   pinned: t.pinned,
                   closed: t.closed,
                   archived: t.archived,
-                  unread_posts: 0,
-                  new_posts: 0
+                  unseen: true
                 });
                 var newLink = newItem.firstElementChild;
                 if (newLink && list.firstChild) {
@@ -3098,37 +3118,25 @@ function _renderTopics() {
               }).catch(function () {});
             }
 
-            // Handle unread/latest updates - update badge on existing topic
+            // Handle unread/latest updates - toggle read/unread styling on existing topic
             if ((messageType === 'unread' || messageType === 'latest') && topicId) {
               var link = list.querySelector('a[href*="/t/' + topicId + '"]');
               if (link) {
                 // Fetch fresh topic data to get accurate counts
                 api('/t/' + topicId + '.json', { nocache: true }).then(function (t) {
                   if (!t) return;
-                  // Full topic response uses highest_post_number/last_read_post_number
-                  var unread = t.highest_post_number && t.last_read_post_number != null
-                    ? Math.max(0, t.highest_post_number - t.last_read_post_number)
-                    : (t.unread_posts || 0) + (t.new_posts || 0);
-                  var badge = link.querySelector('.unread-badge');
-                  if (unread > 0) {
-                    if (badge) {
-                      badge.textContent = unread;
-                    } else {
-                      var flexWrapper = link.querySelector('div[style*="display:flex"]');
-                      if (flexWrapper) {
-                        var newBadge = document.createElement('span');
-                        newBadge.className = 'unread-badge';
-                        newBadge.textContent = unread;
-                        flexWrapper.appendChild(newBadge);
-                      }
-                    }
+                  var hasUnread = t.highest_post_number && t.last_read_post_number != null
+                    ? t.highest_post_number > t.last_read_post_number
+                    : (t.unread_posts || 0) + (t.new_posts || 0) > 0;
+                  if (hasUnread) {
+                    link.classList.add('unread');
                     // Update href to first unread
                     if (t.last_read_post_number > 0) {
                       var firstUnread = t.last_read_post_number + 1;
                       link.setAttribute('href', topicHref(topicId, t.slug, firstUnread));
                     }
-                  } else if (badge) {
-                    badge.remove();
+                  } else {
+                    link.classList.remove('unread');
                   }
                   // Move bumped topic to top of list
                   if (link && list.firstChild && link !== list.firstChild) {
@@ -3162,25 +3170,17 @@ function _renderTopics() {
             if (!list) return;
             api(_pollUrl, { nocache: true, nodup: true }).then(function(resp) {
               var freshTopics = resp && resp.topic_list && resp.topic_list.topics || [];
-              // Update badges and add new topics
+              // Update read/unread styling and add new topics
               freshTopics.forEach(function(t) {
                 if (!t || !t.id) return;
                 var link = list.querySelector('a[href*="/t/' + t.id + '"]') || list.querySelector('a[href*="/t/' + t.slug + '/' + t.id + '"]');
                 if (link) {
-                  var unread = (t.unread_posts || 0) + (t.new_posts || 0);
-                  var badge = link.querySelector('.unread-badge');
-                  if (unread > 0) {
-                    if (badge) { badge.textContent = unread; }
-                    else {
-                      var flex = link.querySelector('div[style*="display:flex"]');
-                      if (flex) {
-                        var b = document.createElement('span');
-                        b.className = 'unread-badge';
-                        b.textContent = unread;
-                        flex.appendChild(b);
-                      }
-                    }
-                  } else if (badge) { badge.remove(); }
+                  var hasUnread = t.unseen || (t.unread_posts || 0) + (t.new_posts || 0) > 0;
+                  if (hasUnread) {
+                    link.classList.add('unread');
+                  } else {
+                    link.classList.remove('unread');
+                  }
                 } else if (!knownTopicIds[t.id]) {
                   knownTopicIds[t.id] = true;
                   var tmp = document.createElement('div');
@@ -3634,8 +3634,8 @@ function _renderTopic() {
                     return uploadFile(file, uploadBtn);
                   case 2:
                     r = _context19.v;
-                    addAttachmentPreview('replyAttachments', file, r);
                     markdown = buildUploadMarkdown(file, r);
+                    addAttachmentPreview('replyAttachments', file, r, 'replyBox');
                     if (markdown) replyBox.value += `\n${markdown}`;
                     replyBox.dispatchEvent(new Event('input'));
                     e.target.value = '';
@@ -4883,8 +4883,8 @@ function renderNewTopic() {
           case 2:
             r = _context9.v;
             b = document.getElementById('ntBody');
-            addAttachmentPreview('ntAttachments', file, r);
             markdown = buildUploadMarkdown(file, r);
+            addAttachmentPreview('ntAttachments', file, r, 'ntBody');
             if (markdown) b.value += `\n${markdown}`;
             b.dispatchEvent(new Event('input'));
             e.target.value = '';
