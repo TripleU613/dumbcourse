@@ -2934,7 +2934,7 @@ function topicItemHtml(t) {
       firstUnread = 1;
     }
   }
-  return `<a class="list-item${unread ? ' unread' : ''}" href="${topicHref(t.id, t.slug, firstUnread)}" tabindex="0">
+  return `<a class="list-item${unread ? ' unread' : ''}" href="${topicHref(t.id, t.slug, firstUnread)}" tabindex="0" data-topic-id="${t.id}">
     <div class="topic-row">
       <div class="topic-main">
         <div class="item-title"><span class="item-title-text">${escEmoji(t.title)}</span>${statusIcons}</div>
@@ -3120,7 +3120,7 @@ function _renderTopics() {
 
             // Handle unread/latest updates - toggle read/unread styling on existing topic
             if ((messageType === 'unread' || messageType === 'latest') && topicId) {
-              var link = list.querySelector('a[href*="/t/' + topicId + '"]');
+              var link = list.querySelector('a[data-topic-id="' + topicId + '"]');
               if (link) {
                 // Fetch fresh topic data to get accurate counts
                 api('/t/' + topicId + '.json', { nocache: true }).then(function (t) {
@@ -3173,7 +3173,7 @@ function _renderTopics() {
               // Update read/unread styling and add new topics
               freshTopics.forEach(function(t) {
                 if (!t || !t.id) return;
-                var link = list.querySelector('a[href*="/t/' + t.id + '"]') || list.querySelector('a[href*="/t/' + t.slug + '/' + t.id + '"]');
+                var link = list.querySelector('a[data-topic-id="' + t.id + '"]');
                 if (link) {
                   var hasUnread = t.unseen || (t.unread_posts || 0) + (t.new_posts || 0) > 0;
                   if (hasUnread) {
@@ -3198,7 +3198,7 @@ function _renderTopics() {
               var insertRef = list.firstChild;
               freshTopics.forEach(function(t) {
                 if (!t || !t.id) return;
-                var link = list.querySelector('a[href*="/t/' + t.id + '"]') || list.querySelector('a[href*="/t/' + t.slug + '/' + t.id + '"]');
+                var link = list.querySelector('a[data-topic-id="' + t.id + '"]');
                 if (link && link !== insertRef) {
                   list.insertBefore(link, insertRef);
                 }
