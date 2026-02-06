@@ -3105,8 +3105,10 @@ function _renderTopics() {
                 // Fetch fresh topic data to get accurate counts
                 api('/t/' + topicId + '.json', { nocache: true }).then(function (t) {
                   if (!t) return;
-                  var unread = (t.unread_posts || 0) + (t.new_posts || 0);
-                  if (VIEWED_THIS_SESSION[String(topicId)]) unread = 0;
+                  // Full topic response uses highest_post_number/last_read_post_number
+                  var unread = t.highest_post_number && t.last_read_post_number != null
+                    ? Math.max(0, t.highest_post_number - t.last_read_post_number)
+                    : (t.unread_posts || 0) + (t.new_posts || 0);
                   var badge = link.querySelector('.unread-badge');
                   if (unread > 0) {
                     if (badge) {
@@ -3160,12 +3162,12 @@ function _renderTopics() {
             if (!list) return;
             api(_pollUrl, { nocache: true, nodup: true }).then(function(resp) {
               var freshTopics = resp && resp.topic_list && resp.topic_list.topics || [];
+              // Update badges and add new topics
               freshTopics.forEach(function(t) {
                 if (!t || !t.id) return;
                 var link = list.querySelector('a[href*="/t/' + t.id + '"]') || list.querySelector('a[href*="/t/' + t.slug + '/' + t.id + '"]');
                 if (link) {
                   var unread = (t.unread_posts || 0) + (t.new_posts || 0);
-                  if (VIEWED_THIS_SESSION[String(t.id)]) unread = 0;
                   var badge = link.querySelector('.unread-badge');
                   if (unread > 0) {
                     if (badge) { badge.textContent = unread; }
@@ -3191,6 +3193,16 @@ function _renderTopics() {
                     setTimeout(function() { el.style.background = ''; }, 5000);
                   }
                 }
+              });
+              // Reorder topics to match API sort order (latest bumped first)
+              var insertRef = list.firstChild;
+              freshTopics.forEach(function(t) {
+                if (!t || !t.id) return;
+                var link = list.querySelector('a[href*="/t/' + t.id + '"]') || list.querySelector('a[href*="/t/' + t.slug + '/' + t.id + '"]');
+                if (link && link !== insertRef) {
+                  list.insertBefore(link, insertRef);
+                }
+                if (link) insertRef = link.nextSibling;
               });
             }).catch(function() {});
           }, 15000);
