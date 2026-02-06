@@ -1167,6 +1167,7 @@ function presenceXhr(method, path, body, cb) {
   xhr.open(method, PROXY + path, true);
   xhr.setRequestHeader('Content-Type', 'application/json');
   xhr.setRequestHeader('Accept', 'application/json');
+  xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
   if (S.token) xhr.setRequestHeader('X-Session-Token', S.token);
   if (S.csrf) xhr.setRequestHeader('X-CSRF-Token', S.csrf);
   if (S.cookies) xhr.setRequestHeader('X-Cookies', S.cookies);
