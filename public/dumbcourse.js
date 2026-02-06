@@ -2214,6 +2214,7 @@ function shouldShowTopicPosters() {
   return isMobileLayout() ? topicPostersVisibility === 'mobile' : topicPostersVisibility === 'desktop';
 }
 function isUserOnline(u) {
+  if (DUMBCOURSE_SETTINGS && DUMBCOURSE_SETTINGS.onlineGlowEnabled === false) return false;
   if (!u) return false;
   if (typeof u.is_online === 'boolean') return u.is_online;
   if (typeof u.online === 'boolean') return u.online;

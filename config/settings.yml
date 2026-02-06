@@ -39,6 +39,9 @@ plugins:
       - desktop
       - mobile
       - none
+  dumbcourse_online_glow_enabled:
+    default: true
+    client: true
   dumbcourse_push_enabled:
     default: true
     client: false
