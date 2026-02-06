@@ -58,6 +58,7 @@ input[type=text],input[type=search],input[type=email],input[type=password],input
 .topic-posters{display:flex;align-items:center;gap:6px;flex-shrink:0;max-width:160px;overflow:hidden}
 .topic-poster{display:inline-flex}
 .topic-poster-avatar{width:22px;height:22px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);display:block}
+.topic-poster-avatar--online{border-color:#4aa3ff;box-shadow:0 0 0 2px rgba(74,163,255,.6),0 0 8px rgba(74,163,255,.6)}
 @media (max-width: 520px){
   .topic-posters{display:none}
 }

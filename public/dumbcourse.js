@@ -2213,6 +2213,13 @@ function shouldShowTopicPosters() {
   if (topicPostersVisibility === 'all') return true;
   return isMobileLayout() ? topicPostersVisibility === 'mobile' : topicPostersVisibility === 'desktop';
 }
+function isUserOnline(u) {
+  if (!u) return false;
+  if (typeof u.is_online === 'boolean') return u.is_online;
+  if (typeof u.online === 'boolean') return u.online;
+  if (u.status && typeof u.status.is_online === 'boolean') return u.status.is_online;
+  return false;
+}
 function topicPostersHtml(t) {
   if (!shouldShowTopicPosters()) return '';
   var posters = (t.posters || []).map(function (p) {
@@ -2233,7 +2240,7 @@ function topicPostersHtml(t) {
   });
   if (!uniq.length) return '';
   return `<div class="topic-posters">${uniq.slice(0, 5).map(function (u) {
-    return `<span class="topic-poster" title="${esc(u.username)}"><img class="topic-poster-avatar" src="${avatarUrl(u.avatar_template, 40)}" alt="" loading="lazy"></span>`;
+    return `<span class="topic-poster" title="${esc(u.username)}"><img class="topic-poster-avatar${isUserOnline(u) ? ' topic-poster-avatar--online' : ''}" src="${avatarUrl(u.avatar_template, 40)}" alt="" loading="lazy"></span>`;
   }).join('')}</div>`;
 }
 function loadCategories() {
