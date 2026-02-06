@@ -3966,10 +3966,17 @@ function _renderTopic() {
               var stream = resp.post_stream.stream || [];
               var _ctr2 = document.getElementById('postsContainer');
               if (!_ctr2) return;
-              var missing = stream.filter(function(pid) {
+              var lastLoadedIndex = -1;
+              for (var i = stream.length - 1; i >= 0; i--) {
+                if (document.getElementById('post-' + stream[i])) {
+                  lastLoadedIndex = i;
+                  break;
+                }
+              }
+              var missing = stream.slice(lastLoadedIndex + 1).filter(function(pid) {
                 return !document.getElementById('post-' + pid);
               });
-              var toFetch = missing.slice(-5);
+              var toFetch = missing.slice(0, 5);
               toFetch.forEach(function(pid) {
                 api('/posts/' + pid + '.json', { nocache: true }).then(function(resp2) {
                   var p = resp2 && resp2.post ? resp2.post : resp2;
