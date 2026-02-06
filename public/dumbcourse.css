@@ -93,6 +93,13 @@ input[type=text],input[type=search],input[type=email],input[type=password],input
 .post-trust.level-2{border-color:#8bc34a;color:#d8f2b8}
 .post-trust.level-3{border-color:#d2b83f;color:#f3e5a4}
 .post-trust.level-4{border-color:#7bd3ff;color:#cbefff}
+html.light .post-trust{background:#f6f8fb;border-color:#c8d2e0;color:#2c3747}
+html.light .post-trust.role-admin{border-color:#2f5bd7;color:#1f3f9a}
+html.light .post-trust.role-mod{border-color:#1f7bb6;color:#145a84}
+html.light .post-trust.level-1{border-color:#2f7d32;color:#1f5a23}
+html.light .post-trust.level-2{border-color:#5d8a20;color:#3f5e14}
+html.light .post-trust.level-3{border-color:#8a6a00;color:#5c4500}
+html.light .post-trust.level-4{border-color:#0a7aa5;color:#07536f}
 .post-meta-right{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:.7rem;color:var(--fg2);white-space:nowrap}
 .post-num{font-size:.7rem;color:var(--fg2)}
 .post-body{font-size:.9rem;line-height:1.5;word-break:break-word}
