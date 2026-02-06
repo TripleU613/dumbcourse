@@ -76,6 +76,7 @@ module DiscourseDumbcourse
         topicsPerPage: SiteSetting.dumbcourse_topics_per_page,
         showCategoryNames: SiteSetting.dumbcourse_show_category_names,
         topicPostersVisibility: SiteSetting.dumbcourse_topic_posters_visibility,
+        onlineGlowEnabled: SiteSetting.dumbcourse_online_glow_enabled,
       }
       settings_script = "<script>window.DUMBCOURSE_SETTINGS=#{settings.to_json};</script>"
       if html.include?("</head>")

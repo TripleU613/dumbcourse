@@ -7,6 +7,7 @@ en:
     dumbcourse_sidebar_link_enabled: "Show Dumbcourse link in sidebar"
     dumbcourse_show_category_names: "Show category names"
     dumbcourse_topic_posters_visibility: "Show latest user profiles on topic list"
+    dumbcourse_online_glow_enabled: "Show online glow on topic user profiles"
     dumbcourse_topic_posters_visibility_choices:
       all: "All devices"
       desktop: "Desktop only"
