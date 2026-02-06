@@ -906,7 +906,7 @@ function _api() {
             storageSet('jt_cookies', newCookies);
           }
           if (resp.ok) {
-            _context12.n = 4;
+            _context12.n = 3;
             break;
           }
           if (resp.status === 401) {
@@ -1370,14 +1370,12 @@ function routeLogic() {
     if (!parseTopicPath(pathForCheck) && !pathForCheck.match(/^\/messages\/\d+/)) {
       CURRENT_TOPIC = null;
     }
-    // Stop MessageBus when navigating away from topics list
-    if (parseTopicPath(pathForCheck) || pathForCheck.match(/^\/u\/|^\/notifications|^\/messages|^\/search/)) {
-      MB.stop();
-      if (TOPIC_MB_CLEANUP) { TOPIC_MB_CLEANUP(); TOPIC_MB_CLEANUP = null; }
-      if (TOPICS_POLL_INTERVAL) {
-        clearInterval(TOPICS_POLL_INTERVAL);
-        TOPICS_POLL_INTERVAL = null;
-      }
+    // Stop MessageBus and clean up stale subscriptions on every navigation
+    MB.stop();
+    if (TOPIC_MB_CLEANUP) { TOPIC_MB_CLEANUP(); TOPIC_MB_CLEANUP = null; }
+    if (TOPICS_POLL_INTERVAL) {
+      clearInterval(TOPICS_POLL_INTERVAL);
+      TOPICS_POLL_INTERVAL = null;
     }
     if (!isLoggedIn()) {
       if (hash === '/signup' || hash === '/register') {
@@ -3141,6 +3139,9 @@ function _renderTopics() {
           }
 
           // Subscribe to MessageBus channels for real-time updates
+          // Clear any stale subscriptions first
+          var _existingMbChannels = Object.keys(MB.callbacks);
+          _existingMbChannels.forEach(function(ch) { MB.unsubscribe(ch); });
           MB.subscribe('/new', handleTopicMessage);
           MB.subscribe('/latest', handleTopicMessage);
           MB.subscribe('/unread', handleTopicMessage);
@@ -3149,7 +3150,7 @@ function _renderTopics() {
           }
           MB.start();
 
-          // Fallback polling every 60 seconds
+          // Fallback polling every 15 seconds
           if (TOPICS_POLL_INTERVAL) clearInterval(TOPICS_POLL_INTERVAL);
           var _pollUrl = buildViewUrl(topicView, 0);
           TOPICS_POLL_INTERVAL = setInterval(function() {
@@ -3191,7 +3192,7 @@ function _renderTopics() {
                 }
               });
             }).catch(function() {});
-          }, 60000);
+          }, 15000);
 
           // Store cleanup function to unsubscribe when leaving
           var mbCleanup = function() {
@@ -3986,7 +3987,7 @@ function _renderTopic() {
 
           function publishPresence() {
             var now = Date.now();
-            if (now - _lastPresencePublish < 5000) return;
+            if (now - _lastPresencePublish < 2000) return;
             _lastPresencePublish = now;
             presenceXhr('POST', '/presence/update', {
               client_id: MB.clientId,
@@ -4033,7 +4034,7 @@ function _renderTopic() {
               indicator.textContent = text;
               indicator.style.display = 'block';
             });
-          }, 10000);
+          }, 4000);
 
           TOPIC_MB_CLEANUP = function() {
             MB.stop();
