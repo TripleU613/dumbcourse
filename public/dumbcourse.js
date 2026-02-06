@@ -6442,9 +6442,13 @@ document.addEventListener('click', function (e) {
   if (!isActive) {
     if (inActions) {
       activatePost(post, true);
-      if (!document.activeElement || document.activeElement === document.body) {
-        post.focus();
-      }
+      // Defer focus check — btn.disabled in action handlers may not
+      // have moved focus to body yet on some browsers
+      requestAnimationFrame(function() {
+        if (!document.activeElement || document.activeElement === document.body || document.activeElement === document.documentElement) {
+          post.focus();
+        }
+      });
     } else {
       if (e.target.closest('.post-author, .post-avatar-link, .post-body a, .post-body button, .post-body input, .post-body textarea, .post-body select, .post-body summary, .post-body details, .post-body .poll, .post-body .poll-option, .post-body .spoiler, .post-body .spoiler-blurred, .post-body img, .post-body iframe, .post-body video, .post-body audio')) {
         e.preventDefault();
