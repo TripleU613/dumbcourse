@@ -493,6 +493,7 @@ var S = {
   moderator: storageGet('jt_moderator', '') === '1'
 };
 var _unreadMsgCount = 0;
+var _unreadNotifCount = 0;
 var TOPIC_USERS = {};
 function mergeTopicUsers(list) {
   (list || []).forEach(function (u) {
@@ -3177,6 +3178,12 @@ function _renderTopics() {
                 renderMessages();
               }
             });
+            MB.subscribe('/notification/' + S.user.id, function (data) {
+              refreshUnreadNotifCount();
+              if (location.pathname === BASE_PATH + '/notifications' || location.pathname === BASE_PATH + '/notifications/') {
+                renderNotifications();
+              }
+            });
           }
           MB.start();
 
@@ -3421,6 +3428,7 @@ function _renderTopic() {
           };
           markTopicRead(d && d.id ? d.id : id);
           VIEWED_THIS_SESSION[String(d && d.id ? d.id : id)] = true;
+          if (_unreadMsgCount > 0) { _unreadMsgCount--; updateMenuBadges(); }
           setTitle(d.title || 'Topic');
           lastPost = d.post_stream && d.post_stream.posts || [];
           highestNum = 0;
@@ -5251,7 +5259,7 @@ function _renderMessages() {
             }).join('');
             _unreadMsgCount = 0;
             topics.forEach(function (t) { if (isTopicUnread(t)) _unreadMsgCount++; });
-            updateMessageBadge();
+            updateMenuBadges();
           }
           showCreate('/new-message');
           focusContent();
@@ -5377,6 +5385,9 @@ function _renderNotifications() {
         case 2:
           _d2 = _context25.v;
           notifs = _d2.notifications || [];
+          _unreadNotifCount = 0;
+          notifs.forEach(function (n) { if (!n.read) _unreadNotifCount++; });
+          updateMenuBadges();
           if (notifs.length) {
             _context25.n = 3;
             break;
@@ -5836,7 +5847,7 @@ function updateMenuItems() {
     authBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Log In';
     authBtn.style.color = 'var(--accent)';
   }
-  updateMessageBadge();
+  updateMenuBadges();
 }
 function refreshUnreadMessageCount() {
   if (!isLoggedIn()) return;
@@ -5845,10 +5856,20 @@ function refreshUnreadMessageCount() {
     var count = 0;
     topics.forEach(function (t) { if (isTopicUnread(t)) count++; });
     _unreadMsgCount = count;
-    updateMessageBadge();
+    updateMenuBadges();
   }).catch(function () {});
 }
-function updateMessageBadge() {
+function refreshUnreadNotifCount() {
+  if (!isLoggedIn()) return;
+  api('/notifications.json').then(function (d) {
+    var notifs = d && d.notifications || [];
+    var count = 0;
+    notifs.forEach(function (n) { if (!n.read) count++; });
+    _unreadNotifCount = count;
+    updateMenuBadges();
+  }).catch(function () {});
+}
+function updateMenuBadges() {
   var msgLink = document.getElementById('menuMessages');
   if (msgLink) {
     var existing = msgLink.querySelector('.msg-badge');
@@ -5860,12 +5881,23 @@ function updateMessageBadge() {
       msgLink.appendChild(badge);
     }
   }
+  var notifLink = document.getElementById('menuNotifications');
+  if (notifLink) {
+    var existingN = notifLink.querySelector('.msg-badge');
+    if (existingN) existingN.remove();
+    if (_unreadNotifCount > 0) {
+      var badgeN = document.createElement('span');
+      badgeN.className = 'msg-badge';
+      badgeN.textContent = _unreadNotifCount;
+      notifLink.appendChild(badgeN);
+    }
+  }
   var menuBtnEl = document.getElementById('menuBtn');
   var wrap = menuBtnEl && menuBtnEl.parentElement;
   if (wrap) {
     var dot = wrap.querySelector('.menu-dot');
     if (dot) dot.remove();
-    if (_unreadMsgCount > 0) {
+    if (_unreadMsgCount > 0 || _unreadNotifCount > 0) {
       var d = document.createElement('span');
       d.className = 'menu-dot';
       wrap.appendChild(d);
@@ -6555,6 +6587,7 @@ function init() {
     }
     if (loggedIn) {
       refreshUnreadMessageCount();
+      refreshUnreadNotifCount();
     }
     route();
   });
