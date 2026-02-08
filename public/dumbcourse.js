@@ -605,7 +605,7 @@ function unregisterPushNotifications() {
   });
 }
 function registerWebPushBadges() {
-  if (isNativeApp() || !isLoggedIn()) return;
+  if (!isLoggedIn()) return;
   if (_ntfyEventSource) return;
   var deviceId = localStorage.getItem('jt_web_device_id');
   if (!deviceId) {
