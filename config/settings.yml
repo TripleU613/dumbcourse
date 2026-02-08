@@ -45,13 +45,6 @@ plugins:
   dumbcourse_push_enabled:
     default: true
     client: false
-  dumbcourse_ntfy_server:
-    default: "https://ntfy.sh"
-    client: true
-  dumbcourse_ntfy_token:
-    default: ""
-    secret: true
-    client: false
   dumbcourse_pagination_enabled:
     default: false
     client: true

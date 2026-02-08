@@ -14,5 +14,3 @@ en:
       mobile: "Mobile only"
       none: "Off"
     dumbcourse_push_enabled: "Enable push notifications for Dumbcourse app"
-    dumbcourse_ntfy_server: "ntfy server URL (default: https://ntfy.sh)"
-    dumbcourse_ntfy_token: "ntfy auth token (optional, for private servers)"

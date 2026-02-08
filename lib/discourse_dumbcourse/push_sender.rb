@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "net/http"
-require "uri"
 require "json"
 
 module DiscourseDumbcourse
@@ -39,9 +37,6 @@ module DiscourseDumbcourse
         return
       end
 
-      server = SiteSetting.dumbcourse_ntfy_server.to_s.strip
-      server = "https://ntfy.sh" if server.blank?
-
       Rails.logger.info("[Dumbcourse Push] Sending to user #{user_id}: #{devices.size} device(s)")
       devices.each do |device_id, device_info|
         topic = device_info["topic"]
@@ -49,7 +44,6 @@ module DiscourseDumbcourse
 
         Rails.logger.info("[Dumbcourse Push] -> device=#{device_id} topic=#{topic}")
         send_notification(
-          server: server,
           topic: topic,
           title: title,
           message: message,
@@ -60,47 +54,29 @@ module DiscourseDumbcourse
     end
 
     def self.send_notification(
-      server:,
       topic:,
       title:,
       message:,
       click_url: nil,
-      priority: "default"
+      priority: "default",
+      server: nil
     )
-      uri = URI.parse(server)
-
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = uri.scheme == "https"
-      http.open_timeout = 5
-      http.read_timeout = 10
-
-      request = Net::HTTP::Post.new(uri.request_uri)
-      request["Content-Type"] = "application/json"
-
-      # Optional: Add auth token if configured
-      auth_token = SiteSetting.dumbcourse_ntfy_token.to_s.strip
-      request["Authorization"] = "Bearer #{auth_token}" if auth_token.present?
+      channel = "dumbcourse_ntfy:#{topic}"
 
       payload = {
         topic: topic,
-        title: title.to_s[0..99], # ntfy title limit
-        message: message.to_s[0..4095], # ntfy message limit
+        title: title.to_s[0..99],
+        message: message.to_s[0..4095],
         priority: map_priority(priority),
       }
 
       payload[:click] = click_url if click_url.present?
 
-      request.body = payload.to_json
-
       begin
-        response = http.request(request)
-        if response.code.to_i >= 400
-          Rails.logger.warn(
-            "[Dumbcourse Push] Failed to send to #{topic}: #{response.code} #{response.body}",
-          )
-        end
+        subscribers = Discourse.redis.publish(channel, payload.to_json)
+        Rails.logger.info("[Dumbcourse Push] Published to #{topic}: #{subscribers} subscriber(s)")
       rescue StandardError => e
-        Rails.logger.error("[Dumbcourse Push] Error sending to #{topic}: #{e.message}")
+        Rails.logger.error("[Dumbcourse Push] Error publishing to #{topic}: #{e.message}")
       end
     end
 

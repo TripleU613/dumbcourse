@@ -7,10 +7,11 @@ module DiscourseDumbcourse
     skip_before_action :verify_authenticity_token
 
     # GET /<base>/push/info
-    # Returns ntfy server URL for the app to use
+    # Returns self-hosted ntfy server URL for the app to use
     def server_info
+      ntfy_url = "#{Discourse.base_url}#{DiscourseDumbcourse.base_path_with_slash}/ntfy"
       render json: {
-               server: SiteSetting.dumbcourse_ntfy_server,
+               server: ntfy_url,
                enabled: SiteSetting.dumbcourse_push_enabled,
              }
     end
@@ -98,31 +99,20 @@ module DiscourseDumbcourse
     end
 
     # POST /<base>/push/test
-    # Send a test push to one device and return the raw ntfy response
+    # Send a test push via Redis publish and return subscriber counts
     def test_push
       devices = PluginStore.get("dumbcourse", "push_devices_#{current_user.id}") || {}
       return render json: { error: "No devices registered" }, status: :not_found if devices.empty?
-
-      server = SiteSetting.dumbcourse_ntfy_server.to_s.strip
-      server = "https://ntfy.sh" if server.blank?
 
       results = []
       devices.each do |device_id, device_info|
         topic = device_info["topic"]
         next if topic.blank?
         begin
-          uri = URI.parse(server)
-          http = Net::HTTP.new(uri.host, uri.port)
-          http.use_ssl = uri.scheme == "https"
-          http.open_timeout = 5
-          http.read_timeout = 10
-          request = Net::HTTP::Post.new(uri.request_uri)
-          request["Content-Type"] = "application/json"
-          auth_token = SiteSetting.dumbcourse_ntfy_token.to_s.strip
-          request["Authorization"] = "Bearer #{auth_token}" if auth_token.present?
-          request.body = { topic: topic, title: "Test push", message: "Server test #{Time.now.utc.strftime('%H:%M:%S UTC')}", priority: 3 }.to_json
-          response = http.request(request)
-          results << { device_id: device_id, topic: topic, status: response.code.to_i, body: response.body.to_s[0..200] }
+          channel = "dumbcourse_ntfy:#{topic}"
+          payload = { topic: topic, title: "Test push", message: "Server test #{Time.now.utc.strftime('%H:%M:%S UTC')}", priority: 3 }.to_json
+          subscribers = Discourse.redis.publish(channel, payload)
+          results << { device_id: device_id, topic: topic, subscribers: subscribers }
         rescue => e
           results << { device_id: device_id, topic: topic, error: "#{e.class}: #{e.message}" }
         end
