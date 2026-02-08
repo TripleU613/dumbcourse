@@ -7,11 +7,11 @@ module DiscourseDumbcourse
     skip_before_action :verify_authenticity_token
 
     # GET /<base>/push/info
-    # Returns self-hosted ntfy server URL for the app to use
+    # Returns push server URL for SSE connections
     def server_info
-      ntfy_url = "#{Discourse.base_url}#{DiscourseDumbcourse.base_path_with_slash}/ntfy"
+      push_url = "#{Discourse.base_url}#{DiscourseDumbcourse.base_path_with_slash}/push/sse"
       render json: {
-               server: ntfy_url,
+               server: push_url,
                enabled: SiteSetting.dumbcourse_push_enabled,
              }
     end
@@ -109,7 +109,7 @@ module DiscourseDumbcourse
         topic = device_info["topic"]
         next if topic.blank?
         begin
-          channel = "dumbcourse_ntfy:#{topic}"
+          channel = "dumbcourse_push:#{topic}"
           payload = { topic: topic, title: "Test push", message: "Server test #{Time.now.utc.strftime('%H:%M:%S UTC')}", priority: 3 }.to_json
           subscribers = Discourse.redis.publish(channel, payload)
           results << { device_id: device_id, topic: topic, subscribers: subscribers }

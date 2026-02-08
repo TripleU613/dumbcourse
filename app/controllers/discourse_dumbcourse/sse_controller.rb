@@ -1,22 +1,22 @@
 # frozen_string_literal: true
 
 module DiscourseDumbcourse
-  class NtfyController < ::ActionController::Base
+  class SseController < ::ActionController::Base
     requires_plugin DiscourseDumbcourse::PLUGIN_NAME
     include ActionController::Live
 
     skip_before_action :verify_authenticity_token
 
-    # GET /<base>/ntfy/:topic/sse
-    # SSE endpoint backed by Redis SUBSCRIBE - replaces external ntfy.sh
-    def sse
+    # GET /<base>/push/sse/:topic
+    # SSE endpoint backed by Redis SUBSCRIBE
+    def stream
       topic = params[:topic].to_s.strip
       if topic.blank?
         render plain: "topic required", status: :bad_request
         return
       end
 
-      channel = "dumbcourse_ntfy:#{topic}"
+      channel = "dumbcourse_push:#{topic}"
 
       response.headers["Content-Type"] = "text/event-stream"
       response.headers["X-Accel-Buffering"] = "no"
@@ -35,7 +35,7 @@ module DiscourseDumbcourse
             begin
               response.stream.write(": keepalive\n\n")
             rescue => e
-              Rails.logger.debug("[Dumbcourse Ntfy] Heartbeat stopped: #{e.message}")
+              Rails.logger.debug("[Dumbcourse Push] Heartbeat stopped: #{e.message}")
               break
             end
           end
@@ -46,13 +46,13 @@ module DiscourseDumbcourse
             begin
               response.stream.write("event: message\ndata: #{message}\n\n")
             rescue => e
-              Rails.logger.debug("[Dumbcourse Ntfy] Stream write failed: #{e.message}")
+              Rails.logger.debug("[Dumbcourse Push] Stream write failed: #{e.message}")
               redis.unsubscribe(channel)
             end
           end
         end
       rescue => e
-        Rails.logger.debug("[Dumbcourse Ntfy] SSE connection closed: #{e.message}")
+        Rails.logger.debug("[Dumbcourse Push] SSE connection closed: #{e.message}")
       ensure
         heartbeat_thread&.kill
         redis&.close

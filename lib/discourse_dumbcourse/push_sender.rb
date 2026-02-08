@@ -61,7 +61,7 @@ module DiscourseDumbcourse
       priority: "default",
       server: nil
     )
-      channel = "dumbcourse_ntfy:#{topic}"
+      channel = "dumbcourse_push:#{topic}"
 
       payload = {
         topic: topic,

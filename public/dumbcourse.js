@@ -509,10 +509,10 @@ function canModerate() {
 }
 // Push notification registration for native app (ES5 compatible for Chrome 44+)
 var PUSH_REGISTERED = false;
-var _ntfyEventSource = null;
+var _pushEventSource = null;
 function isNativeApp() {
   try {
-    return !!(window.NtfyBridge && typeof window.NtfyBridge.isNativeApp === 'function' && window.NtfyBridge.isNativeApp());
+    return !!(window.PushBridge && typeof window.PushBridge.isNativeApp === 'function' && window.PushBridge.isNativeApp());
   } catch (e) {
     return false;
   }
@@ -520,7 +520,7 @@ function isNativeApp() {
 function generatePushTopic() {
   var deviceId = '';
   try {
-    deviceId = window.NtfyBridge.getDeviceId() || '';
+    deviceId = window.PushBridge.getDeviceId() || '';
   } catch (e) {}
   if (!deviceId) deviceId = 'web-' + Math.random().toString(36).substring(2, 15);
   var topic = 'dumbcourse-' + deviceId.substring(0, 8) + '-' + Math.random().toString(36).substring(2, 10);
@@ -532,7 +532,7 @@ function registerPushNotifications() {
   }
   var existingTopic = '';
   try {
-    existingTopic = window.NtfyBridge.getTopic() || '';
+    existingTopic = window.PushBridge.getTopic() || '';
   } catch (e) {}
   return fetch(PROXY + BASE_PATH + '/push/info', {
     headers: { 'Accept': 'application/json' },
@@ -542,11 +542,11 @@ function registerPushNotifications() {
     return resp.json();
   }).then(function (info) {
     if (!info || !info.enabled) return false;
-    var server = info.server || 'https://ntfy.sh';
+    var server = info.server;
     var topic = existingTopic || generatePushTopic();
     var deviceId = '';
     try {
-      deviceId = window.NtfyBridge.getDeviceId() || '';
+      deviceId = window.PushBridge.getDeviceId() || '';
     } catch (e) {}
     return fetch(PROXY + BASE_PATH + '/push/register', {
       method: 'POST',
@@ -563,7 +563,7 @@ function registerPushNotifications() {
     }).then(function (result) {
       if (result && result.success) {
         try {
-          window.NtfyBridge.registerPush(server, topic);
+          window.PushBridge.registerPush(server, topic);
           PUSH_REGISTERED = true;
           S.pushRegistered = true;
           return true;
@@ -581,7 +581,7 @@ function unregisterPushNotifications() {
   if (!isNativeApp()) return Promise.resolve(false);
   var deviceId = '';
   try {
-    deviceId = window.NtfyBridge.getDeviceId() || '';
+    deviceId = window.PushBridge.getDeviceId() || '';
   } catch (e) {}
   return fetch(PROXY + BASE_PATH + '/push/unregister', {
     method: 'DELETE',
@@ -595,7 +595,7 @@ function unregisterPushNotifications() {
   }).then(function (resp) {
     if (!resp || !resp.ok) return false;
     try {
-      window.NtfyBridge.unregisterPush();
+      window.PushBridge.unregisterPush();
     } catch (e) {}
     PUSH_REGISTERED = false;
     S.pushRegistered = false;
@@ -606,7 +606,7 @@ function unregisterPushNotifications() {
 }
 function registerWebPushBadges() {
   if (!isLoggedIn()) return;
-  if (_ntfyEventSource) return;
+  if (_pushEventSource) return;
   var deviceId = localStorage.getItem('jt_web_device_id');
   if (!deviceId) {
     deviceId = 'web-' + Math.random().toString(36).substring(2, 15);
@@ -625,7 +625,7 @@ function registerWebPushBadges() {
     return resp.json();
   }).then(function (info) {
     if (!info || !info.enabled) return;
-    var server = info.server || 'https://ntfy.sh';
+    var server = info.server;
     return fetch(PROXY + BASE_PATH + '/push/register', {
       method: 'POST',
       headers: {
@@ -640,22 +640,22 @@ function registerWebPushBadges() {
       return resp.json();
     }).then(function (result) {
       if (!result || !result.success) return;
-      var sseUrl = server.replace(/\/+$/, '') + '/' + topic + '/sse';
-      _ntfyEventSource = new EventSource(sseUrl);
-      _ntfyEventSource.onmessage = function () {
+      var sseUrl = server.replace(/\/+$/, '') + '/' + topic;
+      _pushEventSource = new EventSource(sseUrl);
+      _pushEventSource.onmessage = function () {
         refreshUnreadNotifCount();
         refreshUnreadMessageCount();
       };
-      _ntfyEventSource.onerror = function () {
+      _pushEventSource.onerror = function () {
         // EventSource auto-reconnects; no action needed
       };
     });
   }).catch(function () {});
 }
 function closeWebPushBadges() {
-  if (_ntfyEventSource) {
-    _ntfyEventSource.close();
-    _ntfyEventSource = null;
+  if (_pushEventSource) {
+    _pushEventSource.close();
+    _pushEventSource = null;
   }
 }
 function refreshCurrentUser() {
@@ -1171,6 +1171,11 @@ function navigate(path, replace) {
   }
   setUrl(path, replace);
   route();
+  // Refresh badges on every navigation (clicking notifications, messages, topics, etc.)
+  if (isLoggedIn()) {
+    refreshUnreadNotifCount();
+    refreshUnreadMessageCount();
+  }
 }
 document.addEventListener('click', function (e) {
   if (e.defaultPrevented) return;

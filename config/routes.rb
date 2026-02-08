@@ -14,17 +14,14 @@ DiscourseDumbcourse::Engine.routes.draw do
     post "/test" => "push#test_push"
   end
 
-  # Self-hosted ntfy SSE endpoint (must be before catch-all)
-  scope "/ntfy" do
-    get "/:topic/sse" => "ntfy#sse"
-  end
+  # SSE streaming endpoint (must be before catch-all)
+  get "/push/sse/:topic" => "sse#stream"
 
-  # Main app routes (catch-all) - exclude push and ntfy paths
+  # Main app routes (catch-all) - exclude push paths
   get "/" => "app#show"
   get "/*path" => "app#show",
       :constraints => ->(req) do
-        base = DiscourseDumbcourse.base_path_with_slash
-        !req.path.start_with?("#{base}/push") && !req.path.start_with?("#{base}/ntfy")
+        !req.path.start_with?("#{DiscourseDumbcourse.base_path_with_slash}/push")
       end
 end
 
