@@ -35,6 +35,7 @@ module DiscourseDumbcourse
           user_agent: request.user_agent,
         }
         PluginStore.set("dumbcourse", "push_devices_#{current_user.id}", devices)
+        Rails.logger.info("[Dumbcourse Push] Registered device=#{device_id} topic=#{topic} user=#{current_user.id} total_devices=#{devices.size}")
       end
 
       render json: { success: true, topic: topic }

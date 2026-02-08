@@ -28,18 +28,26 @@ module DiscourseDumbcourse
     }.freeze
 
     def self.send_to_user(user_id, title:, message:, click_url: nil, priority: "default")
-      return unless SiteSetting.dumbcourse_push_enabled
+      unless SiteSetting.dumbcourse_push_enabled
+        Rails.logger.info("[Dumbcourse Push] Push disabled, skipping for user #{user_id}")
+        return
+      end
 
       devices = PluginStore.get("dumbcourse", "push_devices_#{user_id}") || {}
-      return if devices.empty?
+      if devices.empty?
+        Rails.logger.info("[Dumbcourse Push] No devices for user #{user_id}")
+        return
+      end
 
       server = SiteSetting.dumbcourse_ntfy_server.to_s.strip
       server = "https://ntfy.sh" if server.blank?
 
+      Rails.logger.info("[Dumbcourse Push] Sending to user #{user_id}: #{devices.size} device(s)")
       devices.each do |device_id, device_info|
         topic = device_info["topic"]
         next if topic.blank?
 
+        Rails.logger.info("[Dumbcourse Push] -> device=#{device_id} topic=#{topic}")
         send_notification(
           server: server,
           topic: topic,
