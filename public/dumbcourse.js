@@ -492,6 +492,7 @@ var S = {
   admin: storageGet('jt_admin', '') === '1',
   moderator: storageGet('jt_moderator', '') === '1'
 };
+var _unreadMsgCount = 0;
 var TOPIC_USERS = {};
 function mergeTopicUsers(list) {
   (list || []).forEach(function (u) {
@@ -3170,6 +3171,12 @@ function _renderTopics() {
           MB.subscribe('/unread', handleTopicMessage);
           if (S.user && S.user.id) {
             MB.subscribe('/unread/' + S.user.id, handleTopicMessage);
+            MB.subscribe('/private-messages/' + S.user.id, function (data) {
+              refreshUnreadMessageCount();
+              if (location.pathname === BASE_PATH + '/messages' || location.pathname === BASE_PATH + '/messages/') {
+                renderMessages();
+              }
+            });
           }
           MB.start();
 
@@ -5235,12 +5242,16 @@ function _renderMessages() {
             $app.innerHTML = '<div class="empty">No messages</div>';
           } else {
             $app.innerHTML = topics.map(function (t) {
+              var unread = isTopicUnread(t);
               return `
-        <a class="list-item" href="${topicHref(t.id, t.slug)}" tabindex="0">
+        <a class="list-item${unread ? ' unread' : ''}" href="${topicHref(t.id, t.slug)}" tabindex="0">
           <div class="item-title">${escEmoji(t.title)}</div>
           <div class="item-meta"><span>${t.posts_count} posts</span><span>${timeAgo(t.last_posted_at)}</span></div>
         </a>`;
             }).join('');
+            _unreadMsgCount = 0;
+            topics.forEach(function (t) { if (isTopicUnread(t)) _unreadMsgCount++; });
+            updateMessageBadge();
           }
           showCreate('/new-message');
           focusContent();
@@ -5824,6 +5835,41 @@ function updateMenuItems() {
   } else {
     authBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Log In';
     authBtn.style.color = 'var(--accent)';
+  }
+  updateMessageBadge();
+}
+function refreshUnreadMessageCount() {
+  if (!isLoggedIn()) return;
+  api('/topics/private-messages/' + encodeURIComponent(S.username) + '.json').then(function (d) {
+    var topics = d && d.topic_list && d.topic_list.topics || [];
+    var count = 0;
+    topics.forEach(function (t) { if (isTopicUnread(t)) count++; });
+    _unreadMsgCount = count;
+    updateMessageBadge();
+  }).catch(function () {});
+}
+function updateMessageBadge() {
+  var msgLink = document.getElementById('menuMessages');
+  if (msgLink) {
+    var existing = msgLink.querySelector('.msg-badge');
+    if (existing) existing.remove();
+    if (_unreadMsgCount > 0) {
+      var badge = document.createElement('span');
+      badge.className = 'msg-badge';
+      badge.textContent = _unreadMsgCount;
+      msgLink.appendChild(badge);
+    }
+  }
+  var menuBtnEl = document.getElementById('menuBtn');
+  var wrap = menuBtnEl && menuBtnEl.parentElement;
+  if (wrap) {
+    var dot = wrap.querySelector('.menu-dot');
+    if (dot) dot.remove();
+    if (_unreadMsgCount > 0) {
+      var d = document.createElement('span');
+      d.className = 'menu-dot';
+      wrap.appendChild(d);
+    }
   }
 }
 function toggleMenu(open) {
@@ -6503,6 +6549,9 @@ function init() {
     // Register push notifications if logged in and in native app
     if (loggedIn && isNativeApp()) {
       registerPushNotifications().catch(function () {});
+    }
+    if (loggedIn) {
+      refreshUnreadMessageCount();
     }
     route();
   });
