@@ -261,6 +261,13 @@ function markTopicRead(id) {
 function isTopicRead(id) {
   return !!READ_TOPICS[String(id)];
 }
+function isTopicUnread(t) {
+  if (VIEWED_THIS_SESSION[String(t.id)]) return false;
+  if ((t.unread_posts || 0) > 0 || (t.new_posts || 0) > 0) return true;
+  if (t.last_read_post_number != null && t.highest_post_number > t.last_read_post_number) return true;
+  if (t.last_read_post_number == null && !isTopicRead(t.id)) return true;
+  return false;
+}
 function updateSiteUI(prevTitle) {
   var t = emojifyText(SITE_TITLE || 'Forum');
   var top = document.getElementById('topTitle');
@@ -2924,8 +2931,7 @@ function _loadMoreCategoryTopics() {
   return _loadMoreCategoryTopics.apply(this, arguments);
 }
 function topicItemHtml(t) {
-  var unread = t.unseen || (t.unread_posts || 0) + (t.new_posts || 0) > 0;
-  if (VIEWED_THIS_SESSION[String(t.id)]) unread = false;
+  var unread = isTopicUnread(t);
   var statusIcons = '';
   if (t.pinned) statusIcons += '<span class="topic-status-icon" title="Pinned">' + IC.pin + '</span>';
   if (t.closed || t.archived) statusIcons += '<span class="topic-status-icon" title="Locked">' + IC.lock + '</span>';
@@ -3133,9 +3139,7 @@ function _renderTopics() {
                 // Fetch fresh topic data to get accurate counts
                 api('/t/' + topicId + '.json', { nocache: true }).then(function (t) {
                   if (!t) return;
-                  var hasUnread = t.highest_post_number && t.last_read_post_number != null
-                    ? t.highest_post_number > t.last_read_post_number
-                    : (t.unread_posts || 0) + (t.new_posts || 0) > 0;
+                  var hasUnread = isTopicUnread(t);
                   if (hasUnread) {
                     link.classList.add('unread');
                     // Update href to first unread
@@ -3183,7 +3187,7 @@ function _renderTopics() {
                 if (!t || !t.id) return;
                 var link = list.querySelector('a[data-topic-id="' + t.id + '"]');
                 if (link) {
-                  var hasUnread = t.unseen || (t.unread_posts || 0) + (t.new_posts || 0) > 0;
+                  var hasUnread = isTopicUnread(t);
                   if (hasUnread) {
                     link.classList.add('unread');
                   } else {
