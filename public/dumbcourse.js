@@ -1171,10 +1171,12 @@ function navigate(path, replace) {
   }
   setUrl(path, replace);
   route();
-  // Refresh badges on every navigation (clicking notifications, messages, topics, etc.)
+  // Refresh badges after a short delay to let the server process read state
   if (isLoggedIn()) {
-    refreshUnreadNotifCount();
-    refreshUnreadMessageCount();
+    setTimeout(function () {
+      refreshUnreadNotifCount();
+      refreshUnreadMessageCount();
+    }, 1500);
   }
 }
 document.addEventListener('click', function (e) {
@@ -3506,6 +3508,9 @@ function _renderTopic() {
                 topic_time: 1,
                 timings: timings
               }
+            }).then(function () {
+              refreshUnreadNotifCount();
+              refreshUnreadMessageCount();
             }).catch(function () {});
           }
           allPostIds = d.post_stream && d.post_stream.stream || [];
@@ -6660,3 +6665,10 @@ function init() {
   });
 }
 init();
+// Refresh badges when user returns to the app/tab
+document.addEventListener('visibilitychange', function () {
+  if (!document.hidden && isLoggedIn()) {
+    refreshUnreadNotifCount();
+    refreshUnreadMessageCount();
+  }
+});
