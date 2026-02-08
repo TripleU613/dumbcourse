@@ -6613,19 +6613,16 @@ function init() {
   })).then(function () {
     return checkSession();
   }).then(function (loggedIn) {
-    // Register push notifications if logged in and in native app
-    // Await push registration before other API calls to avoid interference
-    var pushDone = (loggedIn && isNativeApp())
-      ? registerPushNotifications().catch(function () {})
-      : Promise.resolve();
-    pushDone.then(function () {
-      if (loggedIn) {
-        refreshUnreadMessageCount();
-        refreshUnreadNotifCount();
-        registerWebPushBadges();
-      }
-      route();
-    });
+    // Register push notifications if logged in and in native app (fire and forget)
+    if (loggedIn && isNativeApp()) {
+      registerPushNotifications().catch(function () {});
+    }
+    if (loggedIn) {
+      refreshUnreadMessageCount();
+      refreshUnreadNotifCount();
+      registerWebPushBadges();
+    }
+    route();
   });
 }
 init();
