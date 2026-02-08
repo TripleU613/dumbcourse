@@ -97,6 +97,25 @@ module DiscourseDumbcourse
       render json: { success: true, preferences: prefs }
     end
 
+    # POST /<base>/push/test
+    # Send a test push to all registered devices for the current user
+    def test_push
+      devices = PluginStore.get("dumbcourse", "push_devices_#{current_user.id}") || {}
+      return render json: { error: "No devices registered" }, status: :not_found if devices.empty?
+
+      begin
+        DiscourseDumbcourse::PushSender.send_to_user(
+          current_user.id,
+          title: "Test push",
+          message: "Push test from server at #{Time.now.utc.strftime('%H:%M:%S UTC')}",
+          priority: "default",
+        )
+        render json: { success: true, device_count: devices.size }
+      rescue => e
+        render json: { error: e.message, backtrace: e.backtrace&.first(5) }, status: :internal_server_error
+      end
+    end
+
     private
 
     def default_prefs

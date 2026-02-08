@@ -11,6 +11,7 @@ DiscourseDumbcourse::Engine.routes.draw do
     get "/status" => "push#status"
     get "/preferences" => "push#preferences"
     put "/preferences" => "push#update_preferences"
+    post "/test" => "push#test_push"
   end
 
   # Main app routes (catch-all) - exclude push paths
