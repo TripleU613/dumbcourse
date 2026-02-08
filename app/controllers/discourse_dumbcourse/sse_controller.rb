@@ -29,17 +29,18 @@ module DiscourseDumbcourse
         redis = Redis.new(DiscourseRedis.config.dup)
 
         # Heartbeat thread to prevent nginx proxy timeout
-        heartbeat_thread = Thread.new do
-          loop do
-            sleep 30
-            begin
-              response.stream.write(": keepalive\n\n")
-            rescue => e
-              Rails.logger.debug("[Dumbcourse Push] Heartbeat stopped: #{e.message}")
-              break
+        heartbeat_thread =
+          Thread.new do
+            loop do
+              sleep 30
+              begin
+                response.stream.write(": keepalive\n\n")
+              rescue => e
+                Rails.logger.debug("[Dumbcourse Push] Heartbeat stopped: #{e.message}")
+                break
+              end
             end
           end
-        end
 
         redis.subscribe(channel) do |on|
           on.message do |_ch, message|

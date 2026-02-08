@@ -10,10 +10,7 @@ module DiscourseDumbcourse
     # Returns push server URL for SSE connections
     def server_info
       push_url = "#{Discourse.base_url}#{DiscourseDumbcourse.base_path_with_slash}/push/sse"
-      render json: {
-               server: push_url,
-               enabled: SiteSetting.dumbcourse_push_enabled,
-             }
+      render json: { server: push_url, enabled: SiteSetting.dumbcourse_push_enabled }
     end
 
     # POST /<base>/push/register
@@ -36,7 +33,9 @@ module DiscourseDumbcourse
           user_agent: request.user_agent,
         }
         PluginStore.set("dumbcourse", "push_devices_#{current_user.id}", devices)
-        Rails.logger.info("[Dumbcourse Push] Registered device=#{device_id} topic=#{topic} user=#{current_user.id} total_devices=#{devices.size}")
+        Rails.logger.info(
+          "[Dumbcourse Push] Registered device=#{device_id} topic=#{topic} user=#{current_user.id} total_devices=#{devices.size}",
+        )
       end
 
       render json: { success: true, topic: topic }
@@ -110,7 +109,12 @@ module DiscourseDumbcourse
         next if topic.blank?
         begin
           channel = "dumbcourse_push:#{topic}"
-          payload = { topic: topic, title: "Test push", message: "Server test #{Time.now.utc.strftime('%H:%M:%S UTC')}", priority: 3 }.to_json
+          payload = {
+            topic: topic,
+            title: "Test push",
+            message: "Server test #{Time.now.utc.strftime("%H:%M:%S UTC")}",
+            priority: 3,
+          }.to_json
           subscribers = Discourse.redis.publish(channel, payload)
           results << { device_id: device_id, topic: topic, subscribers: subscribers }
         rescue => e

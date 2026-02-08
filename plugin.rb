@@ -51,17 +51,23 @@ after_initialize do
     class DumbcoursePushNotify < ::Jobs::Base
       def execute(args)
         unless SiteSetting.dumbcourse_push_enabled
-          Rails.logger.info("[Dumbcourse Push Job] Push disabled, skipping notification #{args[:notification_id]}")
+          Rails.logger.info(
+            "[Dumbcourse Push Job] Push disabled, skipping notification #{args[:notification_id]}",
+          )
           return
         end
 
         notification = Notification.find_by(id: args[:notification_id])
         unless notification
-          Rails.logger.warn("[Dumbcourse Push Job] Notification #{args[:notification_id]} not found (deleted?)")
+          Rails.logger.warn(
+            "[Dumbcourse Push Job] Notification #{args[:notification_id]} not found (deleted?)",
+          )
           return
         end
 
-        Rails.logger.info("[Dumbcourse Push Job] Processing notification #{notification.id} type=#{notification.notification_type} user=#{notification.user_id}")
+        Rails.logger.info(
+          "[Dumbcourse Push Job] Processing notification #{notification.id} type=#{notification.notification_type} user=#{notification.user_id}",
+        )
         DiscourseDumbcourse::PushSender.notify_notification(notification)
       end
     end
