@@ -509,6 +509,7 @@ function canModerate() {
 }
 // Push notification registration for native app (ES5 compatible for Chrome 44+)
 var PUSH_REGISTERED = false;
+var _ntfyEventSource = null;
 function isNativeApp() {
   try {
     return !!(window.NtfyBridge && typeof window.NtfyBridge.isNativeApp === 'function' && window.NtfyBridge.isNativeApp());
@@ -602,6 +603,60 @@ function unregisterPushNotifications() {
   }).catch(function () {
     return false;
   });
+}
+function registerWebPushBadges() {
+  if (isNativeApp() || !isLoggedIn()) return;
+  if (_ntfyEventSource) return;
+  var deviceId = localStorage.getItem('jt_web_device_id');
+  if (!deviceId) {
+    deviceId = 'web-' + Math.random().toString(36).substring(2, 15);
+    localStorage.setItem('jt_web_device_id', deviceId);
+  }
+  var topic = localStorage.getItem('jt_web_push_topic');
+  if (!topic) {
+    topic = 'dumbcourse-' + deviceId.substring(0, 8) + '-' + Math.random().toString(36).substring(2, 10);
+    localStorage.setItem('jt_web_push_topic', topic);
+  }
+  fetch(PROXY + BASE_PATH + '/push/info', {
+    headers: { 'Accept': 'application/json' },
+    credentials: 'same-origin'
+  }).then(function (resp) {
+    if (!resp || !resp.ok) return null;
+    return resp.json();
+  }).then(function (info) {
+    if (!info || !info.enabled) return;
+    var server = info.server || 'https://ntfy.sh';
+    return fetch(PROXY + BASE_PATH + '/push/register', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': S.csrf || ''
+      },
+      credentials: 'same-origin',
+      body: JSON.stringify({ topic: topic, device_id: deviceId })
+    }).then(function (resp) {
+      if (!resp || !resp.ok) return;
+      return resp.json();
+    }).then(function (result) {
+      if (!result || !result.success) return;
+      var sseUrl = server.replace(/\/+$/, '') + '/' + topic + '/sse';
+      _ntfyEventSource = new EventSource(sseUrl);
+      _ntfyEventSource.onmessage = function () {
+        refreshUnreadNotifCount();
+        refreshUnreadMessageCount();
+      };
+      _ntfyEventSource.onerror = function () {
+        // EventSource auto-reconnects; no action needed
+      };
+    });
+  }).catch(function () {});
+}
+function closeWebPushBadges() {
+  if (_ntfyEventSource) {
+    _ntfyEventSource.close();
+    _ntfyEventSource = null;
+  }
 }
 function refreshCurrentUser() {
   var now = Date.now();
@@ -1438,7 +1493,7 @@ function routeLogic() {
       return Promise.resolve();
     }
     if (path === '/messages') return renderMessages();
-    if (path.match(/^\/messages\/(\d+)/)) return renderTopic(path.match(/^\/messages\/(\d+)/)[1], '');
+    if (path.match(/^\/messages\/(\d+)/)) return renderTopic(path.match(/^\/messages\/(\d+)/)[1], '', true);
     if (path === '/drafts') {
       renderDrafts();
       return Promise.resolve();
@@ -2716,6 +2771,7 @@ function _logout() {
           try {
             unregisterPushNotifications().catch(function () {});
           } catch (e) {}
+          closeWebPushBadges();
           try {
             api('/session/' + encodeURIComponent(S.username) + '.json', {
               method: 'DELETE'
@@ -3399,7 +3455,7 @@ function renderTopic(_x2, _x3) {
   return _renderTopic.apply(this, arguments);
 }
 function _renderTopic() {
-  _renderTopic = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee22(id, postNumber) {
+  _renderTopic = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee22(id, postNumber, isMessage) {
     var d, apiPath, lastPost, highestNum, timings, allPostIds, loadedPosts, postNumberMap, indexMap, loadedIndexes, minIdx, maxIdx, earlierIds, laterIds, html, remainingEarlierIds, remainingLaterIds, replyToPostNumber, replyBox, uploadBtn, loadEarlierBtn, loadLaterBtn, posts, last;
     return _regenerator().w(function (_context22) {
       while (1) switch (_context22.n) {
@@ -3428,7 +3484,7 @@ function _renderTopic() {
           };
           markTopicRead(d && d.id ? d.id : id);
           VIEWED_THIS_SESSION[String(d && d.id ? d.id : id)] = true;
-          if (_unreadMsgCount > 0) { _unreadMsgCount--; updateMenuBadges(); }
+          if (isMessage && _unreadMsgCount > 0) { _unreadMsgCount--; updateMenuBadges(); }
           setTitle(d.title || 'Topic');
           lastPost = d.post_stream && d.post_stream.posts || [];
           highestNum = 0;
@@ -5430,6 +5486,8 @@ function _renderNotifications() {
                     method: 'PUT'
                   });
                 case 2:
+                  _unreadNotifCount = 0;
+                  updateMenuBadges();
                   _context24.n = 3;
                   return renderNotifications();
                 case 3:
@@ -6588,6 +6646,7 @@ function init() {
     if (loggedIn) {
       refreshUnreadMessageCount();
       refreshUnreadNotifCount();
+      registerWebPushBadges();
     }
     route();
   });
