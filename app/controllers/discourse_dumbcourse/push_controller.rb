@@ -26,13 +26,16 @@ module DiscourseDumbcourse
       end
 
       # Store the mapping: user_id -> { device_id, topic }
-      devices = PluginStore.get("dumbcourse", "push_devices_#{current_user.id}") || {}
-      devices[device_id] = {
-        topic: topic,
-        registered_at: Time.now.iso8601,
-        user_agent: request.user_agent,
-      }
-      PluginStore.set("dumbcourse", "push_devices_#{current_user.id}", devices)
+      # Use a mutex to prevent concurrent registrations from overwriting each other
+      DistributedMutex.synchronize("dumbcourse_push_devices_#{current_user.id}") do
+        devices = PluginStore.get("dumbcourse", "push_devices_#{current_user.id}") || {}
+        devices[device_id] = {
+          topic: topic,
+          registered_at: Time.now.iso8601,
+          user_agent: request.user_agent,
+        }
+        PluginStore.set("dumbcourse", "push_devices_#{current_user.id}", devices)
+      end
 
       render json: { success: true, topic: topic }
     end
@@ -44,9 +47,11 @@ module DiscourseDumbcourse
 
       return render json: { error: "device_id required" }, status: :bad_request if device_id.blank?
 
-      devices = PluginStore.get("dumbcourse", "push_devices_#{current_user.id}") || {}
-      devices.delete(device_id)
-      PluginStore.set("dumbcourse", "push_devices_#{current_user.id}", devices)
+      DistributedMutex.synchronize("dumbcourse_push_devices_#{current_user.id}") do
+        devices = PluginStore.get("dumbcourse", "push_devices_#{current_user.id}") || {}
+        devices.delete(device_id)
+        PluginStore.set("dumbcourse", "push_devices_#{current_user.id}", devices)
+      end
 
       render json: { success: true }
     end
