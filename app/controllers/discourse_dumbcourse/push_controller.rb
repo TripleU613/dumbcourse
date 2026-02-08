@@ -98,22 +98,36 @@ module DiscourseDumbcourse
     end
 
     # POST /<base>/push/test
-    # Send a test push to all registered devices for the current user
+    # Send a test push to one device and return the raw ntfy response
     def test_push
       devices = PluginStore.get("dumbcourse", "push_devices_#{current_user.id}") || {}
       return render json: { error: "No devices registered" }, status: :not_found if devices.empty?
 
-      begin
-        DiscourseDumbcourse::PushSender.send_to_user(
-          current_user.id,
-          title: "Test push",
-          message: "Push test from server at #{Time.now.utc.strftime('%H:%M:%S UTC')}",
-          priority: "default",
-        )
-        render json: { success: true, device_count: devices.size }
-      rescue => e
-        render json: { error: e.message, backtrace: e.backtrace&.first(5) }, status: :internal_server_error
+      server = SiteSetting.dumbcourse_ntfy_server.to_s.strip
+      server = "https://ntfy.sh" if server.blank?
+
+      results = []
+      devices.each do |device_id, device_info|
+        topic = device_info["topic"]
+        next if topic.blank?
+        begin
+          uri = URI.parse(server)
+          http = Net::HTTP.new(uri.host, uri.port)
+          http.use_ssl = uri.scheme == "https"
+          http.open_timeout = 5
+          http.read_timeout = 10
+          request = Net::HTTP::Post.new(uri.request_uri)
+          request["Content-Type"] = "application/json"
+          auth_token = SiteSetting.dumbcourse_ntfy_token.to_s.strip
+          request["Authorization"] = "Bearer #{auth_token}" if auth_token.present?
+          request.body = { topic: topic, title: "Test push", message: "Server test #{Time.now.utc.strftime('%H:%M:%S UTC')}", priority: 3 }.to_json
+          response = http.request(request)
+          results << { device_id: device_id, topic: topic, status: response.code.to_i, body: response.body.to_s[0..200] }
+        rescue => e
+          results << { device_id: device_id, topic: topic, error: "#{e.class}: #{e.message}" }
+        end
       end
+      render json: { device_count: devices.size, results: results }
     end
 
     private
