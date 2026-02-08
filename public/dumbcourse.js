@@ -509,7 +509,6 @@ function canModerate() {
 }
 // Push notification registration for native app (ES5 compatible for Chrome 44+)
 var PUSH_REGISTERED = false;
-var _pushEventSource = null;
 function isNativeApp() {
   try {
     return !!(window.PushBridge && typeof window.PushBridge.isNativeApp === 'function' && window.PushBridge.isNativeApp());
@@ -604,58 +603,23 @@ function unregisterPushNotifications() {
     return false;
   });
 }
+var _badgePollInterval = null;
 function registerWebPushBadges() {
   if (!isLoggedIn()) return;
-  if (_pushEventSource) return;
-  var deviceId = localStorage.getItem('jt_web_device_id');
-  if (!deviceId) {
-    deviceId = 'web-' + Math.random().toString(36).substring(2, 15);
-    localStorage.setItem('jt_web_device_id', deviceId);
-  }
-  var topic = localStorage.getItem('jt_web_push_topic');
-  if (!topic) {
-    topic = 'dumbcourse-' + deviceId.substring(0, 8) + '-' + Math.random().toString(36).substring(2, 10);
-    localStorage.setItem('jt_web_push_topic', topic);
-  }
-  fetch(PROXY + BASE_PATH + '/push/info', {
-    headers: { 'Accept': 'application/json' },
-    credentials: 'same-origin'
-  }).then(function (resp) {
-    if (!resp || !resp.ok) return null;
-    return resp.json();
-  }).then(function (info) {
-    if (!info || !info.enabled) return;
-    var server = info.server;
-    return fetch(PROXY + BASE_PATH + '/push/register', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'X-CSRF-Token': S.csrf || ''
-      },
-      credentials: 'same-origin',
-      body: JSON.stringify({ topic: topic, device_id: deviceId })
-    }).then(function (resp) {
-      if (!resp || !resp.ok) return;
-      return resp.json();
-    }).then(function (result) {
-      if (!result || !result.success) return;
-      var sseUrl = server.replace(/\/+$/, '') + '/' + topic;
-      _pushEventSource = new EventSource(sseUrl);
-      _pushEventSource.onmessage = function () {
-        refreshUnreadNotifCount();
-        refreshUnreadMessageCount();
-      };
-      _pushEventSource.onerror = function () {
-        // EventSource auto-reconnects; no action needed
-      };
-    });
-  }).catch(function () {});
+  if (_badgePollInterval) return;
+  // Poll badge counts every 30 seconds instead of holding an SSE connection
+  // SSE connections through Rails hold a Puma thread each, exhausting the thread pool
+  _badgePollInterval = setInterval(function () {
+    if (isLoggedIn()) {
+      refreshUnreadNotifCount();
+      refreshUnreadMessageCount();
+    }
+  }, 30000);
 }
 function closeWebPushBadges() {
-  if (_pushEventSource) {
-    _pushEventSource.close();
-    _pushEventSource = null;
+  if (_badgePollInterval) {
+    clearInterval(_badgePollInterval);
+    _badgePollInterval = null;
   }
 }
 function refreshCurrentUser() {
