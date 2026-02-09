@@ -60,6 +60,14 @@ Dumbcourse does not use a proxy, it serves all directly.
 - `dumbcourse_default_view` (`latest` / `new` / `top` / `unseen` / `hot` / `my` / `categories`)
 - `dumbcourse_base_path` (defaults to `dumb`)
 - `dumbcourse_sidebar_link_enabled` (adds a sidebar link to your Dumbcourse base path)
+- LanguageTool (Refine button):
+  - `dumbcourse_languagetool_enabled`
+  - `dumbcourse_languagetool_mode` (`self_hosted` / `official_api`)
+  - `dumbcourse_languagetool_url` (self-hosted)
+  - `dumbcourse_languagetool_secret` (self-hosted, optional)
+  - `dumbcourse_languagetool_api_url` (official API, default: `https://api.languagetool.org/v2/check`)
+  - `dumbcourse_languagetool_api_username` (official API, optional)
+  - `dumbcourse_languagetool_api_key` (official API, optional)
 
 ---
 
@@ -93,6 +101,61 @@ Reference: Discourse’s plugin install guide:
 * Anonymous users should land on `/dumb/login` (or your configured base path)
 * Logged-in users should see the default view
 * Confirm: category navigation, topic load, reply flow, and focus order
+
+---
+
+## LanguageTool "Refine" setup
+
+When enabled, a **Refine** button (star icon) appears in all composer boxes (reply, new topic, edit, PM). It calls a server-side proxy so the browser never hits LanguageTool directly.
+
+### Self-hosted (recommended)
+
+1. Run LanguageTool on any server and expose it via HTTPS.
+2. Protect it with a single header (recommended):  
+   `Authorization: Bearer <token>`
+3. In Discourse Admin → Plugins → Dumbcourse:
+   - `dumbcourse_languagetool_enabled` = `true`
+   - `dumbcourse_languagetool_mode` = `self_hosted`
+   - `dumbcourse_languagetool_url` = `https://your-domain.example`
+   - `dumbcourse_languagetool_secret` = `<token>`  
+     (If you need a custom header, use `Header-Name: value` instead of a token.)
+
+Notes:
+- The plugin automatically calls `/v2/check` if your URL doesn’t include it.
+- Your LanguageTool server must be reachable from your Discourse server.
+
+### Self-hosted with Cloudflare Tunnel (no port forwarding)
+
+If your LanguageTool server is on a private LAN, use Cloudflare Tunnel:
+
+1. Install and configure `cloudflared` with a tunnel.
+2. Add an ingress rule to `/etc/cloudflared/config.yml`:
+
+```yml
+ingress:
+  - hostname: lt.example.com
+    service: https://127.0.0.1:443
+    originRequest:
+      originServerName: lt.example.com
+      noTLSVerify: true
+```
+
+3. Restart tunnel: `systemctl restart cloudflared`
+4. Set DNS (Cloudflare):
+   - `CNAME` `lt` → `<tunnel-id>.cfargotunnel.com` (proxied)
+
+Then set Dumbcourse to `self_hosted` and use `https://lt.example.com`.
+
+### Official LanguageTool API
+
+1. Get an API key from LanguageTool.
+2. In Discourse Admin → Plugins → Dumbcourse:
+   - `dumbcourse_languagetool_enabled` = `true`
+   - `dumbcourse_languagetool_mode` = `official_api`
+   - `dumbcourse_languagetool_api_url` = `https://api.languagetool.org/v2/check`
+   - `dumbcourse_languagetool_api_username` = `<optional>`
+   - `dumbcourse_languagetool_api_key` = `<optional>`  
+     (If you set a username, the API key is required.)
 
 ---
 
