@@ -16,6 +16,9 @@ en:
     dumbcourse_push_enabled: "Enable push notifications for Dumbcourse app"
     dumbcourse_languagetool_enabled: "Enable LanguageTool refine button"
     dumbcourse_languagetool_mode: "LanguageTool mode"
+    dumbcourse_languagetool_mode_choices:
+      self_hosted: "Self-hosted"
+      official_api: "Official API"
     dumbcourse_languagetool_url: "LanguageTool server URL"
     dumbcourse_languagetool_secret: "LanguageTool server secret (optional)"
     dumbcourse_languagetool_api_url: "LanguageTool official API URL"
