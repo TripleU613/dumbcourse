@@ -53,3 +53,12 @@ plugins:
     min: 10
     max: 100
     client: true
+  dumbcourse_languagetool_enabled:
+    default: false
+    client: false
+  dumbcourse_languagetool_url:
+    default: ""
+    client: false
+  dumbcourse_languagetool_secret:
+    default: ""
+    client: false

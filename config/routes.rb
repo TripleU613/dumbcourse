@@ -17,6 +17,9 @@ DiscourseDumbcourse::Engine.routes.draw do
   # SSE streaming endpoint (must be before catch-all)
   get "/push/sse/:topic" => "sse#stream"
 
+  # LanguageTool proxy endpoint
+  post "/languagetool/check" => "languagetool#check"
+
   # Main app routes (catch-all) - exclude push paths
   get "/" => "app#show"
   get "/*path" => "app#show",

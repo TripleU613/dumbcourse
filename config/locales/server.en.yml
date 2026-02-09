@@ -14,3 +14,6 @@ en:
       mobile: "Mobile only"
       none: "Off"
     dumbcourse_push_enabled: "Enable push notifications for Dumbcourse app"
+    dumbcourse_languagetool_enabled: "Enable LanguageTool refine button"
+    dumbcourse_languagetool_url: "LanguageTool server URL"
+    dumbcourse_languagetool_secret: "LanguageTool server secret (optional)"

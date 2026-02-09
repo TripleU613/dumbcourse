@@ -53,6 +53,7 @@ var SITE_SETTINGS = {
 };
 var HCAPTCHA_ENABLED = false;
 var HCAPTCHA_SITE_KEY = '';
+var LT_ENABLED = window.DUMBCOURSE_SETTINGS && window.DUMBCOURSE_SETTINGS.languagetoolEnabled;
 var HCAPTCHA_WIDGET_ID = null;
 var HCAPTCHA_LOAD_PROMISE = null;
 var API_INFLIGHT = {};
@@ -1786,6 +1787,80 @@ function bindPreview(textareaId, previewId, toggleId, opts) {
   });
   setPreviewButton(on);
   ta.addEventListener('input', schedule);
+}
+function applyLtMatches(text, matches) {
+  if (!matches || !matches.length) return {
+    text: text,
+    changed: false
+  };
+  var list = [];
+  for (var i = 0; i < matches.length; i++) {
+    var m = matches[i] || {};
+    if (typeof m.offset !== 'number' || typeof m.length !== 'number') continue;
+    if (!m.replacements || !m.replacements.length) continue;
+    list.push(m);
+  }
+  if (!list.length) return {
+    text: text,
+    changed: false
+  };
+  list.sort(function (a, b) {
+    return (b.offset || 0) - (a.offset || 0);
+  });
+  var out = text;
+  var changed = false;
+  for (var j = 0; j < list.length; j++) {
+    var m2 = list[j];
+    var rep = m2.replacements && m2.replacements[0] ? m2.replacements[0].value : null;
+    if (rep === null || rep === undefined) continue;
+    var start = m2.offset || 0;
+    var len = m2.length || 0;
+    if (start < 0 || len < 0) continue;
+    var end = start + len;
+    if (start > out.length) continue;
+    out = out.slice(0, start) + rep + out.slice(end);
+    changed = true;
+  }
+  return {
+    text: out,
+    changed: changed
+  };
+}
+function bindRefine(textareaId, buttonId) {
+  var ta = document.getElementById(textareaId);
+  var btn = document.getElementById(buttonId);
+  if (!ta || !btn) return;
+  if (btn._bound) return;
+  btn._bound = true;
+  btn.addEventListener('click', function () {
+    if (!LT_ENABLED) return showAlert('LanguageTool not enabled');
+    var raw = ta.value || '';
+    if (!raw.trim()) return showAlert('Write something first');
+    if (btn.disabled) return;
+    var prevText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Refining...';
+    api(BASE_PATH + '/languagetool/check', {
+      method: 'POST',
+      body: {
+        text: raw
+      }
+    }).then(function (resp) {
+      var matches = resp && resp.matches ? resp.matches : [];
+      var result = applyLtMatches(raw, matches);
+      if (result.changed && result.text !== raw) {
+        ta.value = result.text;
+        ta.dispatchEvent(new Event('input'));
+      } else {
+        showAlert('No changes found');
+      }
+    }).catch(function (e) {
+      showAlert(e && e.message ? e.message : 'LanguageTool failed');
+    }).then(function () {
+      btn.disabled = false;
+      btn.textContent = prevText;
+    });
+  });
 }
 function attachMentionAutocomplete(textarea, opts) {
   if (!textarea) return;
@@ -3525,6 +3600,7 @@ function _renderTopic() {
       <label for="uploadFile" id="uploadBtn" role="button" tabindex="0" style="background:var(--bg3);color:var(--fg);cursor:pointer" aria-label="Upload" title="Upload">${IC.upload}</label>
       <button id="emojiBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Emoji">${IC.smile}</button>
       <button id="replyPreviewBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Preview" title="Preview"></button>
+      ${LT_ENABLED ? '<button id="refineReply" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Refine" title="Refine">Refine</button>' : ''}
       <span class="actions-spacer" aria-hidden="true"></span>
       <button id="discardReply" class="discard" tabindex="0" aria-label="Discard reply draft" title="Discard">${IC.trash}</button>
       <button id="sendReply" tabindex="0" aria-label="Post reply" title="Post reply">${IC.send}</button>
@@ -3581,6 +3657,7 @@ function _renderTopic() {
               replyToPostNumber: replyToPostNumber
             };
           });
+          bindRefine('replyBox', 'refineReply');
           refreshComposeActions();
           document.getElementById('discardReply').addEventListener('click', /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _calleeReplyDiscard() {
             return _regenerator().w(function (_contextReplyDiscard) {
@@ -4416,11 +4493,13 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
             bodyEl.innerHTML = `<textarea id="editBox-${postId}" style="width:100%;min-height:120px" tabindex="0">${esc(raw)}</textarea>
           <div style="display:flex;gap:8px;margin-top:8px">
             <button class="save-edit" data-post-id="${postId}" tabindex="0">Save</button>
+            ${LT_ENABLED ? `<button class="refine-edit" id="refineEdit-${postId}" data-post-id="${postId}" tabindex="0" style="background:var(--bg3);color:var(--fg)">Refine</button>` : ''}
             <button class="cancel-edit" data-post-id="${postId}" tabindex="0" style="background:var(--bg3);color:var(--fg)">Cancel</button>
           </div>`;
             attachMentionAutocomplete(document.getElementById('editBox-' + postId), {
               topicId: topicId
             });
+            bindRefine('editBox-' + postId, 'refineEdit-' + postId);
             bodyEl.querySelector('.save-edit').addEventListener('click', /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee4() {
               var newRaw, te, _t5;
               return _regenerator().w(function (_context4) {
@@ -4864,6 +4943,7 @@ function renderNewTopic() {
     <div class="actions chip-actions">
       <label for="uploadNtFile" id="uploadNt" role="button" tabindex="0" style="background:var(--bg3);color:var(--fg);cursor:pointer" aria-label="Upload" title="Upload">${IC.upload}</label>
       <button id="previewNt" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Preview" title="Preview"></button>
+      ${LT_ENABLED ? '<button id="refineNt" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Refine" title="Refine">Refine</button>' : ''}
       <span class="actions-spacer" aria-hidden="true"></span>
       <button id="discardNt" class="discard" tabindex="0" aria-label="Discard topic draft" title="Discard">${IC.trash}</button>
       <button id="postTopic" tabindex="0" aria-label="Create topic" title="Create topic">${IC.send}</button>
@@ -4897,6 +4977,7 @@ function renderNewTopic() {
     titleId: 'ntTitle',
     categoryId: 'ntCat'
   });
+  bindRefine('ntBody', 'refineNt');
   document.getElementById('discardNt').addEventListener('click', /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _calleeNtDiscard() {
     return _regenerator().w(function (_contextNtDiscard) {
       while (1) switch (_contextNtDiscard.p = _contextNtDiscard.n) {
@@ -5039,6 +5120,7 @@ function renderNewMessage() {
     </div>
     <div class="actions chip-actions">
       <button id="previewPm" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Preview" title="Preview"></button>
+      ${LT_ENABLED ? '<button id="refinePm" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Refine" title="Refine">Refine</button>' : ''}
       <span class="actions-spacer" aria-hidden="true"></span>
       <button id="discardPm" class="discard" tabindex="0" aria-label="Discard message draft" title="Discard">${IC.trash}</button>
       <button id="sendPm" tabindex="0" aria-label="Send message" title="Send message">${IC.send}</button>
@@ -5099,6 +5181,7 @@ function renderNewMessage() {
     titleId: 'pmTitle',
     archetype: 'private_message'
   });
+  bindRefine('pmBody', 'refinePm');
   refreshComposeActions();
   document.getElementById('sendPm').addEventListener('click', /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee1() {
     var to, title, raw, d, _t10;
