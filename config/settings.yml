@@ -60,9 +60,7 @@ plugins:
     default: "self_hosted"
     client: false
     type: enum
-    choices:
-      - self_hosted
-      - official_api
+    enum: "DumbcourseLanguagetoolModeSiteSetting"
   dumbcourse_languagetool_url:
     default: ""
     client: false
