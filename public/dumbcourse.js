@@ -1839,7 +1839,7 @@ function bindRefine(textareaId, buttonId) {
     if (btn.disabled) return;
     var prevHtml = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = 'Refining...';
+    btn.innerHTML = '<span class="btn-icon">' + IC.refine + '</span>';
     api(BASE_PATH + '/languagetool/check', {
       method: 'POST',
       body: {
