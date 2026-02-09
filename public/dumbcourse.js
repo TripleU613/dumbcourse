@@ -1837,9 +1837,9 @@ function bindRefine(textareaId, buttonId) {
     var raw = ta.value || '';
     if (!raw.trim()) return showAlert('Write something first');
     if (btn.disabled) return;
-    var prevText = btn.textContent;
+    var prevHtml = btn.innerHTML;
     btn.disabled = true;
-    btn.textContent = 'Refining...';
+    btn.innerHTML = 'Refining...';
     api(BASE_PATH + '/languagetool/check', {
       method: 'POST',
       body: {
@@ -1858,7 +1858,7 @@ function bindRefine(textareaId, buttonId) {
       showAlert(e && e.message ? e.message : 'LanguageTool failed');
     }).then(function () {
       btn.disabled = false;
-      btn.textContent = prevText;
+      btn.innerHTML = prevHtml;
     });
   });
 }
@@ -2261,6 +2261,7 @@ var IC = {
   upload: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
   preview: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>',
   hidePreview: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C5 20 1 12 1 12a21.77 21.77 0 0 1 5.06-6.94"/><path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.72 21.72 0 0 1-3.06 4.44"/><path d="M14.12 14.12A3 3 0 0 1 9.88 9.88"/><line x1="1" y1="1" x2="23" y2="23"/></svg>',
+  refine: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12,1L9,9L1,12L9,15L12,23L15,15L23,12L15,9L12,1Z" /></svg>',
   msg: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
   bell: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
   flag: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>',
@@ -3600,7 +3601,7 @@ function _renderTopic() {
       <label for="uploadFile" id="uploadBtn" role="button" tabindex="0" style="background:var(--bg3);color:var(--fg);cursor:pointer" aria-label="Upload" title="Upload">${IC.upload}</label>
       <button id="emojiBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Emoji">${IC.smile}</button>
       <button id="replyPreviewBtn" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Preview" title="Preview"></button>
-      ${LT_ENABLED ? '<button id="refineReply" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Refine" title="Refine">Refine</button>' : ''}
+      ${LT_ENABLED ? `<button id="refineReply" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Refine" title="Refine"><span class="btn-icon">${IC.refine}</span></button>` : ''}
       <span class="actions-spacer" aria-hidden="true"></span>
       <button id="discardReply" class="discard" tabindex="0" aria-label="Discard reply draft" title="Discard">${IC.trash}</button>
       <button id="sendReply" tabindex="0" aria-label="Post reply" title="Post reply">${IC.send}</button>
@@ -4493,7 +4494,7 @@ function attachPostHandlers(container, topicId, replyBox, postNumberMap, setRepl
             bodyEl.innerHTML = `<textarea id="editBox-${postId}" style="width:100%;min-height:120px" tabindex="0">${esc(raw)}</textarea>
           <div style="display:flex;gap:8px;margin-top:8px">
             <button class="save-edit" data-post-id="${postId}" tabindex="0">Save</button>
-            ${LT_ENABLED ? `<button class="refine-edit" id="refineEdit-${postId}" data-post-id="${postId}" tabindex="0" style="background:var(--bg3);color:var(--fg)">Refine</button>` : ''}
+            ${LT_ENABLED ? `<button class="refine-edit" id="refineEdit-${postId}" data-post-id="${postId}" tabindex="0" style="background:var(--bg3);color:var(--fg)"><span class="btn-icon">${IC.refine}</span></button>` : ''}
             <button class="cancel-edit" data-post-id="${postId}" tabindex="0" style="background:var(--bg3);color:var(--fg)">Cancel</button>
           </div>`;
             attachMentionAutocomplete(document.getElementById('editBox-' + postId), {
@@ -4943,7 +4944,7 @@ function renderNewTopic() {
     <div class="actions chip-actions">
       <label for="uploadNtFile" id="uploadNt" role="button" tabindex="0" style="background:var(--bg3);color:var(--fg);cursor:pointer" aria-label="Upload" title="Upload">${IC.upload}</label>
       <button id="previewNt" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Preview" title="Preview"></button>
-      ${LT_ENABLED ? '<button id="refineNt" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Refine" title="Refine">Refine</button>' : ''}
+      ${LT_ENABLED ? `<button id="refineNt" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Refine" title="Refine"><span class="btn-icon">${IC.refine}</span></button>` : ''}
       <span class="actions-spacer" aria-hidden="true"></span>
       <button id="discardNt" class="discard" tabindex="0" aria-label="Discard topic draft" title="Discard">${IC.trash}</button>
       <button id="postTopic" tabindex="0" aria-label="Create topic" title="Create topic">${IC.send}</button>
@@ -5120,7 +5121,7 @@ function renderNewMessage() {
     </div>
     <div class="actions chip-actions">
       <button id="previewPm" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Preview" title="Preview"></button>
-      ${LT_ENABLED ? '<button id="refinePm" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Refine" title="Refine">Refine</button>' : ''}
+      ${LT_ENABLED ? `<button id="refinePm" tabindex="0" style="background:var(--bg3);color:var(--fg)" aria-label="Refine" title="Refine"><span class="btn-icon">${IC.refine}</span></button>` : ''}
       <span class="actions-spacer" aria-hidden="true"></span>
       <button id="discardPm" class="discard" tabindex="0" aria-label="Discard message draft" title="Discard">${IC.trash}</button>
       <button id="sendPm" tabindex="0" aria-label="Send message" title="Send message">${IC.send}</button>
