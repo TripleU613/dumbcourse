@@ -56,9 +56,25 @@ plugins:
   dumbcourse_languagetool_enabled:
     default: false
     client: false
+  dumbcourse_languagetool_mode:
+    default: "self_hosted"
+    client: false
+    type: enum
+    choices:
+      - self_hosted
+      - official_api
   dumbcourse_languagetool_url:
     default: ""
     client: false
   dumbcourse_languagetool_secret:
+    default: ""
+    client: false
+  dumbcourse_languagetool_api_url:
+    default: "https://api.languagetool.org/v2/check"
+    client: false
+  dumbcourse_languagetool_api_username:
+    default: ""
+    client: false
+  dumbcourse_languagetool_api_key:
     default: ""
     client: false

@@ -13,11 +13,6 @@ module DiscourseDumbcourse
     def check
       raise Discourse::NotFound unless SiteSetting.dumbcourse_languagetool_enabled
 
-      url = SiteSetting.dumbcourse_languagetool_url.to_s.strip
-      if url.blank?
-        return render json: { error: "LanguageTool URL not configured" }, status: :unprocessable_entity
-      end
-
       text = params[:text].to_s
       if text.blank?
         return render json: { error: "text required" }, status: :bad_request
@@ -26,11 +21,35 @@ module DiscourseDumbcourse
       language = params[:language].to_s.strip
       language = "auto" if language.blank?
 
+      mode = SiteSetting.dumbcourse_languagetool_mode.to_s
+      if mode == "official_api"
+        url = SiteSetting.dumbcourse_languagetool_api_url.to_s.strip
+        if url.blank?
+          return render json: { error: "LanguageTool API URL not configured" }, status: :unprocessable_entity
+        end
+      else
+        url = SiteSetting.dumbcourse_languagetool_url.to_s.strip
+        if url.blank?
+          return render json: { error: "LanguageTool URL not configured" }, status: :unprocessable_entity
+        end
+      end
+
       uri = build_languagetool_uri(url)
       req = Net::HTTP::Post.new(uri.request_uri)
       req["Content-Type"] = "application/x-www-form-urlencoded"
-      apply_secret_header(req)
-      req.body = URI.encode_www_form(language: language, text: text)
+      params_body = { language: language, text: text }
+      if mode == "official_api"
+        username = SiteSetting.dumbcourse_languagetool_api_username.to_s.strip
+        api_key = SiteSetting.dumbcourse_languagetool_api_key.to_s.strip
+        if username.present? && api_key.blank?
+          return render json: { error: "LanguageTool API key required for username" }, status: :unprocessable_entity
+        end
+        params_body[:username] = username if username.present?
+        params_body[:apiKey] = api_key if api_key.present?
+      else
+        apply_secret_header(req)
+      end
+      req.body = URI.encode_www_form(params_body)
 
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = uri.scheme == "https"
@@ -64,6 +83,10 @@ module DiscourseDumbcourse
       path = uri.path.to_s
       if path.empty? || path == "/"
         uri.path = "/v2/check"
+      elsif path.end_with?("/v2")
+        uri.path = path + "/check"
+      elsif path.end_with?("/v2/")
+        uri.path = path + "check"
       elsif !path.end_with?("/v2/check")
         uri.path = path.sub(%r{/+\z}, "") + "/v2/check"
       end
