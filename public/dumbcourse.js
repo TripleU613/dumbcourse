@@ -4817,10 +4817,43 @@ function showFlagDialog(postId) {
     }
   });
 }
+
+function describeTopicChangePost(p) {
+  if (!p) return '';
+  var code = p.action_code || '';
+  var actor = p.username ? esc(p.username) : 'Someone';
+  var map = {
+    'closed.enabled': actor + ' locked this thread',
+    'closed.disabled': actor + ' unlocked this thread',
+    'autoclosed.enabled': 'This thread was automatically locked',
+    'autoclosed.disabled': 'This thread was automatically unlocked',
+    'archived.enabled': actor + ' archived this thread',
+    'archived.disabled': actor + ' unarchived this thread',
+    'visible.enabled': actor + ' listed this thread',
+    'visible.disabled': actor + ' unlisted this thread',
+    'pinned.enabled': actor + ' pinned this thread',
+    'pinned.disabled': actor + ' unpinned this thread'
+  };
+  if (map[code]) return map[code];
+
+  if (code.indexOf('.enabled') > -1) {
+    return actor + ' enabled ' + code.replace('.enabled', '').replace(/[_\.]/g, ' ');
+  }
+  if (code.indexOf('.disabled') > -1) {
+    return actor + ' disabled ' + code.replace('.disabled', '').replace(/[_\.]/g, ' ');
+  }
+  return '';
+}
+
 function renderPost(p, topicData) {
   var isDeleted = !!p.deleted_at;
   var isHidden = !!p.hidden;
+  var isSystemAction = p.post_type === 3 || !!p.action_code;
   var body = fixPostHtml(p.cooked || '');
+  if (isSystemAction && !stripHtml(body).trim()) {
+    var changeDescription = describeTopicChangePost(p);
+    body = '<div class="system-action-label">' + esc(changeDescription || 'Thread settings changed') + '</div>';
+  }
   var isOwn = p.username === S.username;
   // For deleted posts, show placeholder if not mod, or show deleted styling if mod
   if (isDeleted || isHidden) {
