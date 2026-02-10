@@ -25,12 +25,18 @@ module DiscourseDumbcourse
       if mode == "official_api"
         url = SiteSetting.dumbcourse_languagetool_api_url.to_s.strip
         if url.blank?
-          return render json: { error: "LanguageTool API URL not configured" }, status: :unprocessable_entity
+          return render(
+            json: { error: "LanguageTool API URL not configured" },
+            status: :unprocessable_entity,
+          )
         end
       else
         url = SiteSetting.dumbcourse_languagetool_url.to_s.strip
         if url.blank?
-          return render json: { error: "LanguageTool URL not configured" }, status: :unprocessable_entity
+          return render(
+            json: { error: "LanguageTool URL not configured" },
+            status: :unprocessable_entity,
+          )
         end
       end
 
@@ -42,7 +48,10 @@ module DiscourseDumbcourse
         username = SiteSetting.dumbcourse_languagetool_api_username.to_s.strip
         api_key = SiteSetting.dumbcourse_languagetool_api_key.to_s.strip
         if username.present? && api_key.blank?
-          return render json: { error: "LanguageTool API key required for username" }, status: :unprocessable_entity
+          return render(
+            json: { error: "LanguageTool API key required for username" },
+            status: :unprocessable_entity,
+          )
         end
         params_body[:username] = username if username.present?
         params_body[:apiKey] = api_key if api_key.present?
@@ -58,7 +67,10 @@ module DiscourseDumbcourse
 
       resp = http.request(req)
       unless resp.is_a?(Net::HTTPSuccess)
-        return render json: { error: "LanguageTool error", status: resp.code.to_i }, status: :bad_gateway
+        return render(
+          json: { error: "LanguageTool error", status: resp.code.to_i },
+          status: :bad_gateway,
+        )
       end
 
       data = begin
