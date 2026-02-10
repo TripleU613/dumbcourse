@@ -61,7 +61,11 @@ module DiscourseDumbcourse
         return render json: { error: "LanguageTool error", status: resp.code.to_i }, status: :bad_gateway
       end
 
-      data = JSON.parse(resp.body) rescue nil
+      data = begin
+        JSON.parse(resp.body)
+      rescue JSON::ParserError
+        nil
+      end
       matches = data && data["matches"].is_a?(Array) ? data["matches"] : nil
       unless matches
         return render json: { error: "Invalid LanguageTool response" }, status: :bad_gateway
