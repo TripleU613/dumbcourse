@@ -104,6 +104,7 @@ html.light .post-trust.level-4{border-color:#0a7aa5;color:#07536f}
 .post-meta-right{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:.7rem;color:var(--fg2);white-space:nowrap}
 .post-num{font-size:.7rem;color:var(--fg2)}
 .post-body{font-size:.9rem;line-height:1.5;word-break:break-word}
+.post-body .system-action-label{font-size:.82rem;color:var(--fg2);background:var(--bg3);border:1px dashed var(--border);border-radius:999px;padding:4px 10px;display:inline-block}
 .post-body img{max-width:100%;height:auto;border-radius:var(--radius)}
 .post-body img.emoji{display:inline;width:1.2em;height:1.2em;vertical-align:middle;border-radius:0}
 .post-body pre{background:var(--bg3);padding:8px;border-radius:var(--radius);overflow-x:auto;font-size:.8rem}
