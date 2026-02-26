@@ -7,9 +7,19 @@ module DiscourseDumbcourse
 
     skip_before_action :verify_authenticity_token
 
+    # Maximum time a single SSE connection can hold a worker (seconds).
+    # Clients must reconnect after this. Keeps workers from being held forever.
+    MAX_CONNECTION_SECONDS = 120
+
     # GET /<base>/push/sse/:topic
-    # SSE endpoint backed by Redis SUBSCRIBE
+    # SSE endpoint backed by Redis SUBSCRIBE with a hard timeout so we never
+    # hold a Unicorn/Pitchfork worker indefinitely.
     def stream
+      unless SiteSetting.dumbcourse_push_enabled
+        render plain: "push disabled", status: :service_unavailable
+        return
+      end
+
       topic = params[:topic].to_s.strip
       if topic.blank?
         render plain: "topic required", status: :bad_request
@@ -24,15 +34,29 @@ module DiscourseDumbcourse
 
       redis = nil
       heartbeat_thread = nil
+      timeout_thread = nil
 
       begin
         redis = Redis.new(DiscourseRedis.config.dup)
 
-        # Heartbeat thread to prevent nginx proxy timeout
+        # Hard timeout — unsubscribe after MAX_CONNECTION_SECONDS so the worker is freed.
+        # The client will see the stream end and should reconnect.
+        timeout_thread =
+          Thread.new do
+            sleep MAX_CONNECTION_SECONDS
+            begin
+              response.stream.write("event: reconnect\ndata: {\"reason\":\"timeout\"}\n\n")
+            rescue
+              nil
+            end
+            redis&.unsubscribe(channel) rescue nil
+          end
+
+        # Heartbeat to prevent intermediate proxy timeouts
         heartbeat_thread =
           Thread.new do
             loop do
-              sleep 30
+              sleep 25
               begin
                 response.stream.write(": keepalive\n\n")
               rescue => e
@@ -55,6 +79,7 @@ module DiscourseDumbcourse
       rescue => e
         Rails.logger.debug("[Dumbcourse Push] SSE connection closed: #{e.message}")
       ensure
+        timeout_thread&.kill
         heartbeat_thread&.kill
         redis&.close
         response.stream.close
