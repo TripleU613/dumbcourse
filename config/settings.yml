@@ -43,7 +43,7 @@ plugins:
     default: true
     client: true
   dumbcourse_push_enabled:
-    default: true
+    default: false
     client: false
   dumbcourse_pagination_enabled:
     default: false

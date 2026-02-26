@@ -13,7 +13,7 @@ en:
       desktop: "Desktop only"
       mobile: "Mobile only"
       none: "Off"
-    dumbcourse_push_enabled: "Enable push notifications for Dumbcourse app"
+    dumbcourse_push_enabled: "Enable push notifications for Dumbcourse app (SSE disabled — Redis publish only)"
     dumbcourse_languagetool_enabled: "Enable LanguageTool refine button"
     dumbcourse_languagetool_enabled_description: "Adds a Refine (spell/grammar) button in the composer."
     dumbcourse_languagetool_mode: "LanguageTool mode"
