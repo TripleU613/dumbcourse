@@ -36,7 +36,8 @@ end
 
 Discourse::Application.routes.draw do
   constraints DiscourseDumbcourseBasePathConstraint.new do
-    scope "/:dumbcourse_base_path" do
+    scope "/:dumbcourse_base_path",
+          defaults: { dumbcourse_base_path: DiscourseDumbcourse.base_path } do
       mount ::DiscourseDumbcourse::Engine, at: "/"
     end
   end
