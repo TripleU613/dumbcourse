@@ -6,20 +6,18 @@ module DiscourseDumbcourse
 
     skip_before_action :verify_authenticity_token
 
-    # GET /<base>/push/sse/:topic
+    # GET /<base>/push/sse/:topic and /<base>/ntfy/:topic/sse
     #
-    # SSE is disabled.  The SPA client already uses polling for badge counts
-    # instead of holding an SSE connection.  Keeping ActionController::Live
-    # here was the root cause of total worker exhaustion — each open SSE
-    # connection held a Pitchfork worker for up to 120 s, and with only 8
-    # workers the site became unresponsive.
+    # SSE is permanently disabled.  Returning 410 Gone (not 503) so stale
+    # cached SPA bundles stop reconnecting — EventSource spec treats 410
+    # as a terminal error and stops retrying.
     #
-    # Push notifications are still delivered via Redis PUBLISH → the
-    # PushSender publishes, and any future lightweight listener (e.g.
-    # a standalone Puma or a thin SSE proxy) can subscribe without
-    # tying up Discourse workers.
+    # Push notifications are still delivered via Redis PUBLISH → a future
+    # lightweight listener (standalone Puma / thin SSE proxy) can subscribe
+    # without tying up Discourse Pitchfork workers.
     def stream
-      render plain: "SSE disabled — use polling", status: :service_unavailable
+      response.headers["Cache-Control"] = "no-store"
+      render plain: "SSE permanently disabled — use polling", status: :gone
     end
   end
 end

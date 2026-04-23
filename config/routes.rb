@@ -14,17 +14,21 @@ DiscourseDumbcourse::Engine.routes.draw do
     post "/test" => "push#test_push"
   end
 
-  # SSE streaming endpoint (must be before catch-all)
+  # SSE / ntfy endpoints — permanently gone (see sse_controller.rb)
+  # Must be before the catch-all so stale clients don't get redirected to /login.
   get "/push/sse/:topic" => "sse#stream"
+  get "/ntfy/:topic/sse" => "sse#stream"
+  get "/ntfy/*path" => "sse#stream"
 
   # LanguageTool proxy endpoint
   post "/languagetool/check" => "languagetool#check"
 
-  # Main app routes (catch-all) - exclude push paths
+  # Main app routes (catch-all) - exclude push and ntfy paths
   get "/" => "app#show"
   get "/*path" => "app#show",
       :constraints => ->(req) do
-        !req.path.start_with?("#{DiscourseDumbcourse.base_path_with_slash}/push")
+        base = DiscourseDumbcourse.base_path_with_slash
+        !req.path.start_with?("#{base}/push") && !req.path.start_with?("#{base}/ntfy")
       end
 end
 
